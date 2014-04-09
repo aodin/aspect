@@ -9,25 +9,25 @@ A simple table schema:
 
 ```go
 import (
-    * "github.com/aodin/aspect"
+    "github.com/aodin/aspect"
 )
 
-var Users = Table("users",
-    Column("id", Integer{}),
-    Column("name", String{"Length": 32}),
-    Column("password", String{}),
-    PrimaryKey("id"),
+var Users = aspect.Table("users",
+    aspect.Column("id", aspect.Integer{}),
+    aspect.Column("name", aspect.String{"Length": 32}),
+    aspect.Column("password", aspect.String{}),
+    aspect.PrimaryKey("id"),
 )
 ```
 
-### SELECT
+### Select
 
 Each of the following statements will produce the same SQL:
 
 ```go
-users.Select()
-sql.Select(users)
-sql.Select(users.C["id"], users.C["name"], users.C["password"])
+Users.Select()
+aspect.Select(Users)
+aspect.Select(Users.C["id"], Users.C["name"], Users.C["password"])
 ```
 
 ```sql
@@ -48,7 +48,7 @@ func (u User) String() string {
 }
 
 var users []User
-result, err := conn.Execute(users.Select())
+result, err := conn.Execute(Users.Select())
 if err != nil {
     result.All(&users)
 }
@@ -57,7 +57,7 @@ for _, user := range users {
 }
 ```
 
-And simplier queries into more concise return types:
+Simple queries can be returned into more concise types:
 
 ```go
 s := aspect.Select(Users.C["id"]).OrderBy(Users.C["id"])
