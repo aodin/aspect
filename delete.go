@@ -9,7 +9,7 @@ type Deletable interface {
 }
 
 type DeleteStatement struct {
-	Target      Deletable
+	Target Deletable
 }
 
 func (stmt *DeleteStatement) String() string {

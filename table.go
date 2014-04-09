@@ -64,6 +64,10 @@ func (table *TableStruct) Deletable() *TableStruct {
 	return table
 }
 
+func (table *TableStruct) Insert(arg interface{}, args ...interface{}) *InsertStatement {
+	return InsertTableValues(table, arg, args...)
+}
+
 // Constructor function
 func Table(name string, elements ...TableModifier) *TableStruct {
 	// Create the table with its dynamic elements

@@ -45,6 +45,26 @@ func (db *DB) MustExecute(stmt Executable, args ...interface{}) *Result {
 	return result
 }
 
+func (db *DB) ExecuteSQL(s string, args ...interface{}) (*Result, error) {
+	// TODO User Exec if no args are given?
+	rows, err := db.conn.Query(s, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wrap the sql rows in a result
+	return &Result{rows: rows, stmt: s}, nil
+}
+
+// A version of Execute that will panic if there is an error
+func (db *DB) MustExecuteSQL(s string, args ...interface{}) *Result {
+	result, err := db.ExecuteSQL(s, args...)
+	if err != nil {
+		panic(err)
+	}
+	return result
+}
+
 func Connect(driver, credentials string) (*DB, error) {
 	db, err := sql.Open(driver, credentials)
 	return &DB{conn: db}, err
