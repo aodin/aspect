@@ -60,24 +60,24 @@ func (c *ColumnStruct) Selectable() []ColumnElement {
 
 // Implement the sql.Orderable interface in order.go
 func (c *ColumnStruct) Orderable() *OrderedColumn {
-	return &OrderedColumn{ColumnStruct: c}
+	return &OrderedColumn{inner: c}
 }
 
 // All other functions should return an OrderedColumn
 func (c *ColumnStruct) Asc() *OrderedColumn {
-	return &OrderedColumn{ColumnStruct: c}
+	return &OrderedColumn{inner: c}
 }
 
 func (c *ColumnStruct) Desc() *OrderedColumn {
-	return &OrderedColumn{ColumnStruct: c, desc: true}
+	return &OrderedColumn{inner: c, desc: true}
 }
 
 func (c *ColumnStruct) NullsFirst() *OrderedColumn {
-	return &OrderedColumn{ColumnStruct: c, nullsFirst: true}
+	return &OrderedColumn{inner: c, nullsFirst: true}
 }
 
 func (c *ColumnStruct) NullsLast() *OrderedColumn {
-	return &OrderedColumn{ColumnStruct: c, nullsLast: true}
+	return &OrderedColumn{inner: c, nullsLast: true}
 }
 
 // Conditionals

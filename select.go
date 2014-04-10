@@ -13,6 +13,7 @@ type Selectable interface {
 type SelectStatement struct {
 	tables  []*TableStruct
 	columns []ColumnElement
+	groupBy []ColumnElement
 	order   []*OrderedColumn
 	limit   int
 	offset  int
@@ -64,6 +65,13 @@ func (stmt *SelectStatement) Compile() string {
 		strings.Join(stmt.CompileColumns(), ", "),
 		strings.Join(stmt.CompileTables(), ", "),
 	)
+	if stmt.groupBy != nil && len(stmt.groupBy) > 0 {
+		groupBy := make([]string, len(stmt.groupBy))
+		for i, column := range stmt.groupBy {
+			groupBy[i] = column.Compile()
+		}
+		compiled += fmt.Sprintf(" GROUP BY %s", strings.Join(groupBy, ", "))
+	}
 	if stmt.order != nil && len(stmt.order) > 0 {
 		order := make([]string, len(stmt.order))
 		for i, column := range stmt.order {
@@ -78,6 +86,17 @@ func (stmt *SelectStatement) Compile() string {
 		compiled += fmt.Sprintf(" OFFSET %d", stmt.offset)
 	}
 	return compiled
+}
+
+func (stmt *SelectStatement) GroupBy(cs ...ColumnElement) *SelectStatement {
+	groupBy := make([]ColumnElement, len(cs))
+	// Since columns may be given without an ordering method, perform the
+	// orderable conversion whether or not it is already ordered
+	for i, column := range cs {
+		groupBy[i] = column
+	}
+	stmt.groupBy = groupBy
+	return stmt
 }
 
 func (stmt *SelectStatement) OrderBy(params ...Orderable) *SelectStatement {

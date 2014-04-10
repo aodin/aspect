@@ -18,6 +18,11 @@ func (stmt *InsertStatement) String() string {
 
 func (stmt *InsertStatement) Compile() string {
 	c := len(stmt.columns)
+	// No columns? no statement!
+	if c == 0 {
+		return ""
+	}
+
 	columns := make([]string, len(stmt.columns))
 	for i, column := range stmt.columns {
 		columns[i] = fmt.Sprintf(`"%s"`, column.Name())
@@ -25,6 +30,10 @@ func (stmt *InsertStatement) Compile() string {
 
 	// TODO column length should divide args without remainder
 	g := len(stmt.args) / c
+	// If there are no arguments, default to one group
+	if g == 0 {
+		g = 1
+	}
 	parameters := make([]string, g)
 
 	var param int

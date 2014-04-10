@@ -13,7 +13,7 @@ type Orderable interface {
 // * the default behavior is NULLS LAST when ASC is specified or implied, and
 // NULLS FIRST when DESC is specified
 type OrderedColumn struct {
-	*ColumnStruct
+	inner      ColumnElement
 	desc       bool
 	nullsFirst bool
 	nullsLast  bool
@@ -25,7 +25,7 @@ func (o *OrderedColumn) String() string {
 
 func (o *OrderedColumn) Compile() string {
 	// Call the compilation method of the embeded column
-	compiled := o.ColumnStruct.Compile()
+	compiled := o.inner.Compile()
 	if o.desc {
 		compiled += " DESC"
 	}
