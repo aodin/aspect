@@ -25,3 +25,7 @@ func (stmt *DeleteStatement) Execute() (string, error) {
 	// TODO Check for a cached string
 	return stmt.Compile(), nil
 }
+
+func (stmt *DeleteStatement) Args() []interface{} {
+	return make([]interface{}, 0)
+}

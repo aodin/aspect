@@ -7,12 +7,12 @@ import (
 
 // Since an entire Table can be selected, this must return an array of columns
 type Selectable interface {
-	Selectable() []*ColumnStruct
+	Selectable() []ColumnElement
 }
 
 type SelectStatement struct {
 	tables  []*TableStruct
-	columns []*ColumnStruct
+	columns []ColumnElement
 	order   []*OrderedColumn
 	limit   int
 	offset  int
@@ -107,9 +107,13 @@ func (stmt *SelectStatement) Execute() (string, error) {
 	return stmt.Compile(), nil
 }
 
+func (stmt *SelectStatement) Args() []interface{} {
+	return make([]interface{}, 0)
+}
+
 func Select(selections ...Selectable) *SelectStatement {
 	stmt := &SelectStatement{
-		columns: make([]*ColumnStruct, 0),
+		columns: make([]ColumnElement, 0),
 		tables:  make([]*TableStruct, 0),
 	}
 
@@ -120,8 +124,8 @@ func Select(selections ...Selectable) *SelectStatement {
 			// TODO Test for name conflicts
 			stmt.columns = append(stmt.columns, column)
 
-			if !stmt.TableExists(column.table.Name) {
-				stmt.tables = append(stmt.tables, column.table)
+			if !stmt.TableExists(column.Table().Name) {
+				stmt.tables = append(stmt.tables, column.Table())
 			}
 		}
 	}

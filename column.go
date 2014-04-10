@@ -13,32 +13,46 @@ Implements the `TableModifier` interface.
 
 */
 
+type ColumnElement interface {
+	Compile() string
+	Name() string
+	Table() *TableStruct
+}
+
 // Maintains a unique set of columns
 type ColumnSet map[string]*ColumnStruct
 
 // Returns an error if a ColumnStruct by this name already exists
 // TODO Make this a private method?
 func (set ColumnSet) Add(c *ColumnStruct) error {
-	if _, exists := set[c.Name]; exists {
-		return fmt.Errorf("A column with the name %s already exists", c.Name)
+	if _, exists := set[c.name]; exists {
+		return fmt.Errorf("A column with the name %s already exists", c.name)
 	}
-	set[c.Name] = c
+	set[c.name] = c
 	return nil
 }
 
 type ColumnStruct struct {
-	Name  string
+	name  string
 	table *TableStruct
 	typ   dbType
 }
 
 func (c *ColumnStruct) Compile() string {
-	return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.Name)
+	return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name)
+}
+
+func (c *ColumnStruct) Name() string {
+	return c.name
+}
+
+func (c *ColumnStruct) Table() *TableStruct {
+	return c.table
 }
 
 // Implement the sql.Selectable interface for building SELECT statements
-func (c *ColumnStruct) Selectable() []*ColumnStruct {
-	return []*ColumnStruct{c}
+func (c *ColumnStruct) Selectable() []ColumnElement {
+	return []ColumnElement{c}
 }
 
 // Ordering
@@ -77,7 +91,7 @@ func (c *ColumnStruct) NullsLast() *OrderedColumn {
 func (c *ColumnStruct) Modify(t *TableStruct) error {
 	// No re-using columns across tables!
 	if c.table != nil {
-		return fmt.Errorf("Column %s already belongs to table %s", c.Name, t.Name)
+		return fmt.Errorf("Column %s already belongs to table %s", c.name, t.Name)
 	}
 
 	// Set the parent table of this column
@@ -90,11 +104,11 @@ func (c *ColumnStruct) Modify(t *TableStruct) error {
 
 	// Add the name to the table order
 	// TODO Something other than an append operation
-	t.order = append(t.order, c.Name)
+	t.order = append(t.order, c.name)
 	return nil
 }
 
 // Constructor function
 func Column(name string, t dbType) *ColumnStruct {
-	return &ColumnStruct{Name: name, typ: t}
+	return &ColumnStruct{name: name, typ: t}
 }

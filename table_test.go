@@ -27,8 +27,8 @@ func TestTableSchema(t *testing.T) {
 
 	// Test the accessor methods
 	userId := users.C["id"]
-	if userId.Name != "id" {
-		t.Errorf("Name of returned column was not 'id': '%s'", userId.Name)
+	if userId.name != "id" {
+		t.Errorf("Name of returned column was not 'id': '%s'", userId.name)
 	}
 
 	// A pointer to the column's table should have been added

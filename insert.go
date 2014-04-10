@@ -9,7 +9,7 @@ import (
 type InsertStatement struct {
 	table   *TableStruct
 	columns []*ColumnStruct
-	args    [][]interface{}
+	args    []interface{}
 }
 
 func (stmt *InsertStatement) String() string {
@@ -17,22 +17,25 @@ func (stmt *InsertStatement) String() string {
 }
 
 func (stmt *InsertStatement) Compile() string {
+	c := len(stmt.columns)
 	columns := make([]string, len(stmt.columns))
 	for i, column := range stmt.columns {
-		columns[i] = fmt.Sprintf(`"%s"`, column.Name)
+		columns[i] = fmt.Sprintf(`"%s"`, column.Name())
 	}
 
-	parameters := make([]string, len(stmt.args))
-	var c int
-	// TODO Or just len(stmt.columns) * stmt.args
-	for i, group := range stmt.args {
-		args := make([]string, len(group))
-		for j, _ := range group {
-			// TODO Parameters are also dialect specific
-			c += 1
-			args[j] = fmt.Sprintf("$%d", c)
+	// TODO column length should divide args without remainder
+	g := len(stmt.args) / c
+	parameters := make([]string, g)
+
+	var param int
+	for i := 0; i < g; i += 1 {
+		group := make([]string, c)
+		for j := 0; j < c; j += 1 {
+			param += 1
+			// TODO Parameters are dialect specific
+			group[j] = fmt.Sprintf("$%d", param)
 		}
-		parameters[i] = fmt.Sprintf(`(%s)`, strings.Join(args, ", "))
+		parameters[i] = fmt.Sprintf(`(%s)`, strings.Join(group, ", "))
 	}
 
 	// TODO Bulk insert syntax is dialect specific
@@ -45,13 +48,7 @@ func (stmt *InsertStatement) Compile() string {
 }
 
 func (stmt *InsertStatement) Args() []interface{} {
-	args := make([]interface{}, 0)
-	for _, group := range stmt.args {
-		for _, arg := range group {
-			args = append(args, arg)
-		}
-	}
-	return args
+	return stmt.args
 }
 
 func (stmt *InsertStatement) Execute() (string, error) {
@@ -70,20 +67,14 @@ func (stmt *InsertStatement) Values(arg interface{}, args ...interface{}) *Inser
 	if elem.Kind() == reflect.Struct {
 		// TODO They must match the types and length of any previous args
 		l = elem.NumField()
-		inter := make([]interface{}, l)
-
-		for i, _ := range inter {
-			inter[i] = elem.Field(i).Interface()
+		for i := 0; i < l; i += 1 {
+			stmt.args = append(stmt.args, elem.Field(i).Interface())
 		}
-		stmt.args = [][]interface{}{inter}
-
 		for _, arg := range args {
 			e := reflect.Indirect(reflect.ValueOf(arg))
-			inter := make([]interface{}, l)
-			for i, _ := range inter {
-				inter[i] = e.Field(i).Interface()
+			for i := 0; i < l; i += 1 {
+				stmt.args = append(stmt.args, e.Field(i).Interface())
 			}
-			stmt.args = append(stmt.args, inter)
 		}
 	} else {
 		// Single value arguments. How many columns are specified by the
@@ -98,7 +89,7 @@ func Insert(column *ColumnStruct, columns ...*ColumnStruct) *InsertStatement {
 	stmt := &InsertStatement{
 		table:   column.table,
 		columns: []*ColumnStruct{column},
-		args:    make([][]interface{}, 0),
+		args:    make([]interface{}, 0),
 	}
 
 	for _, column := range columns {
@@ -114,8 +105,8 @@ func Insert(column *ColumnStruct, columns ...*ColumnStruct) *InsertStatement {
 func InsertTableValues(t *TableStruct, arg interface{}, args ...interface{}) *InsertStatement {
 	stmt := &InsertStatement{
 		table:   t,
-		columns: t.Selectable(),
-		args:    make([][]interface{}, len(args)),
+		columns: t.Columns(),
+		args:    make([]interface{}, 0),
 	}
 	return stmt.Values(arg, args...)
 }

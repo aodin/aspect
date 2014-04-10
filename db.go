@@ -6,6 +6,7 @@ import (
 
 type Executable interface {
 	Execute() (string, error)
+	Args() []interface{}
 }
 
 // TODO dialect
@@ -23,6 +24,11 @@ func (db *DB) Execute(stmt Executable, args ...interface{}) (*Result, error) {
 	s, err := stmt.Execute()
 	if err != nil {
 		return nil, err
+	}
+
+	// TODO Only request arguments if none were given?
+	if len(args) == 0 {
+		args = stmt.Args()
 	}
 
 	// TODO If params are structs, maps, or slices, unpack them

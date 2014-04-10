@@ -39,15 +39,23 @@ func (table *TableStruct) Compile() string {
 	return fmt.Sprintf(`"%s"`, table.Name)
 }
 
+// Get the table columns in proper order
+func (table *TableStruct) Columns() []*ColumnStruct {
+	columns := make([]*ColumnStruct, len(table.order))
+	for index, name := range table.order {
+		columns[index] = table.C[name]
+	}
+	return columns
+}
+
 // Alias for Select(table) that will select all columns in the table
 func (table *TableStruct) Select() *SelectStatement {
 	return Select(table)
 }
 
 // Implement the sql.Selectable interface for building SELECT statements
-func (table *TableStruct) Selectable() []*ColumnStruct {
-	// TODO This shouldn't have to be built everytime the table is selected
-	columns := make([]*ColumnStruct, len(table.order))
+func (table *TableStruct) Selectable() []ColumnElement {
+	columns := make([]ColumnElement, len(table.order))
 	for index, name := range table.order {
 		columns[index] = table.C[name]
 	}
