@@ -109,6 +109,8 @@ func (c *ColumnStruct) Modify(t *TableStruct) error {
 }
 
 // Constructor function
+// TODO The constructor function does not need to return a ColumnStruct,
+// it can return a struct that modifies the table and adds a column.
 func Column(name string, t dbType) *ColumnStruct {
 	return &ColumnStruct{name: name, typ: t}
 }

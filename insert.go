@@ -1,6 +1,7 @@
 package aspect
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -10,7 +11,12 @@ type InsertStatement struct {
 	table   *TableStruct
 	columns []*ColumnStruct
 	args    []interface{}
+	err     error
 }
+
+var (
+	ErrNoColumns = errors.New("aspect: an INSERT must have associated columns")
+)
 
 func (stmt *InsertStatement) String() string {
 	return stmt.Compile()
@@ -20,6 +26,7 @@ func (stmt *InsertStatement) Compile() string {
 	c := len(stmt.columns)
 	// No columns? no statement!
 	if c == 0 {
+		stmt.err = ErrNoColumns // TODO multiple errors?
 		return ""
 	}
 
@@ -28,7 +35,12 @@ func (stmt *InsertStatement) Compile() string {
 		columns[i] = fmt.Sprintf(`"%s"`, column.Name())
 	}
 
-	// TODO column length should divide args without remainder
+	// Column length must divide args without remainder
+	if len(stmt.args)%c != 0 {
+		stmt.err = fmt.Errorf("Size mismatch between arguments and columns: %d is not a multiple of %d", len(stmt.args), c)
+		return ""
+	}
+
 	g := len(stmt.args) / c
 	// If there are no arguments, default to one group
 	if g == 0 {
@@ -64,6 +76,37 @@ func (stmt *InsertStatement) Execute() (string, error) {
 	return stmt.Compile(), nil
 }
 
+// Iterate through the struct fields and see if the tags match
+// the given column names.
+// Return the field names matching their respective columns.
+// The field tag takes precendence over the name.
+func fieldAlias(cs []*ColumnStruct, i interface{}) []string {
+	// Get the type of the interface pointer
+	t := reflect.TypeOf(i)
+	if t.Kind() != reflect.Ptr {
+		t = reflect.PtrTo(t)
+	}
+	// TODO Confirm that the given interface is a struct
+
+	alias := make([]string, len(cs))
+	// For each field, try the tag name, then the field name
+	elem := t.Elem()
+	for ci, column := range cs {
+		name := column.Name()
+		for i := 0; i < elem.NumField(); i += 1 {
+			f := elem.Field(i)
+			fname := f.Name
+			tag := f.Tag.Get("db")
+			if tag == name || name == fname {
+				alias[ci] = fname
+				break
+			}
+		}
+	}
+	// TODO Were all the columns matched?
+	return alias
+}
+
 // There must be at least one arg
 func (stmt *InsertStatement) Values(arg interface{}, args ...interface{}) *InsertStatement {
 
@@ -74,15 +117,35 @@ func (stmt *InsertStatement) Values(arg interface{}, args ...interface{}) *Inser
 
 	// TODO Allow slice types
 	if elem.Kind() == reflect.Struct {
-		// TODO They must match the types and length of any previous args
+		// TODO Args must match the types and length of any previous args
 		l = elem.NumField()
-		for i := 0; i < l; i += 1 {
-			stmt.args = append(stmt.args, elem.Field(i).Interface())
-		}
-		for _, arg := range args {
-			e := reflect.Indirect(reflect.ValueOf(arg))
+
+		// If the number of columns does not match the number of fields,
+		// attempt to build an alias object
+		if l != len(stmt.columns) {
+			// TODO confirm that the alias is fully populated
+			alias := fieldAlias(stmt.columns, arg)
+
+			// Get the value of the field struct by name
+			for _, n := range alias {
+				stmt.args = append(stmt.args, elem.FieldByName(n).Interface())
+			}
+			for _, arg := range args {
+				e := reflect.Indirect(reflect.ValueOf(arg))
+				for _, n := range alias {
+					stmt.args = append(stmt.args, e.FieldByName(n).Interface())
+				}
+			}
+		} else {
+			// Read every value of the struct in order
 			for i := 0; i < l; i += 1 {
-				stmt.args = append(stmt.args, e.Field(i).Interface())
+				stmt.args = append(stmt.args, elem.Field(i).Interface())
+			}
+			for _, arg := range args {
+				e := reflect.Indirect(reflect.ValueOf(arg))
+				for i := 0; i < l; i += 1 {
+					stmt.args = append(stmt.args, e.Field(i).Interface())
+				}
 			}
 		}
 	} else {
