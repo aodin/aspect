@@ -16,9 +16,9 @@ import (
 )
 
 type User struct {
-    Id       int64
-    Name     string
-    Password string
+    Id       int64  `db:"id"`
+    Name     string `db:"name"`
+    Password string `db:"password"`
 }
 
 func (u User) String() string {
@@ -79,21 +79,43 @@ var Users = Table("users",
 )
 ```
 
-### Insert
+### INSERT
 
 ```go
-s := Users.Insert(
+insertUsers := Users.Insert(
     User{1, "admin", "secret"}, 
     User{2, "client", "1234"},
     User{3, "daemon", ""},
 )
-conn.MustExecute(s, s.Args()...)
+conn.MustExecute(insertUsers)
 ```
 ```sql
 INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3), ($4, $5, $6), ($7, $8, $9)
 ```
 
-### Select
+Structs can be partially inserted by specifying the columns. For this to work, the column names must either match the field name or the field tag `db`:
+
+```go
+type User struct {
+    Id       int64  `db:"id"`
+    Name     string `db:"name"`
+    Password string `db:"password"`
+}
+
+admin := user{Name: "admin", Password: "secret"}
+client := user{Name: "client", Password: "1234"}
+
+insertColumns := Insert(Users.C["name"], Users.C["password"])
+insertColumns = insertColumns.Values(admin, client)
+conn.MustExecute(insertColumns)
+```
+
+```sql
+INSERT INTO "users" ("name", "password") VALUES ($1, $2), ($3, $4)
+```
+
+
+### SELECT
 
 Each of the following statements will produce the same SQL:
 
