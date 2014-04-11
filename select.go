@@ -35,47 +35,49 @@ func (stmt *SelectStatement) TableExists(name string) bool {
 	return false
 }
 
-func (stmt *SelectStatement) CompileTables() []string {
+// TODO These need errors now
+func (stmt *SelectStatement) CompileTables(d Dialect, params *Parameters) []string {
 	names := make([]string, len(stmt.tables))
 	for i, table := range stmt.tables {
-		names[i] = table.Compile()
+		names[i] = table.Compile(d, params)
 	}
 	return names
 }
 
-func (stmt *SelectStatement) CompileColumns() []string {
+// TODO These need errors now
+func (stmt *SelectStatement) CompileColumns(d Dialect, params *Parameters) []string {
 	names := make([]string, len(stmt.columns))
 	for i, c := range stmt.columns {
-		names[i] = c.Compile()
+		names[i], _ = c.Compile(d, params)
 	}
 	return names
 }
 
-// TODO Use clauses to abstract compilation
 func (stmt *SelectStatement) String() string {
-	// TODO assume the default dialect if none is given
-	// TODO Cache the result of compilation?
-	return stmt.Compile()
+	compiled, _ := stmt.Compile(&PostGres{}, Params())
+	return compiled
 }
 
 // TODO Will require a dialect
-func (stmt *SelectStatement) Compile() string {
+func (stmt *SelectStatement) Compile(d Dialect, params *Parameters) (string, error) {
 	compiled := fmt.Sprintf(
 		"SELECT %s FROM %s",
-		strings.Join(stmt.CompileColumns(), ", "),
-		strings.Join(stmt.CompileTables(), ", "),
+		strings.Join(stmt.CompileColumns(d, params), ", "),
+		strings.Join(stmt.CompileTables(d, params), ", "),
 	)
 	if stmt.groupBy != nil && len(stmt.groupBy) > 0 {
 		groupBy := make([]string, len(stmt.groupBy))
 		for i, column := range stmt.groupBy {
-			groupBy[i] = column.Compile()
+			// TODO Errors!
+			groupBy[i], _ = column.Compile(d, params)
 		}
 		compiled += fmt.Sprintf(" GROUP BY %s", strings.Join(groupBy, ", "))
 	}
 	if stmt.order != nil && len(stmt.order) > 0 {
 		order := make([]string, len(stmt.order))
 		for i, column := range stmt.order {
-			order[i] = column.Compile()
+			// TODO Errors!
+			order[i], _ = column.Compile(d, params)
 		}
 		compiled += fmt.Sprintf(" ORDER BY %s", strings.Join(order, ", "))
 	}
@@ -85,7 +87,7 @@ func (stmt *SelectStatement) Compile() string {
 	if stmt.offset != 0 {
 		compiled += fmt.Sprintf(" OFFSET %d", stmt.offset)
 	}
-	return compiled
+	return compiled, nil
 }
 
 func (stmt *SelectStatement) GroupBy(cs ...ColumnElement) *SelectStatement {
@@ -118,16 +120,6 @@ func (stmt *SelectStatement) Limit(limit int) *SelectStatement {
 func (stmt *SelectStatement) Offset(offset int) *SelectStatement {
 	stmt.offset = offset
 	return stmt
-}
-
-func (stmt *SelectStatement) Execute() (string, error) {
-	// TODO Return any delayed errors
-	// TODO Check for a cached string
-	return stmt.Compile(), nil
-}
-
-func (stmt *SelectStatement) Args() []interface{} {
-	return make([]interface{}, 0)
 }
 
 func Select(selections ...Selectable) *SelectStatement {

@@ -19,15 +19,15 @@ var (
 )
 
 func (stmt *InsertStatement) String() string {
-	return stmt.Compile()
+	compiled, _ := stmt.Compile(&PostGres{}, Params())
+	return compiled
 }
 
-func (stmt *InsertStatement) Compile() string {
+func (stmt *InsertStatement) Compile(d Dialect, params *Parameters) (string, error) {
 	c := len(stmt.columns)
 	// No columns? no statement!
 	if c == 0 {
-		stmt.err = ErrNoColumns // TODO multiple errors?
-		return ""
+		return "", ErrNoColumns
 	}
 
 	columns := make([]string, len(stmt.columns))
@@ -37,14 +37,18 @@ func (stmt *InsertStatement) Compile() string {
 
 	// Column length must divide args without remainder
 	if len(stmt.args)%c != 0 {
-		stmt.err = fmt.Errorf("Size mismatch between arguments and columns: %d is not a multiple of %d", len(stmt.args), c)
-		return ""
+		return "", fmt.Errorf("Size mismatch between arguments and columns: %d is not a multiple of %d", len(stmt.args), c)
 	}
 
 	g := len(stmt.args) / c
-	// If there are no arguments, default to one group
+	// If there are no arguments, default to one group and create
+	// placeholder values
 	if g == 0 {
 		g = 1
+		stmt.args = make([]interface{}, c)
+		for i, _ := range stmt.args {
+			stmt.args[i] = struct{}{}
+		}
 	}
 	parameters := make([]string, g)
 
@@ -52,9 +56,11 @@ func (stmt *InsertStatement) Compile() string {
 	for i := 0; i < g; i += 1 {
 		group := make([]string, c)
 		for j := 0; j < c; j += 1 {
+			// Parameters are dialect specific
+			// TODO errors
+			p := &Parameter{stmt.args[param]}
+			group[j], _ = p.Compile(d, params)
 			param += 1
-			// TODO Parameters are dialect specific
-			group[j] = fmt.Sprintf("$%d", param)
 		}
 		parameters[i] = fmt.Sprintf(`(%s)`, strings.Join(group, ", "))
 	}
@@ -65,15 +71,7 @@ func (stmt *InsertStatement) Compile() string {
 		stmt.table.Name,
 		strings.Join(columns, ", "),
 		strings.Join(parameters, ", "),
-	)
-}
-
-func (stmt *InsertStatement) Args() []interface{} {
-	return stmt.args
-}
-
-func (stmt *InsertStatement) Execute() (string, error) {
-	return stmt.Compile(), nil
+	), nil
 }
 
 // Iterate through the struct fields and see if the tags match

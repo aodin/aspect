@@ -85,12 +85,11 @@ var Users = Table("users",
 insertUsers := Users.Insert(
     User{1, "admin", "secret"}, 
     User{2, "client", "1234"},
-    User{3, "daemon", ""},
 )
 conn.MustExecute(insertUsers)
 ```
 ```sql
-INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3), ($4, $5, $6), ($7, $8, $9)
+INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3), ($4, $5, $6)
 ```
 
 Structs can be partially inserted by specifying the columns. For this to work, the column names must either match the field name or the field tag `db`:
@@ -102,12 +101,11 @@ type User struct {
     Password string `db:"password"`
 }
 
-admin := user{Name: "admin", Password: "secret"}
-client := user{Name: "client", Password: "1234"}
+admin := User{Name: "admin", Password: "secret"}
+client := User{Name: "client", Password: "1234"}
 
-insertColumns := Insert(Users.C["name"], Users.C["password"])
-insertColumns = insertColumns.Values(admin, client)
-conn.MustExecute(insertColumns)
+insert := Insert(Users.C["name"], Users.C["password"]).Values(admin, client)
+conn.MustExecute(insert)
 ```
 
 ```sql
@@ -158,7 +156,7 @@ fmt.Println(ids)
 // [3, 2, 1]
 ```
 
-### Delete
+### DELETE
 
 ```go
 Users.Delete()
@@ -166,6 +164,17 @@ Users.Delete()
 
 ```sql
 DELETE FROM "users"
+```
+
+If the schema has a primary key specified, deletes can be performed with structs:
+
+```go
+admin = User{1, "admin", "secret"}
+Users.Delete(admin)
+```
+
+```sql
+DELETE FROM "users" WHERE "users"."id" = $1
 ```
 
 > Death and Light are everywhere, always, and they begin, end, strive,

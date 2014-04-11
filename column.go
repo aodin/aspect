@@ -14,7 +14,7 @@ Implements the `TableModifier` interface.
 */
 
 type ColumnElement interface {
-	Compile() string
+	Compiler
 	Name() string
 	Table() *TableStruct
 }
@@ -38,8 +38,13 @@ type ColumnStruct struct {
 	typ   dbType
 }
 
-func (c *ColumnStruct) Compile() string {
-	return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name)
+func (c *ColumnStruct) String() string {
+	compiled, _ := c.Compile(&PostGres{}, Params())
+	return compiled
+}
+
+func (c *ColumnStruct) Compile(d Dialect, params *Parameters) (string, error) {
+	return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name), nil
 }
 
 func (c *ColumnStruct) Name() string {

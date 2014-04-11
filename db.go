@@ -4,14 +4,15 @@ import (
 	"database/sql"
 )
 
+// TODO How to distiguish between full statements and fragments?
 type Executable interface {
-	Execute() (string, error)
-	Args() []interface{}
+	Compiler
 }
 
 // TODO dialect
 type DB struct {
-	conn *sql.DB
+	conn    *sql.DB
+	dialect Dialect
 }
 
 func (db *DB) Close() error {
@@ -19,19 +20,21 @@ func (db *DB) Close() error {
 }
 
 func (db *DB) Execute(stmt Executable, args ...interface{}) (*Result, error) {
-	// TODO A dialect is needed to perform parameterization
+	// Initialize a list of empty parameters
+	params := Params()
+
 	// TODO Columns are needed for name return types, tag matching, etc...
-	s, err := stmt.Execute()
+	s, err := stmt.Compile(db.dialect, params)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO Only request arguments if none were given?
+	// TODO When to use the given arguments?
+	// TODO If args are structs, maps, or slices, unpack them
+	// Use any arguments given in Execute() over compiled arguments
 	if len(args) == 0 {
-		args = stmt.Args()
+		args = params.args
 	}
-
-	// TODO If params are structs, maps, or slices, unpack them
 
 	rows, err := db.conn.Query(s, args...)
 	if err != nil {
@@ -73,5 +76,8 @@ func (db *DB) MustExecuteSQL(s string, args ...interface{}) *Result {
 
 func Connect(driver, credentials string) (*DB, error) {
 	db, err := sql.Open(driver, credentials)
-	return &DB{conn: db}, err
+
+	// TODO Get the requested dialect using the driver name
+	// For now, everyone gets postgres! PostGres for you, and you! AND YOU!
+	return &DB{conn: db, dialect: &PostGres{}}, err
 }

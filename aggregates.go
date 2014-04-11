@@ -10,11 +10,16 @@ type AggregateColumn struct {
 }
 
 func (c *AggregateColumn) String() string {
-	return c.Compile()
+	compiled, _ := c.Compile(&PostGres{}, Params())
+	return compiled
 }
 
-func (c *AggregateColumn) Compile() string {
-	return fmt.Sprintf(`%s(%s)`, c.f, c.ColumnStruct.Compile())
+func (c *AggregateColumn) Compile(d Dialect, params *Parameters) (string, error) {
+	cc, err := c.ColumnStruct.Compile(d, params)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(`%s(%s)`, c.f, cc), nil
 }
 
 // Implement the Selectable interface for building SELECT statements
@@ -26,7 +31,6 @@ func (c *AggregateColumn) Selectable() []ColumnElement {
 
 // Same with the Orderable interface
 func (c *AggregateColumn) Orderable() *OrderedColumn {
-	fmt.Println("Wrapping an aggregate column:", c.Compile())
 	return &OrderedColumn{inner: c}
 }
 

@@ -20,12 +20,17 @@ type OrderedColumn struct {
 }
 
 func (o *OrderedColumn) String() string {
-	return o.Compile()
+	compiled, _ := o.Compile(&PostGres{}, Params())
+	return compiled
 }
 
-func (o *OrderedColumn) Compile() string {
+func (o *OrderedColumn) Compile(d Dialect, params *Parameters) (string, error) {
 	// Call the compilation method of the embeded column
-	compiled := o.inner.Compile()
+	compiled, err := o.inner.Compile(d, params)
+	if err != nil {
+		return "", err
+	}
+
 	if o.desc {
 		compiled += " DESC"
 	}
@@ -36,7 +41,7 @@ func (o *OrderedColumn) Compile() string {
 			compiled += " NULLS LAST"
 		}
 	}
-	return compiled
+	return compiled, nil
 }
 
 func (o *OrderedColumn) Orderable() *OrderedColumn {

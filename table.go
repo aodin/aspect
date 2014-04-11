@@ -35,7 +35,9 @@ func (table *TableStruct) String() string {
 	return table.Name
 }
 
-func (table *TableStruct) Compile() string {
+// TODO Compile might not be the best name for this method, since it is
+// not a target for compilation
+func (table *TableStruct) Compile(d Dialect, params *Parameters) string {
 	return fmt.Sprintf(`"%s"`, table.Name)
 }
 
@@ -63,13 +65,8 @@ func (table *TableStruct) Selectable() []ColumnElement {
 }
 
 // Constructor Method for an DELETE statement tied to this table
-func (table *TableStruct) Delete() *DeleteStatement {
-	return &DeleteStatement{Target: table}
-}
-
-// Implement the interface that is needed to generate a DELETE statement
-func (table *TableStruct) Deletable() *TableStruct {
-	return table
+func (table *TableStruct) Delete(args ...interface{}) *DeleteStatement {
+	return Delete(table, args...)
 }
 
 func (table *TableStruct) Insert(arg interface{}, args ...interface{}) *InsertStatement {
