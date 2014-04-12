@@ -18,6 +18,10 @@ func (p *Parameters) Add(i interface{}) int {
 	return len(p.args)
 }
 
+func (p *Parameters) Len() int {
+	return len(p.args)
+}
+
 func Params() *Parameters {
 	return &Parameters{args: make([]interface{}, 0)}
 }

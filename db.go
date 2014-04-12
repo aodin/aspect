@@ -75,9 +75,16 @@ func (db *DB) MustExecuteSQL(s string, args ...interface{}) *Result {
 }
 
 func Connect(driver, credentials string) (*DB, error) {
+	// Connect to the database using the given credentials
 	db, err := sql.Open(driver, credentials)
+	if err != nil {
+		return nil, err
+	}
 
-	// TODO Get the requested dialect using the driver name
-	// For now, everyone gets postgres! PostGres for you, and you! AND YOU!
-	return &DB{conn: db, dialect: &PostGres{}}, err
+	// Get the dialect
+	dialect, err := GetDialect(driver)
+	if err != nil {
+		return nil, err
+	}
+	return &DB{conn: db, dialect: dialect}, nil
 }

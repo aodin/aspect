@@ -44,5 +44,5 @@ func GetDialect(name string) (Dialect, error) {
 func init() {
 	// Register all declared dialects
 	RegisterDialect("postgres", &PostGres{})
-	RegisterDialect("sqlite", &Sqlite3{})
+	RegisterDialect("sqlite3", &Sqlite3{})
 }
