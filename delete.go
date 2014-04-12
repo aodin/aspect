@@ -25,7 +25,7 @@ func (stmt *DeleteStatement) Compile(d Dialect, params *Parameters) (string, err
 		if err != nil {
 			return "", err
 		}
-		compiled += fmt.Sprintf(" %s", cc)
+		compiled += fmt.Sprintf(" WHERE %s", cc)
 	}
 	return compiled, nil
 }

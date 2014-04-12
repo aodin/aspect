@@ -82,6 +82,13 @@ func TestTableDelete(t *testing.T) {
 	// Delete the entire table
 	expectedSQL(t, users.Delete(), `DELETE FROM "users"`)
 
+	// Delete using a conditional
+	expectedSQL(
+		t,
+		users.Delete().Where(users.C["id"].Equals(1)),
+		`DELETE FROM "users" WHERE "users"."id" = $1`,
+	)
+
 	// Delete a record by primary key
 	// admin := user{1, "admin", "secret"}
 	// expectedSQL(

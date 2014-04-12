@@ -13,6 +13,7 @@ type Selectable interface {
 type SelectStatement struct {
 	tables  []*TableStruct
 	columns []ColumnElement
+	cond    Clause
 	groupBy []ColumnElement
 	order   []*OrderedColumn
 	limit   int
@@ -65,6 +66,13 @@ func (stmt *SelectStatement) Compile(d Dialect, params *Parameters) (string, err
 		strings.Join(stmt.CompileColumns(d, params), ", "),
 		strings.Join(stmt.CompileTables(d, params), ", "),
 	)
+	if stmt.cond != nil {
+		cc, err := stmt.cond.Compile(d, params)
+		if err != nil {
+			return "", err
+		}
+		compiled += fmt.Sprintf(" WHERE %s", cc)
+	}
 	if stmt.groupBy != nil && len(stmt.groupBy) > 0 {
 		groupBy := make([]string, len(stmt.groupBy))
 		for i, column := range stmt.groupBy {
@@ -88,6 +96,11 @@ func (stmt *SelectStatement) Compile(d Dialect, params *Parameters) (string, err
 		compiled += fmt.Sprintf(" OFFSET %d", stmt.offset)
 	}
 	return compiled, nil
+}
+
+func (stmt *SelectStatement) Where(cond Clause) *SelectStatement {
+	stmt.cond = cond
+	return stmt
 }
 
 func (stmt *SelectStatement) GroupBy(cs ...ColumnElement) *SelectStatement {
