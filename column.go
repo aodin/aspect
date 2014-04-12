@@ -88,6 +88,54 @@ func (c *ColumnStruct) NullsLast() *OrderedColumn {
 // Conditionals
 // ------------
 
+func (c *ColumnStruct) Equals(i interface{}) *BinaryClause {
+	return &BinaryClause{
+		pre:  c,
+		post: &Parameter{i},
+		sep:  "=",
+	}
+}
+
+func (c *ColumnStruct) LessThan(i interface{}) *BinaryClause {
+	return &BinaryClause{
+		pre:  c,
+		post: &Parameter{i},
+		sep:  "<",
+	}
+}
+
+func (c *ColumnStruct) GreaterThan(i interface{}) *BinaryClause {
+	return &BinaryClause{
+		pre:  c,
+		post: &Parameter{i},
+		sep:  ">",
+	}
+}
+
+func (c *ColumnStruct) LTE(i interface{}) *BinaryClause {
+	return &BinaryClause{
+		pre:  c,
+		post: &Parameter{i},
+		sep:  "<=",
+	}
+}
+
+func (c *ColumnStruct) GTE(i interface{}) *BinaryClause {
+	return &BinaryClause{
+		pre:  c,
+		post: &Parameter{i},
+		sep:  ">=",
+	}
+}
+
+func (c *ColumnStruct) Between(a, b interface{}) *ArrayClause {
+	return AllOf(c.GTE(a), c.LTE(b))
+}
+
+func (c *ColumnStruct) NotBetween(a, b interface{}) *ArrayClause {
+	return AnyOf(c.LessThan(a), c.GreaterThan(b))
+}
+
 // Schema
 // ------
 

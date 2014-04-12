@@ -94,10 +94,10 @@ func (c *ArrayClause) Compile(d Dialect, params *Parameters) (string, error) {
 	return strings.Join(compiled, c.sep), nil
 }
 
-func All(clauses ...Clause) *ArrayClause {
+func AllOf(clauses ...Clause) *ArrayClause {
 	return &ArrayClause{clauses, " AND "}
 }
 
-func Any(clauses ...Clause) *ArrayClause {
+func AnyOf(clauses ...Clause) *ArrayClause {
 	return &ArrayClause{clauses, " OR "}
 }
