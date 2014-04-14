@@ -5,7 +5,7 @@ import (
 )
 
 type DropStmt struct {
-	table *TableStruct
+	table *TableElem
 }
 
 func (stmt *DropStmt) String() string {

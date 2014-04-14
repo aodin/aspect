@@ -27,7 +27,7 @@ func (pk PrimaryKeyArray) Create(d Dialect) (string, error) {
 
 // To implement the `TableModifier` interface, the `ColumnStruct` must
 // have method Modify(). It does not need to modify its parent table.
-func (pk PrimaryKeyArray) Modify(table *TableStruct) error {
+func (pk PrimaryKeyArray) Modify(table *TableElem) error {
 	// Confirm that all columns in the primary key exists
 	for _, name := range pk {
 		// TODO Aggregate errors

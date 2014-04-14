@@ -16,7 +16,7 @@ Implements the `TableModifier` interface.
 type ColumnElement interface {
 	Compiler
 	Name() string
-	Table() *TableStruct
+	Table() *TableElem
 }
 
 // Maintains a unique set of columns
@@ -34,7 +34,7 @@ func (set ColumnSet) Add(c *ColumnStruct) error {
 
 type ColumnStruct struct {
 	name  string
-	table *TableStruct
+	table *TableElem
 	typ   dbType
 }
 
@@ -51,7 +51,7 @@ func (c *ColumnStruct) Name() string {
 	return c.name
 }
 
-func (c *ColumnStruct) Table() *TableStruct {
+func (c *ColumnStruct) Table() *TableElem {
 	return c.table
 }
 
@@ -141,7 +141,7 @@ func (c *ColumnStruct) NotBetween(a, b interface{}) *ArrayClause {
 
 // To implement the TableModifier interface the ColumnStruct must
 // have method Modify(). It does not need to modify its parent table.
-func (c *ColumnStruct) Modify(t *TableStruct) error {
+func (c *ColumnStruct) Modify(t *TableElem) error {
 	// No re-using columns across tables!
 	if c.table != nil {
 		return fmt.Errorf("Column %s already belongs to table %s", c.name, t.Name)

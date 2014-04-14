@@ -5,7 +5,7 @@ import (
 )
 
 type DeleteStatement struct {
-	table *TableStruct
+	table *TableElem
 	args  []interface{}
 	cond  Clause
 }
@@ -35,7 +35,7 @@ func (stmt *DeleteStatement) Where(cond Clause) *DeleteStatement {
 	return stmt
 }
 
-func Delete(table *TableStruct, args ...interface{}) *DeleteStatement {
+func Delete(table *TableElem, args ...interface{}) *DeleteStatement {
 	stmt := &DeleteStatement{table: table}
 	// If the table has a primary key, create a where statement using
 	// its columns and the values from the given args

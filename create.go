@@ -6,7 +6,7 @@ import (
 )
 
 type CreateStmt struct {
-	table *TableStruct
+	table *TableElem
 }
 
 func (stmt *CreateStmt) String() string {

@@ -9,7 +9,7 @@ import (
 Table
 -----
 
-Create using the `Table()` constructor, `TableStruct`s represent a Table within the SQL spec.
+Create using the `Table()` constructor, `TableElem`s represent a Table within the SQL spec.
 
 The Table consists of any number of `TableModifier` interfaces, including `Column`, `ForeignKey`, `Constraint`, and `PrimaryKey` elements.
 
@@ -21,28 +21,28 @@ It will panic when an improper schema is created.
 // In the case of a ColumnStruct, it will add the column after checking
 // for a namespace collision.
 type TableModifier interface {
-	Modify(*TableStruct) error
+	Modify(*TableElem) error
 }
 
-type TableStruct struct {
+type TableElem struct {
 	Name  string
 	C     ColumnSet // TODO Should this be a pointer?
 	order []string
 	pk    PrimaryKeyArray
 }
 
-func (table *TableStruct) String() string {
+func (table *TableElem) String() string {
 	return table.Name
 }
 
 // TODO Compile might not be the best name for this method, since it is
 // not a target for compilation
-func (table *TableStruct) Compile(d Dialect, params *Parameters) string {
+func (table *TableElem) Compile(d Dialect, params *Parameters) string {
 	return fmt.Sprintf(`"%s"`, table.Name)
 }
 
 // Get the table columns in proper order
-func (table *TableStruct) Columns() []*ColumnStruct {
+func (table *TableElem) Columns() []*ColumnStruct {
 	columns := make([]*ColumnStruct, len(table.order))
 	for index, name := range table.order {
 		columns[index] = table.C[name]
@@ -50,21 +50,21 @@ func (table *TableStruct) Columns() []*ColumnStruct {
 	return columns
 }
 
-func (table *TableStruct) Create() *CreateStmt {
+func (table *TableElem) Create() *CreateStmt {
 	return &CreateStmt{table: table}
 }
 
-func (table *TableStruct) Drop() *DropStmt {
+func (table *TableElem) Drop() *DropStmt {
 	return &DropStmt{table: table}
 }
 
 // Alias for Select(table) that will select all columns in the table
-func (table *TableStruct) Select() *SelectStatement {
+func (table *TableElem) Select() *SelectStatement {
 	return Select(table)
 }
 
 // Implement the sql.Selectable interface for building SELECT statements
-func (table *TableStruct) Selectable() []ColumnElement {
+func (table *TableElem) Selectable() []ColumnElement {
 	columns := make([]ColumnElement, len(table.order))
 	for index, name := range table.order {
 		columns[index] = table.C[name]
@@ -73,22 +73,22 @@ func (table *TableStruct) Selectable() []ColumnElement {
 }
 
 // Constructor Method for an DELETE statement tied to this table
-func (table *TableStruct) Delete(args ...interface{}) *DeleteStatement {
+func (table *TableElem) Delete(args ...interface{}) *DeleteStatement {
 	return Delete(table, args...)
 }
 
-func (table *TableStruct) Insert(arg interface{}, args ...interface{}) *InsertStatement {
+func (table *TableElem) Insert(arg interface{}, args ...interface{}) *InsertStatement {
 	return InsertTableValues(table, arg, args...)
 }
 
 // Constructor function
-func Table(name string, elements ...TableModifier) *TableStruct {
+func Table(name string, elements ...TableModifier) *TableElem {
 	// Create the table with its dynamic elements
 	mapping := ColumnSet{}
 	order := make([]string, 0)
 
 	// TODO Name safety
-	table := &TableStruct{
+	table := &TableElem{
 		Name:  name,
 		C:     mapping,
 		order: order,

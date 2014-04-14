@@ -11,7 +11,7 @@ type Selectable interface {
 }
 
 type SelectStatement struct {
-	tables  []*TableStruct
+	tables  []*TableElem
 	columns []ColumnElement
 	join    *JoinStmt
 	cond    Clause
@@ -168,7 +168,7 @@ func (stmt *SelectStatement) Offset(offset int) *SelectStatement {
 func Select(selections ...Selectable) *SelectStatement {
 	stmt := &SelectStatement{
 		columns: make([]ColumnElement, 0),
-		tables:  make([]*TableStruct, 0),
+		tables:  make([]*TableElem, 0),
 	}
 
 	// Iterate through the selections and get the columns in the selection

@@ -8,7 +8,7 @@ import (
 )
 
 type InsertStatement struct {
-	table   *TableStruct
+	table   *TableElem
 	columns []*ColumnStruct
 	args    []interface{}
 	err     error
@@ -172,7 +172,7 @@ func Insert(column *ColumnStruct, columns ...*ColumnStruct) *InsertStatement {
 	return stmt
 }
 
-func InsertTableValues(t *TableStruct, arg interface{}, args ...interface{}) *InsertStatement {
+func InsertTableValues(t *TableElem, arg interface{}, args ...interface{}) *InsertStatement {
 	stmt := &InsertStatement{
 		table:   t,
 		columns: t.Columns(),

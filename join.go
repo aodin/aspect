@@ -5,7 +5,7 @@ import (
 )
 
 type JoinStmt struct {
-	table *TableStruct
+	table *TableElem
 	pre   ColumnElement
 	post  ColumnElement
 }
