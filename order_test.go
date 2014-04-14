@@ -8,14 +8,14 @@ func TestOrder(t *testing.T) {
 	// Since OrderedColumn is a pointer, settings will persist
 	// Asc is implied
 	o := &OrderedColumn{inner: users.C["id"]}
-	expectedSQL(t, o, `"users"."id"`)
+	expectedPostGres(t, o, `"users"."id"`, 0)
 
 	// Desc
-	expectedSQL(t, o.Desc(), `"users"."id" DESC`)
+	expectedPostGres(t, o.Desc(), `"users"."id" DESC`, 0)
 
 	// Desc, nulls first
-	expectedSQL(t, o.NullsFirst(), `"users"."id" DESC NULLS FIRST`)
+	expectedPostGres(t, o.NullsFirst(), `"users"."id" DESC NULLS FIRST`, 0)
 
 	// nulls last
-	expectedSQL(t, o.Asc().NullsLast(), `"users"."id" NULLS LAST`)
+	expectedPostGres(t, o.Asc().NullsLast(), `"users"."id" NULLS LAST`, 0)
 }

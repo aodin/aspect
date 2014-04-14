@@ -59,7 +59,7 @@ func (table *TableElem) Drop() *DropStmt {
 }
 
 // Alias for Select(table) that will select all columns in the table
-func (table *TableElem) Select() *SelectStatement {
+func (table *TableElem) Select() *SelectStmt {
 	return Select(table)
 }
 

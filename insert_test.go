@@ -37,14 +37,13 @@ func TestInsert(t *testing.T) {
 	stmt := Insert(users.C["name"], users.C["password"])
 
 	// By default, an INSERT without values will assume a single entry
-	expectedSQL(
+	// TODO This statement should have zero parameters
+	expectedPostGres(
 		t,
 		stmt,
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
+		2,
 	)
-	// if len(stmt.Args()) != 0 {
-	// 	t.Errorf("Expected 0 arguments, received %d", len(stmt.Args()))
-	// }
 
 	// Adding multiple values will generate a bulk insert statement
 	// Structs do not need to be complete if fields are named
@@ -52,12 +51,10 @@ func TestInsert(t *testing.T) {
 	client := user{Name: "client", Password: "1234"}
 	stmt = Insert(users.C["name"], users.C["password"]).Values(admin, client)
 
-	expectedSQL(
+	expectedPostGres(
 		t,
 		stmt,
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2), ($3, $4)`,
+		4,
 	)
-	// if len(stmt.Args()) != 4 {
-	// 	t.Errorf("Expected 4 arguments, received %d", len(stmt.Args()))
-	// }
 }

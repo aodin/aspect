@@ -12,5 +12,5 @@ func TestCreateStmt(t *testing.T) {
 	"password" VARCHAR,
 	PRIMARY KEY ("id")
 )`
-	expectedSQL(t, stmt, expected)
+	expectedPostGres(t, stmt, expected, 0)
 }
