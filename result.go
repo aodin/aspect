@@ -15,6 +15,10 @@ func (r *Result) Close() error {
 	return r.rows.Close()
 }
 
+func (r *Result) Next() bool {
+	return r.rows.Next()
+}
+
 // Return one result from the row as the given interface
 func (r *Result) One(i interface{}) error {
 	// Confirm that there is a row to return

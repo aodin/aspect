@@ -50,6 +50,14 @@ func (table *TableStruct) Columns() []*ColumnStruct {
 	return columns
 }
 
+func (table *TableStruct) Create() *CreateStmt {
+	return &CreateStmt{table: table}
+}
+
+func (table *TableStruct) Drop() *DropStmt {
+	return &DropStmt{table: table}
+}
+
 // Alias for Select(table) that will select all columns in the table
 func (table *TableStruct) Select() *SelectStatement {
 	return Select(table)

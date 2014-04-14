@@ -7,7 +7,7 @@ import (
 // Declare schemas that can be used package-wide
 var users = Table("users",
 	Column("id", Serial{}),
-	Column("name", String{"Length": 32}),
+	Column("name", String{Length: 32, NotNull: true}),
 	Column("password", String{}),
 	PrimaryKey("id"),
 )

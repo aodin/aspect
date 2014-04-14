@@ -2,6 +2,7 @@ package aspect
 
 import (
 	"fmt"
+	"strings"
 )
 
 /*
@@ -15,6 +16,14 @@ Implements the `TableModifier` interface.
 
 // Simply a list of columns
 type PrimaryKeyArray []string
+
+func (pk PrimaryKeyArray) Create(d Dialect) (string, error) {
+	cs := make([]string, len(pk))
+	for i, c := range pk {
+		cs[i] = fmt.Sprintf(`"%s"`, c)
+	}
+	return fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(cs, ", ")), nil
+}
 
 // To implement the `TableModifier` interface, the `ColumnStruct` must
 // have method Modify(). It does not need to modify its parent table.
