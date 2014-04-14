@@ -13,6 +13,7 @@ type Selectable interface {
 type SelectStatement struct {
 	tables  []*TableStruct
 	columns []ColumnElement
+	join    *JoinStmt
 	cond    Clause
 	groupBy []ColumnElement
 	order   []*OrderedColumn
@@ -66,6 +67,13 @@ func (stmt *SelectStatement) Compile(d Dialect, params *Parameters) (string, err
 		strings.Join(stmt.CompileColumns(d, params), ", "),
 		strings.Join(stmt.CompileTables(d, params), ", "),
 	)
+	if stmt.join != nil {
+		jc, err := stmt.join.Compile(d, params)
+		if err != nil {
+			return "", err
+		}
+		compiled += jc
+	}
 	if stmt.cond != nil {
 		cc, err := stmt.cond.Compile(d, params)
 		if err != nil {
@@ -98,11 +106,30 @@ func (stmt *SelectStatement) Compile(d Dialect, params *Parameters) (string, err
 	return compiled, nil
 }
 
+// Add a JOIN ... ON to the SELECT statement
+func (stmt *SelectStatement) Join(pre, post ColumnElement) *SelectStatement {
+	// Get the table of the post element
+	table := post.Table()
+
+	// Remove the post table from the list of selected tables
+	for i, t := range stmt.tables {
+		if t == table {
+			stmt.tables = append(stmt.tables[:i], stmt.tables[i+1:]...)
+			break
+		}
+	}
+
+	// Add the join structure to the select
+	stmt.join = &JoinStmt{pre: pre, post: post, table: table}
+	return stmt
+}
+
 func (stmt *SelectStatement) Where(cond Clause) *SelectStatement {
 	stmt.cond = cond
 	return stmt
 }
 
+// Add a GROUP BY to the SELECT statement
 func (stmt *SelectStatement) GroupBy(cs ...ColumnElement) *SelectStatement {
 	groupBy := make([]ColumnElement, len(cs))
 	// Since columns may be given without an ordering method, perform the
@@ -114,6 +141,7 @@ func (stmt *SelectStatement) GroupBy(cs ...ColumnElement) *SelectStatement {
 	return stmt
 }
 
+// Add an ORDER BY to the SELECT statement
 func (stmt *SelectStatement) OrderBy(params ...Orderable) *SelectStatement {
 	order := make([]*OrderedColumn, len(params))
 	// Since columns may be given without an ordering method, perform the
@@ -125,11 +153,13 @@ func (stmt *SelectStatement) OrderBy(params ...Orderable) *SelectStatement {
 	return stmt
 }
 
+// Add a LIMIT to the SELECT statement
 func (stmt *SelectStatement) Limit(limit int) *SelectStatement {
 	stmt.limit = limit
 	return stmt
 }
 
+// Add an OFFSET to the SELECT statement
 func (stmt *SelectStatement) Offset(offset int) *SelectStatement {
 	stmt.offset = offset
 	return stmt
