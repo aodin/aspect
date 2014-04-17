@@ -2,11 +2,15 @@ package aspect
 
 import (
 	"fmt"
+	"strings"
 )
 
+// TODO Another implementation for functions?
+// TODO args are pre or post?
 type AggregateColumn struct {
 	*ColumnStruct
-	f string
+	f    string
+	args []string
 }
 
 func (c *AggregateColumn) String() string {
@@ -18,6 +22,15 @@ func (c *AggregateColumn) Compile(d Dialect, params *Parameters) (string, error)
 	cc, err := c.ColumnStruct.Compile(d, params)
 	if err != nil {
 		return "", err
+	}
+	if c.args != nil && len(c.args) > 0 {
+		// TODO parameterization of args
+		return fmt.Sprintf(
+			`%s(%s, %s)`,
+			c.f,
+			strings.Join(c.args, ", "),
+			cc,
+		), nil
 	}
 	return fmt.Sprintf(`%s(%s)`, c.f, cc), nil
 }
@@ -61,4 +74,13 @@ func Max(column *ColumnStruct) *AggregateColumn {
 
 func Avg(column *ColumnStruct) *AggregateColumn {
 	return &AggregateColumn{ColumnStruct: column, f: "AVG"}
+}
+
+func DatePart(column *ColumnStruct, part string) *AggregateColumn {
+	// TODO add the part as a parameter?
+	return &AggregateColumn{
+		ColumnStruct: column,
+		f:            "DATE_PART",
+		args:         []string{fmt.Sprintf("'%s'", part)},
+	}
 }
