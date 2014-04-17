@@ -4,13 +4,6 @@ import (
 	"testing"
 )
 
-var views = Table("views",
-	Column("id", Integer{}),
-	Column("user_id", Integer{}),
-	Column("timestamp", Timestamp{}),
-	PrimaryKey("id"),
-)
-
 func TestSelect(t *testing.T) {
 	// All three of these select statements should produce the same output
 	s := Select(users.C["id"], users.C["name"])

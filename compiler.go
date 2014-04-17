@@ -8,6 +8,16 @@ type Compiler interface {
 	Compile(Dialect, *Parameters) (string, error)
 }
 
+// Perform compilation of the given statement with the given dialect.
+// Ignore the parameters.
+func CompileWith(c Compiler, d Dialect) (string, error) {
+	return c.Compile(d, Params())
+}
+
+func CompileWithParams(c Compiler, d Dialect, p *Parameters) (string, error) {
+	return c.Compile(d, p)
+}
+
 // TODO Or just type Parameters []interface{} ?
 type Parameters struct {
 	args []interface{}

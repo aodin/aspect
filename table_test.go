@@ -6,9 +6,9 @@ import (
 
 // Declare schemas that can be used package-wide
 var users = Table("users",
-	Column("id", Serial{}),
+	Column("id", Integer{NotNull: true}),
 	Column("name", String{Length: 32, NotNull: true}),
-	Column("password", String{}),
+	Column("password", String{Length: 128}),
 	PrimaryKey("id"),
 )
 
@@ -17,6 +17,14 @@ type user struct {
 	Name     string `db:"name"`
 	Password string `db:"password"`
 }
+
+var views = Table("views",
+	Column("id", Integer{PrimaryKey: true}),
+	Column("user_id", Integer{}),
+	Column("url", String{}),
+	Column("ip", Inet{}),
+	Column("timestamp", Timestamp{}),
+)
 
 // A short test for testing that an SQL statement was compiled as expected
 func expectedPostGres(t *testing.T, stmt Compiler, expected string, p int) {

@@ -40,9 +40,16 @@ func (db *DB) Execute(stmt Executable, args ...interface{}) (*Result, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	// Wrap the sql rows in a result
 	return &Result{rows: rows, stmt: s}, nil
+}
+
+func (db *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return db.conn.Exec(query, args...)
+}
+
+func (db *DB) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return db.conn.Query(query, args...)
 }
 
 // A version of Execute that will panic if there is an error
@@ -55,12 +62,10 @@ func (db *DB) MustExecute(stmt Executable, args ...interface{}) *Result {
 }
 
 func (db *DB) ExecuteSQL(s string, args ...interface{}) (*Result, error) {
-	// TODO User Exec if no args are given?
 	rows, err := db.conn.Query(s, args...)
 	if err != nil {
 		return nil, err
 	}
-
 	// Wrap the sql rows in a result
 	return &Result{rows: rows, stmt: s}, nil
 }
@@ -72,6 +77,15 @@ func (db *DB) MustExecuteSQL(s string, args ...interface{}) *Result {
 		panic(err)
 	}
 	return result
+}
+
+func ConnectUsing(driver string, db *sql.DB) (*DB, error) {
+	// Get the dialect
+	dialect, err := GetDialect(driver)
+	if err != nil {
+		return nil, err
+	}
+	return &DB{conn: db, dialect: dialect}, nil
 }
 
 func Connect(driver, credentials string) (*DB, error) {
