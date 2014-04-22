@@ -72,23 +72,23 @@ func (c *WrappedColumn) NullsLast() *OrderedColumn {
 	return &OrderedColumn{inner: c, nullsLast: true}
 }
 
-func Avg(c *ColumnStruct) *WrappedColumn {
+func Avg(c ColumnStruct) *WrappedColumn {
 	return &WrappedColumn{column: c, f: "AVG"}
 }
 
-func Count(c *ColumnStruct) *WrappedColumn {
+func Count(c ColumnStruct) *WrappedColumn {
 	return &WrappedColumn{column: c, f: "COUNT"}
 }
 
-func Date(c *ColumnStruct) *WrappedColumn {
+func Date(c ColumnStruct) *WrappedColumn {
 	return &WrappedColumn{column: c, f: "DATE"}
 }
 
-func Max(c *ColumnStruct) *WrappedColumn {
+func Max(c ColumnStruct) *WrappedColumn {
 	return &WrappedColumn{column: c, f: "MAX"}
 }
 
-func DatePart(c *ColumnStruct, part string) *WrappedColumn {
+func DatePart(c ColumnStruct, part string) *WrappedColumn {
 	// TODO add the part as a parameter?
 	return &WrappedColumn{
 		column: c,

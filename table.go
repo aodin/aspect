@@ -42,8 +42,8 @@ func (table *TableElem) Compile(d Dialect, params *Parameters) string {
 }
 
 // Get the table columns in proper order
-func (table *TableElem) Columns() []*ColumnStruct {
-	columns := make([]*ColumnStruct, len(table.order))
+func (table *TableElem) Columns() []ColumnStruct {
+	columns := make([]ColumnStruct, len(table.order))
 	for index, name := range table.order {
 		columns[index] = table.C[name]
 	}

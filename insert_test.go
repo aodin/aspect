@@ -5,7 +5,7 @@ import (
 )
 
 func TestFieldAlias(t *testing.T) {
-	columns := []*ColumnStruct{users.C["name"], users.C["password"]}
+	columns := []ColumnStruct{users.C["name"], users.C["password"]}
 
 	// Get the alias fields for the users struct
 	var u user
