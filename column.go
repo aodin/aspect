@@ -14,7 +14,7 @@ Implements the `TableModifier` interface.
 */
 
 type ColumnElement interface {
-	Compiler
+	Clause
 	Name() string
 	Table() *TableElem
 }

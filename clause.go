@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-// All clauses must implement the Compiler interface
+// All clauses must implement the Compiles interface
 type Clause interface {
-	Compiler
+	Compiles
 }
 
 // TODO Or just type Parameter []interface{}

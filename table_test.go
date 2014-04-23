@@ -27,7 +27,7 @@ var views = Table("views",
 )
 
 // A short test for testing that an SQL statement was compiled as expected
-func expectedPostGres(t *testing.T, stmt Compiler, expected string, p int) {
+func expectedPostGres(t *testing.T, stmt Compiles, expected string, p int) {
 	params := Params()
 	compiled, err := stmt.Compile(&PostGres{}, params)
 	if err != nil {

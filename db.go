@@ -6,7 +6,7 @@ import (
 
 // TODO How to distiguish between full statements and fragments?
 type Executable interface {
-	Compiler
+	Compiles
 }
 
 // TODO dialect
