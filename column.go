@@ -2,7 +2,6 @@ package aspect
 
 import (
 	"fmt"
-	"time"
 )
 
 /*
@@ -128,14 +127,6 @@ func (c ColumnElem) GTE(i interface{}) BinaryClause {
 		pre:  c,
 		post: &Parameter{i},
 		sep:  " >= ",
-	}
-}
-
-func (c ColumnElem) InLocation(loc *time.Location) BinaryClause {
-	return BinaryClause{
-		pre:  c,
-		post: &Parameter{loc.String()},
-		sep:  "::TIMESTAMP WITH TIME ZONE AT TIME ZONE ",
 	}
 }
 
