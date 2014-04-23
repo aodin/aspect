@@ -7,6 +7,14 @@ import (
 func TestClauses(t *testing.T) {
 	id := users.C["id"]
 
+	// Column clause
+	expectedPostGres(
+		t,
+		ColumnClause{table: users, name: id.Name()},
+		`"users"."id"`,
+		0,
+	)
+
 	// Binary clause
 	expectedPostGres(
 		t,

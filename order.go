@@ -13,10 +13,8 @@ type Orderable interface {
 // * the default behavior is NULLS LAST when ASC is specified or implied, and
 // NULLS FIRST when DESC is specified
 type OrderedColumn struct {
-	inner      ColumnElement
-	desc       bool
-	nullsFirst bool
-	nullsLast  bool
+	inner                       ColumnStruct
+	desc, nullsFirst, nullsLast bool
 }
 
 func (o OrderedColumn) String() string {

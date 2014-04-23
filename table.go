@@ -64,8 +64,8 @@ func (table *TableElem) Select() *SelectStmt {
 }
 
 // Implement the sql.Selectable interface for building SELECT statements
-func (table *TableElem) Selectable() []ColumnElement {
-	columns := make([]ColumnElement, len(table.order))
+func (table *TableElem) Selectable() []ColumnStruct {
+	columns := make([]ColumnStruct, len(table.order))
 	for index, name := range table.order {
 		columns[index] = table.C[name]
 	}

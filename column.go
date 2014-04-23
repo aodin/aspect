@@ -13,12 +13,6 @@ Implements the `TableModifier` interface.
 
 */
 
-type ColumnElement interface {
-	Clause
-	Name() string
-	Table() *TableElem
-}
-
 // Maintains a unique set of columns
 type ColumnSet map[string]ColumnStruct
 
@@ -33,6 +27,7 @@ func (set ColumnSet) Add(c ColumnStruct) error {
 }
 
 type ColumnStruct struct {
+	inner Clause
 	name  string
 	table *TableElem
 	typ   dbType
@@ -44,20 +39,27 @@ func (c ColumnStruct) String() string {
 }
 
 func (c ColumnStruct) Compile(d Dialect, params *Parameters) (string, error) {
-	return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name), nil
+	if c.inner == nil {
+		// Old behavior
+		return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name), nil
+	} else {
+		return c.inner.Compile(d, params)
+	}
 }
 
+// TODO remove these
 func (c ColumnStruct) Name() string {
 	return c.name
 }
 
+// TODO remove these
 func (c ColumnStruct) Table() *TableElem {
 	return c.table
 }
 
 // Implement the sql.Selectable interface for building SELECT statements
-func (c ColumnStruct) Selectable() []ColumnElement {
-	return []ColumnElement{c}
+func (c ColumnStruct) Selectable() []ColumnStruct {
+	return []ColumnStruct{c}
 }
 
 // Ordering
@@ -150,6 +152,9 @@ func (c ColumnStruct) Modify(t *TableElem) error {
 	// Set the parent table of this column
 	c.table = t
 
+	// Update the inner clause with the completed ColumnClause
+	c.inner = ColumnClause{table: t, name: c.name}
+
 	// Add the column to the unique set of columns for this table
 	if duplicate := t.C.Add(c); duplicate != nil {
 		return duplicate
@@ -165,5 +170,7 @@ func (c ColumnStruct) Modify(t *TableElem) error {
 // TODO The constructor function does not need to return a ColumnStruct,
 // it can return a struct that modifies the table and adds a column.
 func Column(name string, t dbType) ColumnStruct {
-	return ColumnStruct{name: name, typ: t}
+	// Set the inner clause of the column to the incomplete ColumnClause.
+	// This will be overwritten by the table modify function.
+	return ColumnStruct{inner: ColumnClause{name: name}, name: name, typ: t}
 }

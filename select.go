@@ -7,15 +7,16 @@ import (
 
 // Since an entire Table can be selected, this must return an array of columns
 type Selectable interface {
-	Selectable() []ColumnElement
+	Selectable() []ColumnStruct
 }
 
+// TODO Use clauses to build the parts of statement
 type SelectStmt struct {
 	tables  []*TableElem
-	columns []ColumnElement
+	columns []ColumnStruct
 	join    *JoinStmt
 	cond    Clause
-	groupBy []ColumnElement
+	groupBy []ColumnStruct
 	order   []OrderedColumn
 	limit   int
 	offset  int
@@ -60,7 +61,6 @@ func (stmt *SelectStmt) String() string {
 	return compiled
 }
 
-// TODO Will require a dialect
 func (stmt *SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	compiled := fmt.Sprintf(
 		"SELECT %s FROM %s",
@@ -107,7 +107,7 @@ func (stmt *SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 }
 
 // Add a JOIN ... ON to the SELECT statement
-func (stmt *SelectStmt) Join(pre, post ColumnElement) *SelectStmt {
+func (stmt *SelectStmt) Join(pre, post ColumnStruct) *SelectStmt {
 	// Get the table of the post element
 	table := post.Table()
 
@@ -130,8 +130,8 @@ func (stmt *SelectStmt) Where(cond Clause) *SelectStmt {
 }
 
 // Add a GROUP BY to the SELECT statement
-func (stmt *SelectStmt) GroupBy(cs ...ColumnElement) *SelectStmt {
-	groupBy := make([]ColumnElement, len(cs))
+func (stmt *SelectStmt) GroupBy(cs ...ColumnStruct) *SelectStmt {
+	groupBy := make([]ColumnStruct, len(cs))
 	// Since columns may be given without an ordering method, perform the
 	// orderable conversion whether or not it is already ordered
 	for i, column := range cs {
@@ -167,7 +167,7 @@ func (stmt *SelectStmt) Offset(offset int) *SelectStmt {
 
 func Select(selections ...Selectable) *SelectStmt {
 	stmt := &SelectStmt{
-		columns: make([]ColumnElement, 0),
+		columns: make([]ColumnStruct, 0),
 		tables:  make([]*TableElem, 0),
 	}
 
