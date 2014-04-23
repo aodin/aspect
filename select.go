@@ -25,11 +25,11 @@ type SelectStmt struct {
 // TODO Both the columns and tables should have their own methods for
 // order, existance, and string compilation
 // TODO Check the name or the physical column?
-func (stmt *SelectStmt) ColumnExists(name string) bool {
+func (stmt SelectStmt) ColumnExists(name string) bool {
 	return false
 }
 
-func (stmt *SelectStmt) TableExists(name string) bool {
+func (stmt SelectStmt) TableExists(name string) bool {
 	for _, table := range stmt.tables {
 		if table.Name == name {
 			return true
@@ -39,7 +39,7 @@ func (stmt *SelectStmt) TableExists(name string) bool {
 }
 
 // TODO These need errors now
-func (stmt *SelectStmt) CompileTables(d Dialect, params *Parameters) []string {
+func (stmt SelectStmt) CompileTables(d Dialect, params *Parameters) []string {
 	names := make([]string, len(stmt.tables))
 	for i, table := range stmt.tables {
 		names[i] = table.Compile(d, params)
@@ -48,7 +48,7 @@ func (stmt *SelectStmt) CompileTables(d Dialect, params *Parameters) []string {
 }
 
 // TODO These need errors now
-func (stmt *SelectStmt) CompileColumns(d Dialect, params *Parameters) []string {
+func (stmt SelectStmt) CompileColumns(d Dialect, params *Parameters) []string {
 	names := make([]string, len(stmt.columns))
 	for i, c := range stmt.columns {
 		names[i], _ = c.Compile(d, params)
@@ -56,12 +56,12 @@ func (stmt *SelectStmt) CompileColumns(d Dialect, params *Parameters) []string {
 	return names
 }
 
-func (stmt *SelectStmt) String() string {
+func (stmt SelectStmt) String() string {
 	compiled, _ := stmt.Compile(&PostGres{}, Params())
 	return compiled
 }
 
-func (stmt *SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
+func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	compiled := fmt.Sprintf(
 		"SELECT %s FROM %s",
 		strings.Join(stmt.CompileColumns(d, params), ", "),
@@ -107,7 +107,7 @@ func (stmt *SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 }
 
 // Add a JOIN ... ON to the SELECT statement
-func (stmt *SelectStmt) Join(pre, post ColumnStruct) *SelectStmt {
+func (stmt SelectStmt) Join(pre, post ColumnStruct) SelectStmt {
 	// Get the table of the post element
 	table := post.Table()
 
@@ -124,13 +124,13 @@ func (stmt *SelectStmt) Join(pre, post ColumnStruct) *SelectStmt {
 	return stmt
 }
 
-func (stmt *SelectStmt) Where(cond Clause) *SelectStmt {
+func (stmt SelectStmt) Where(cond Clause) SelectStmt {
 	stmt.cond = cond
 	return stmt
 }
 
 // Add a GROUP BY to the SELECT statement
-func (stmt *SelectStmt) GroupBy(cs ...ColumnStruct) *SelectStmt {
+func (stmt SelectStmt) GroupBy(cs ...ColumnStruct) SelectStmt {
 	groupBy := make([]ColumnStruct, len(cs))
 	// Since columns may be given without an ordering method, perform the
 	// orderable conversion whether or not it is already ordered
@@ -142,7 +142,7 @@ func (stmt *SelectStmt) GroupBy(cs ...ColumnStruct) *SelectStmt {
 }
 
 // Add an ORDER BY to the SELECT statement
-func (stmt *SelectStmt) OrderBy(params ...Orderable) *SelectStmt {
+func (stmt SelectStmt) OrderBy(params ...Orderable) SelectStmt {
 	order := make([]OrderedColumn, len(params))
 	// Since columns may be given without an ordering method, perform the
 	// orderable conversion whether or not it is already ordered
@@ -154,19 +154,19 @@ func (stmt *SelectStmt) OrderBy(params ...Orderable) *SelectStmt {
 }
 
 // Add a LIMIT to the SELECT statement
-func (stmt *SelectStmt) Limit(limit int) *SelectStmt {
+func (stmt SelectStmt) Limit(limit int) SelectStmt {
 	stmt.limit = limit
 	return stmt
 }
 
 // Add an OFFSET to the SELECT statement
-func (stmt *SelectStmt) Offset(offset int) *SelectStmt {
+func (stmt SelectStmt) Offset(offset int) SelectStmt {
 	stmt.offset = offset
 	return stmt
 }
 
-func Select(selections ...Selectable) *SelectStmt {
-	stmt := &SelectStmt{
+func Select(selections ...Selectable) SelectStmt {
+	stmt := SelectStmt{
 		columns: make([]ColumnStruct, 0),
 		tables:  make([]*TableElem, 0),
 	}
