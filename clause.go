@@ -10,16 +10,6 @@ type Clause interface {
 	Compiles
 }
 
-// TODO Or just type Parameter []interface{}
-type Parameter struct {
-	Value interface{}
-}
-
-func (p *Parameter) String() string {
-	compiled, _ := p.Compile(&PostGres{}, Params())
-	return compiled
-}
-
 // Special clause type used for column selections
 type ColumnClause struct {
 	table *TableElem
@@ -33,13 +23,6 @@ func (c ColumnClause) String() string {
 
 func (c ColumnClause) Compile(d Dialect, params *Parameters) (string, error) {
 	return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name), nil
-}
-
-// Parameter compilation is dialect dependent. Some dialects, such as
-// PostGres, also require the parameter index
-func (p *Parameter) Compile(d Dialect, params *Parameters) (string, error) {
-	i := params.Add(p.Value)
-	return d.Parameterize(i), nil
 }
 
 type FuncClause struct {
