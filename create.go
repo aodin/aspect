@@ -9,12 +9,12 @@ type CreateStmt struct {
 	table *TableElem
 }
 
-func (stmt *CreateStmt) String() string {
+func (stmt CreateStmt) String() string {
 	c, _ := stmt.Compile(&PostGres{}, Params())
 	return c
 }
 
-func (stmt *CreateStmt) Compile(d Dialect, p *Parameters) (string, error) {
+func (stmt CreateStmt) Compile(d Dialect, p *Parameters) (string, error) {
 	// Compiled elements
 	cs := make([]string, 0)
 
