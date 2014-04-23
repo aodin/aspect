@@ -79,7 +79,7 @@ func (c BinaryClause) Compile(d Dialect, params *Parameters) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s %s %s", prec, c.sep, postc), nil
+	return fmt.Sprintf("%s%s%s", prec, c.sep, postc), nil
 }
 
 type ArrayClause struct {

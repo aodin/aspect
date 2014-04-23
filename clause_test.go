@@ -2,6 +2,7 @@ package aspect
 
 import (
 	"testing"
+	"time"
 )
 
 func TestClauses(t *testing.T) {
@@ -20,6 +21,18 @@ func TestClauses(t *testing.T) {
 		t,
 		id.Equals(2),
 		`"users"."id" = $1`,
+		1,
+	)
+
+	// Load the Denver timezone
+	denver, err := time.LoadLocation("America/Denver")
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedPostGres(
+		t,
+		views.C["timestamp"].InLocation(denver),
+		`"views"."timestamp"::TIMESTAMP WITH TIME ZONE AT TIME ZONE $1`,
 		1,
 	)
 

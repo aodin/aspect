@@ -2,6 +2,7 @@ package aspect
 
 import (
 	"fmt"
+	"time"
 )
 
 /*
@@ -94,7 +95,7 @@ func (c ColumnElem) Equals(i interface{}) BinaryClause {
 	return BinaryClause{
 		pre:  c,
 		post: &Parameter{i},
-		sep:  "=",
+		sep:  " = ",
 	}
 }
 
@@ -102,7 +103,7 @@ func (c ColumnElem) LessThan(i interface{}) BinaryClause {
 	return BinaryClause{
 		pre:  c,
 		post: &Parameter{i},
-		sep:  "<",
+		sep:  " < ",
 	}
 }
 
@@ -110,7 +111,7 @@ func (c ColumnElem) GreaterThan(i interface{}) BinaryClause {
 	return BinaryClause{
 		pre:  c,
 		post: &Parameter{i},
-		sep:  ">",
+		sep:  " > ",
 	}
 }
 
@@ -118,7 +119,7 @@ func (c ColumnElem) LTE(i interface{}) BinaryClause {
 	return BinaryClause{
 		pre:  c,
 		post: &Parameter{i},
-		sep:  "<=",
+		sep:  " <= ",
 	}
 }
 
@@ -126,7 +127,15 @@ func (c ColumnElem) GTE(i interface{}) BinaryClause {
 	return BinaryClause{
 		pre:  c,
 		post: &Parameter{i},
-		sep:  ">=",
+		sep:  " >= ",
+	}
+}
+
+func (c ColumnElem) InLocation(loc *time.Location) BinaryClause {
+	return BinaryClause{
+		pre:  c,
+		post: &Parameter{loc.String()},
+		sep:  "::TIMESTAMP WITH TIME ZONE AT TIME ZONE ",
 	}
 }
 
