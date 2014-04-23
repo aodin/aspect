@@ -27,27 +27,22 @@ func (p *Parameter) Compile(d Dialect, params *Parameters) (string, error) {
 	return d.Parameterize(i), nil
 }
 
-type UnaryClause struct {
+type FuncClause struct {
 	clause Clause
-	oper   string
-	pre    bool
+	f      string
 }
 
-func (c *UnaryClause) String() string {
+func (c FuncClause) String() string {
 	compiled, _ := c.Compile(&PostGres{}, Params())
 	return compiled
 }
 
-func (c *UnaryClause) Compile(d Dialect, params *Parameters) (string, error) {
+func (c FuncClause) Compile(d Dialect, params *Parameters) (string, error) {
 	cc, err := c.clause.Compile(d, params)
 	if err != nil {
 		return "", err
 	}
-	if c.pre {
-		return fmt.Sprintf("%s(%s)", c.oper, cc), nil
-	} else {
-		return fmt.Sprintf("(%s)%s", cc, c.oper), nil
-	}
+	return fmt.Sprintf("%s(%s)", c.f, cc), nil
 }
 
 type BinaryClause struct {
@@ -55,12 +50,12 @@ type BinaryClause struct {
 	sep       string
 }
 
-func (c *BinaryClause) String() string {
+func (c BinaryClause) String() string {
 	compiled, _ := c.Compile(&PostGres{}, Params())
 	return compiled
 }
 
-func (c *BinaryClause) Compile(d Dialect, params *Parameters) (string, error) {
+func (c BinaryClause) Compile(d Dialect, params *Parameters) (string, error) {
 	prec, err := c.pre.Compile(d, params)
 	if err != nil {
 		return "", err
@@ -77,12 +72,12 @@ type ArrayClause struct {
 	sep     string
 }
 
-func (c *ArrayClause) String() string {
+func (c ArrayClause) String() string {
 	compiled, _ := c.Compile(&PostGres{}, Params())
 	return compiled
 }
 
-func (c *ArrayClause) Compile(d Dialect, params *Parameters) (string, error) {
+func (c ArrayClause) Compile(d Dialect, params *Parameters) (string, error) {
 	compiled := make([]string, len(c.clauses))
 	var err error
 	for i, clause := range c.clauses {
@@ -94,10 +89,10 @@ func (c *ArrayClause) Compile(d Dialect, params *Parameters) (string, error) {
 	return strings.Join(compiled, c.sep), nil
 }
 
-func AllOf(clauses ...Clause) *ArrayClause {
-	return &ArrayClause{clauses, " AND "}
+func AllOf(clauses ...Clause) ArrayClause {
+	return ArrayClause{clauses, " AND "}
 }
 
-func AnyOf(clauses ...Clause) *ArrayClause {
-	return &ArrayClause{clauses, " OR "}
+func AnyOf(clauses ...Clause) ArrayClause {
+	return ArrayClause{clauses, " OR "}
 }
