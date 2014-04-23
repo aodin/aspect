@@ -51,25 +51,25 @@ func (c *WrappedColumn) Selectable() []ColumnElement {
 }
 
 // Same with the Orderable interface
-func (c *WrappedColumn) Orderable() *OrderedColumn {
-	return &OrderedColumn{inner: c}
+func (c *WrappedColumn) Orderable() OrderedColumn {
+	return OrderedColumn{inner: c}
 }
 
 // TODO I have to re-implement all the ordering methods?
-func (c *WrappedColumn) Asc() *OrderedColumn {
-	return &OrderedColumn{inner: c}
+func (c *WrappedColumn) Asc() OrderedColumn {
+	return OrderedColumn{inner: c}
 }
 
-func (c *WrappedColumn) Desc() *OrderedColumn {
-	return &OrderedColumn{inner: c, desc: true}
+func (c *WrappedColumn) Desc() OrderedColumn {
+	return OrderedColumn{inner: c, desc: true}
 }
 
-func (c *WrappedColumn) NullsFirst() *OrderedColumn {
-	return &OrderedColumn{inner: c, nullsFirst: true}
+func (c *WrappedColumn) NullsFirst() OrderedColumn {
+	return OrderedColumn{inner: c, nullsFirst: true}
 }
 
-func (c *WrappedColumn) NullsLast() *OrderedColumn {
-	return &OrderedColumn{inner: c, nullsLast: true}
+func (c *WrappedColumn) NullsLast() OrderedColumn {
+	return OrderedColumn{inner: c, nullsLast: true}
 }
 
 func Avg(c ColumnStruct) *WrappedColumn {

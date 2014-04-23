@@ -16,7 +16,7 @@ type SelectStmt struct {
 	join    *JoinStmt
 	cond    Clause
 	groupBy []ColumnElement
-	order   []*OrderedColumn
+	order   []OrderedColumn
 	limit   int
 	offset  int
 }
@@ -143,7 +143,7 @@ func (stmt *SelectStmt) GroupBy(cs ...ColumnElement) *SelectStmt {
 
 // Add an ORDER BY to the SELECT statement
 func (stmt *SelectStmt) OrderBy(params ...Orderable) *SelectStmt {
-	order := make([]*OrderedColumn, len(params))
+	order := make([]OrderedColumn, len(params))
 	// Since columns may be given without an ordering method, perform the
 	// orderable conversion whether or not it is already ordered
 	for i, column := range params {

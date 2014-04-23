@@ -4,7 +4,7 @@ import ()
 
 // Both ColumnStruct and OrderedColumns will implement the Orderable interface
 type Orderable interface {
-	Orderable() *OrderedColumn
+	Orderable() OrderedColumn
 }
 
 // From the PostGres documentation:
@@ -19,12 +19,12 @@ type OrderedColumn struct {
 	nullsLast  bool
 }
 
-func (o *OrderedColumn) String() string {
+func (o OrderedColumn) String() string {
 	compiled, _ := o.Compile(&PostGres{}, Params())
 	return compiled
 }
 
-func (o *OrderedColumn) Compile(d Dialect, params *Parameters) (string, error) {
+func (o OrderedColumn) Compile(d Dialect, params *Parameters) (string, error) {
 	// Call the compilation method of the embeded column
 	compiled, err := o.inner.Compile(d, params)
 	if err != nil {
@@ -44,27 +44,27 @@ func (o *OrderedColumn) Compile(d Dialect, params *Parameters) (string, error) {
 	return compiled, nil
 }
 
-func (o *OrderedColumn) Orderable() *OrderedColumn {
+func (o OrderedColumn) Orderable() OrderedColumn {
 	return o
 }
 
-func (o *OrderedColumn) Asc() *OrderedColumn {
+func (o OrderedColumn) Asc() OrderedColumn {
 	o.desc = false
 	return o
 }
 
-func (o *OrderedColumn) Desc() *OrderedColumn {
+func (o OrderedColumn) Desc() OrderedColumn {
 	o.desc = true
 	return o
 }
 
-func (o *OrderedColumn) NullsFirst() *OrderedColumn {
+func (o OrderedColumn) NullsFirst() OrderedColumn {
 	o.nullsFirst = true
 	o.nullsLast = false
 	return o
 }
 
-func (o *OrderedColumn) NullsLast() *OrderedColumn {
+func (o OrderedColumn) NullsLast() OrderedColumn {
 	o.nullsFirst = false
 	o.nullsLast = true
 	return o
