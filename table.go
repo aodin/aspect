@@ -73,7 +73,7 @@ func (table *TableElem) Selectable() []ColumnElement {
 }
 
 // Constructor Method for an DELETE statement tied to this table
-func (table *TableElem) Delete(args ...interface{}) *DeleteStatement {
+func (table *TableElem) Delete(args ...interface{}) DeleteStmt {
 	return Delete(table, args...)
 }
 
