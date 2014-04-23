@@ -77,7 +77,7 @@ func (table *TableElem) Delete(args ...interface{}) DeleteStmt {
 	return Delete(table, args...)
 }
 
-func (table *TableElem) Insert(arg interface{}, args ...interface{}) *InsertStatement {
+func (table *TableElem) Insert(arg interface{}, args ...interface{}) InsertStmt {
 	return InsertTableValues(table, arg, args...)
 }
 

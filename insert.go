@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-type InsertStatement struct {
+type InsertStmt struct {
 	table   *TableElem
 	columns []ColumnStruct
 	args    []interface{}
@@ -18,12 +18,12 @@ var (
 	ErrNoColumns = errors.New("aspect: an INSERT must have associated columns")
 )
 
-func (stmt *InsertStatement) String() string {
+func (stmt InsertStmt) String() string {
 	compiled, _ := stmt.Compile(&PostGres{}, Params())
 	return compiled
 }
 
-func (stmt *InsertStatement) Compile(d Dialect, params *Parameters) (string, error) {
+func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	c := len(stmt.columns)
 	// No columns? no statement!
 	if c == 0 {
@@ -106,7 +106,7 @@ func fieldAlias(cs []ColumnStruct, i interface{}) []string {
 }
 
 // There must be at least one arg
-func (stmt *InsertStatement) Values(arg interface{}, args ...interface{}) *InsertStatement {
+func (stmt InsertStmt) Values(arg interface{}, args ...interface{}) InsertStmt {
 
 	var l int // Expected length of each argument, set by first arg
 	elem := reflect.Indirect(reflect.ValueOf(arg))
@@ -154,9 +154,9 @@ func (stmt *InsertStatement) Values(arg interface{}, args ...interface{}) *Inser
 }
 
 // There must be at least one column
-func Insert(column ColumnStruct, columns ...ColumnStruct) *InsertStatement {
+func Insert(column ColumnStruct, columns ...ColumnStruct) InsertStmt {
 	// All columns must belong to the same table
-	stmt := &InsertStatement{
+	stmt := InsertStmt{
 		table:   column.table,
 		columns: []ColumnStruct{column},
 		args:    make([]interface{}, 0),
@@ -172,8 +172,8 @@ func Insert(column ColumnStruct, columns ...ColumnStruct) *InsertStatement {
 	return stmt
 }
 
-func InsertTableValues(t *TableElem, arg interface{}, args ...interface{}) *InsertStatement {
-	stmt := &InsertStatement{
+func InsertTableValues(t *TableElem, arg interface{}, args ...interface{}) InsertStmt {
+	stmt := InsertStmt{
 		table:   t,
 		columns: t.Columns(),
 		args:    make([]interface{}, 0),
