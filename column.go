@@ -14,11 +14,11 @@ Implements the `TableModifier` interface.
 */
 
 // Maintains a unique set of columns
-type ColumnSet map[string]ColumnStruct
+type ColumnSet map[string]ColumnElem
 
-// Returns an error if a ColumnStruct by this name already exists
+// Returns an error if a ColumnElem by this name already exists
 // TODO Make this a private method?
-func (set ColumnSet) Add(c ColumnStruct) error {
+func (set ColumnSet) Add(c ColumnElem) error {
 	if _, exists := set[c.name]; exists {
 		return fmt.Errorf("A column with the name %s already exists", c.name)
 	}
@@ -26,19 +26,19 @@ func (set ColumnSet) Add(c ColumnStruct) error {
 	return nil
 }
 
-type ColumnStruct struct {
+type ColumnElem struct {
 	inner Clause
 	name  string
 	table *TableElem
 	typ   dbType
 }
 
-func (c ColumnStruct) String() string {
+func (c ColumnElem) String() string {
 	compiled, _ := c.Compile(&PostGres{}, Params())
 	return compiled
 }
 
-func (c ColumnStruct) Compile(d Dialect, params *Parameters) (string, error) {
+func (c ColumnElem) Compile(d Dialect, params *Parameters) (string, error) {
 	if c.inner == nil {
 		// Old behavior
 		return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name), nil
@@ -48,49 +48,49 @@ func (c ColumnStruct) Compile(d Dialect, params *Parameters) (string, error) {
 }
 
 // TODO remove these
-func (c ColumnStruct) Name() string {
+func (c ColumnElem) Name() string {
 	return c.name
 }
 
 // TODO remove these
-func (c ColumnStruct) Table() *TableElem {
+func (c ColumnElem) Table() *TableElem {
 	return c.table
 }
 
 // Implement the sql.Selectable interface for building SELECT statements
-func (c ColumnStruct) Selectable() []ColumnStruct {
-	return []ColumnStruct{c}
+func (c ColumnElem) Selectable() []ColumnElem {
+	return []ColumnElem{c}
 }
 
 // Ordering
 // --------
 
 // Implement the sql.Orderable interface in order.go
-func (c ColumnStruct) Orderable() OrderedColumn {
+func (c ColumnElem) Orderable() OrderedColumn {
 	return OrderedColumn{inner: c}
 }
 
 // All other functions should return an OrderedColumn
-func (c ColumnStruct) Asc() OrderedColumn {
+func (c ColumnElem) Asc() OrderedColumn {
 	return OrderedColumn{inner: c}
 }
 
-func (c ColumnStruct) Desc() OrderedColumn {
+func (c ColumnElem) Desc() OrderedColumn {
 	return OrderedColumn{inner: c, desc: true}
 }
 
-func (c ColumnStruct) NullsFirst() OrderedColumn {
+func (c ColumnElem) NullsFirst() OrderedColumn {
 	return OrderedColumn{inner: c, nullsFirst: true}
 }
 
-func (c ColumnStruct) NullsLast() OrderedColumn {
+func (c ColumnElem) NullsLast() OrderedColumn {
 	return OrderedColumn{inner: c, nullsLast: true}
 }
 
 // Conditionals
 // ------------
 
-func (c ColumnStruct) Equals(i interface{}) BinaryClause {
+func (c ColumnElem) Equals(i interface{}) BinaryClause {
 	return BinaryClause{
 		pre:  c,
 		post: &Parameter{i},
@@ -98,7 +98,7 @@ func (c ColumnStruct) Equals(i interface{}) BinaryClause {
 	}
 }
 
-func (c ColumnStruct) LessThan(i interface{}) BinaryClause {
+func (c ColumnElem) LessThan(i interface{}) BinaryClause {
 	return BinaryClause{
 		pre:  c,
 		post: &Parameter{i},
@@ -106,7 +106,7 @@ func (c ColumnStruct) LessThan(i interface{}) BinaryClause {
 	}
 }
 
-func (c ColumnStruct) GreaterThan(i interface{}) BinaryClause {
+func (c ColumnElem) GreaterThan(i interface{}) BinaryClause {
 	return BinaryClause{
 		pre:  c,
 		post: &Parameter{i},
@@ -114,7 +114,7 @@ func (c ColumnStruct) GreaterThan(i interface{}) BinaryClause {
 	}
 }
 
-func (c ColumnStruct) LTE(i interface{}) BinaryClause {
+func (c ColumnElem) LTE(i interface{}) BinaryClause {
 	return BinaryClause{
 		pre:  c,
 		post: &Parameter{i},
@@ -122,7 +122,7 @@ func (c ColumnStruct) LTE(i interface{}) BinaryClause {
 	}
 }
 
-func (c ColumnStruct) GTE(i interface{}) BinaryClause {
+func (c ColumnElem) GTE(i interface{}) BinaryClause {
 	return BinaryClause{
 		pre:  c,
 		post: &Parameter{i},
@@ -130,20 +130,20 @@ func (c ColumnStruct) GTE(i interface{}) BinaryClause {
 	}
 }
 
-func (c ColumnStruct) Between(a, b interface{}) ArrayClause {
+func (c ColumnElem) Between(a, b interface{}) ArrayClause {
 	return AllOf(c.GTE(a), c.LTE(b))
 }
 
-func (c ColumnStruct) NotBetween(a, b interface{}) ArrayClause {
+func (c ColumnElem) NotBetween(a, b interface{}) ArrayClause {
 	return AnyOf(c.LessThan(a), c.GreaterThan(b))
 }
 
 // Schema
 // ------
 
-// To implement the TableModifier interface the ColumnStruct must
+// To implement the TableModifier interface the ColumnElem must
 // have method Modify(). It does not need to modify its parent table.
-func (c ColumnStruct) Modify(t *TableElem) error {
+func (c ColumnElem) Modify(t *TableElem) error {
 	// No re-using columns across tables!
 	if c.table != nil {
 		return fmt.Errorf("Column %s already belongs to table %s", c.name, t.Name)
@@ -167,10 +167,10 @@ func (c ColumnStruct) Modify(t *TableElem) error {
 }
 
 // Constructor function
-// TODO The constructor function does not need to return a ColumnStruct,
+// TODO The constructor function does not need to return a ColumnElem,
 // it can return a struct that modifies the table and adds a column.
-func Column(name string, t dbType) ColumnStruct {
+func Column(name string, t dbType) ColumnElem {
 	// Set the inner clause of the column to the incomplete ColumnClause.
 	// This will be overwritten by the table modify function.
-	return ColumnStruct{inner: ColumnClause{name: name}, name: name, typ: t}
+	return ColumnElem{inner: ColumnClause{name: name}, name: name, typ: t}
 }

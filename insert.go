@@ -9,7 +9,7 @@ import (
 
 type InsertStmt struct {
 	table   *TableElem
-	columns []ColumnStruct
+	columns []ColumnElem
 	args    []interface{}
 	err     error
 }
@@ -78,7 +78,7 @@ func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
 // the given column names.
 // Return the field names matching their respective columns.
 // The field tag takes precendence over the name.
-func fieldAlias(cs []ColumnStruct, i interface{}) []string {
+func fieldAlias(cs []ColumnElem, i interface{}) []string {
 	// Get the type of the interface pointer
 	t := reflect.TypeOf(i)
 	if t.Kind() != reflect.Ptr {
@@ -154,11 +154,11 @@ func (stmt InsertStmt) Values(arg interface{}, args ...interface{}) InsertStmt {
 }
 
 // There must be at least one column
-func Insert(column ColumnStruct, columns ...ColumnStruct) InsertStmt {
+func Insert(column ColumnElem, columns ...ColumnElem) InsertStmt {
 	// All columns must belong to the same table
 	stmt := InsertStmt{
 		table:   column.table,
-		columns: []ColumnStruct{column},
+		columns: []ColumnElem{column},
 		args:    make([]interface{}, 0),
 	}
 

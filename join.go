@@ -6,7 +6,7 @@ import (
 
 type JoinStmt struct {
 	table     *TableElem
-	pre, post ColumnStruct
+	pre, post ColumnElem
 }
 
 func (j *JoinStmt) Compile(d Dialect, params *Parameters) (string, error) {

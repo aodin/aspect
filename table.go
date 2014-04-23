@@ -18,7 +18,7 @@ It will panic when an improper schema is created.
 */
 
 // Allow the implementing element to modify its parent Table.
-// In the case of a ColumnStruct, it will add the column after checking
+// In the case of a ColumnElem, it will add the column after checking
 // for a namespace collision.
 type TableModifier interface {
 	Modify(*TableElem) error
@@ -42,8 +42,8 @@ func (table *TableElem) Compile(d Dialect, params *Parameters) string {
 }
 
 // Get the table columns in proper order
-func (table *TableElem) Columns() []ColumnStruct {
-	columns := make([]ColumnStruct, len(table.order))
+func (table *TableElem) Columns() []ColumnElem {
+	columns := make([]ColumnElem, len(table.order))
 	for index, name := range table.order {
 		columns[index] = table.C[name]
 	}
@@ -64,8 +64,8 @@ func (table *TableElem) Select() SelectStmt {
 }
 
 // Implement the sql.Selectable interface for building SELECT statements
-func (table *TableElem) Selectable() []ColumnStruct {
-	columns := make([]ColumnStruct, len(table.order))
+func (table *TableElem) Selectable() []ColumnElem {
+	columns := make([]ColumnElem, len(table.order))
 	for index, name := range table.order {
 		columns[index] = table.C[name]
 	}

@@ -25,7 +25,7 @@ func (pk PrimaryKeyArray) Create(d Dialect) (string, error) {
 	return fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(cs, ", ")), nil
 }
 
-// To implement the `TableModifier` interface, the `ColumnStruct` must
+// To implement the `TableModifier` interface, the struct must
 // have method Modify(). It does not need to modify its parent table.
 func (pk PrimaryKeyArray) Modify(table *TableElem) error {
 	// Confirm that all columns in the primary key exists

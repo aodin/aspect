@@ -2,7 +2,7 @@ package aspect
 
 import ()
 
-// Both ColumnStruct and OrderedColumns will implement the Orderable interface
+// Both ColumnElem and OrderedColumns will implement the Orderable interface
 type Orderable interface {
 	Orderable() OrderedColumn
 }
@@ -13,7 +13,7 @@ type Orderable interface {
 // * the default behavior is NULLS LAST when ASC is specified or implied, and
 // NULLS FIRST when DESC is specified
 type OrderedColumn struct {
-	inner                       ColumnStruct
+	inner                       ColumnElem
 	desc, nullsFirst, nullsLast bool
 }
 

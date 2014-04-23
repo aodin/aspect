@@ -2,27 +2,27 @@ package aspect
 
 import ()
 
-func Avg(c ColumnStruct) ColumnStruct {
+func Avg(c ColumnElem) ColumnElem {
 	c.inner = FuncClause{clause: c.inner, f: "AVG"}
 	return c
 }
 
-func Count(c ColumnStruct) ColumnStruct {
+func Count(c ColumnElem) ColumnElem {
 	c.inner = FuncClause{clause: c.inner, f: "COUNT"}
 	return c
 }
 
-func Date(c ColumnStruct) ColumnStruct {
+func Date(c ColumnElem) ColumnElem {
 	c.inner = FuncClause{clause: c.inner, f: "DATE"}
 	return c
 }
 
-func Max(c ColumnStruct) ColumnStruct {
+func Max(c ColumnElem) ColumnElem {
 	c.inner = FuncClause{clause: c.inner, f: "MAX"}
 	return c
 }
 
-func DatePart(c ColumnStruct, part string) ColumnStruct {
+func DatePart(c ColumnElem, part string) ColumnElem {
 	// Add the given date part as a parameter
 	c.inner = FuncClause{
 		clause: ArrayClause{
