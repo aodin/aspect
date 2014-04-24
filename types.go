@@ -9,6 +9,13 @@ type dbType interface {
 	Create(Dialect) (string, error)
 }
 
+type Text struct{}
+
+func (s Text) Create(d Dialect) (string, error) {
+	compiled := "TEXT"
+	return compiled, nil
+}
+
 type String struct {
 	Length     int
 	NotNull    bool
