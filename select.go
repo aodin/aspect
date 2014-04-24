@@ -14,7 +14,7 @@ type Selectable interface {
 type SelectStmt struct {
 	tables  []*TableElem
 	columns []ColumnElem
-	join    *JoinStmt
+	joins   []JoinStmt
 	cond    Clause
 	groupBy []ColumnElem
 	order   []OrderedColumn
@@ -67,12 +67,14 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 		strings.Join(stmt.CompileColumns(d, params), ", "),
 		strings.Join(stmt.CompileTables(d, params), ", "),
 	)
-	if stmt.join != nil {
-		jc, err := stmt.join.Compile(d, params)
-		if err != nil {
-			return "", err
+	if stmt.joins != nil && len(stmt.joins) > 0 {
+		for _, join := range stmt.joins {
+			jc, err := join.Compile(d, params)
+			if err != nil {
+				return "", err
+			}
+			compiled += jc
 		}
-		compiled += jc
 	}
 	if stmt.cond != nil {
 		cc, err := stmt.cond.Compile(d, params)
@@ -108,19 +110,33 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 
 // Add a JOIN ... ON to the SELECT statement
 func (stmt SelectStmt) Join(pre, post ColumnElem) SelectStmt {
+	//Get the table of the pre element
+	preTable := pre.Table()
+
+	// If the preTable is not in the current select statement, add it
+	if !stmt.TableExists(preTable.Name) {
+		stmt.tables = append(stmt.tables, preTable)
+	}
+
 	// Get the table of the post element
-	table := post.Table()
+	postTable := post.Table()
 
 	// Remove the post table from the list of selected tables
 	for i, t := range stmt.tables {
-		if t == table {
+		if t == postTable {
 			stmt.tables = append(stmt.tables[:i], stmt.tables[i+1:]...)
 			break
 		}
 	}
 
 	// Add the join structure to the select
-	stmt.join = &JoinStmt{pre: pre, post: post, table: table}
+	if stmt.joins == nil {
+		stmt.joins = make([]JoinStmt, 0)
+	}
+	stmt.joins = append(
+		stmt.joins,
+		JoinStmt{method: "JOIN", pre: pre, post: post, table: postTable},
+	)
 	return stmt
 }
 
