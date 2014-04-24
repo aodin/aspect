@@ -2,6 +2,7 @@ package aspect
 
 import (
 	"fmt"
+	"reflect"
 )
 
 /*
@@ -127,6 +128,26 @@ func (c ColumnElem) GTE(i interface{}) BinaryClause {
 		pre:  c,
 		post: &Parameter{i},
 		sep:  " >= ",
+	}
+}
+
+// interface is used because the args may be of any type: ints, strings...
+func (c ColumnElem) In(args interface{}) BinaryClause {
+	// Create the inner array clause and parameters
+	a := ArrayClause{clauses: make([]Clause, 0), sep: ", "}
+
+	// Use reflect to get arguments from the interface only if it is a slice
+	s := reflect.ValueOf(args)
+	switch s.Kind() {
+	case reflect.Slice:
+		for i := 0; i < s.Len(); i++ {
+			a.clauses = append(a.clauses, &Parameter{s.Index(i).Interface()})
+		}
+	}
+	return BinaryClause{
+		pre:  c,
+		post: FuncClause{clause: a},
+		sep:  " IN ",
 	}
 }
 

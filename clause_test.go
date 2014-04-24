@@ -57,4 +57,10 @@ func TestClauses(t *testing.T) {
 		`"users"."id" < $1 OR "users"."id" > $2`,
 		2,
 	)
+	expectedPostGres(
+		t,
+		id.In([]int64{1, 5}),
+		`"users"."id" IN ($1, $2)`,
+		2,
+	)
 }
