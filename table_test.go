@@ -26,6 +26,12 @@ var views = Table("views",
 	Column("timestamp", Timestamp{}),
 )
 
+var edges = Table("edges",
+	Column("vertex_a", Integer{}),
+	Column("vertex_b", Integer{}),
+	Unique("vertex_a", "vertex_b"),
+)
+
 // A short test for testing that an SQL statement was compiled as expected
 func expectedPostGres(t *testing.T, stmt Compiles, expected string, p int) {
 	params := Params()

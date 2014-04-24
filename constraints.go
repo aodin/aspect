@@ -5,14 +5,9 @@ import (
 	"strings"
 )
 
-/*
-
-Primary Key
------------
-
-Implements the `TableModifier` interface.
-
-*/
+// Primary Key
+// -----------
+// Implements the `TableModifier` interface.
 
 // Simply a list of columns
 type PrimaryKeyArray []string
@@ -56,4 +51,40 @@ func (pk PrimaryKeyArray) Contains(key string) bool {
 // Constructor function for PrimaryKeyArray
 func PrimaryKey(names ...string) PrimaryKeyArray {
 	return PrimaryKeyArray(names)
+}
+
+// Unique
+// -----------
+// A UNIQUE constraint that implements the `TableModifier` interface.
+
+type UniqueConstraint []string
+
+func (uc UniqueConstraint) Create(d Dialect) (string, error) {
+	cs := make([]string, len(uc))
+	for i, c := range uc {
+		cs[i] = fmt.Sprintf(`"%s"`, c)
+	}
+	return fmt.Sprintf("UNIQUE (%s)", strings.Join(cs, ", ")), nil
+}
+
+// To implement the `TableModifier` interface, the struct must
+// have method Modify(). It does not need to modify its parent table.
+func (uc UniqueConstraint) Modify(table *TableElem) error {
+	// Confirm that all columns in the primary key exists
+	for _, name := range uc {
+		// TODO Aggregate errors
+		_, exists := table.C[name]
+		if !exists {
+			return fmt.Errorf("No column with the name '%s' exists in the table '%s'. Is it declared after the PrimaryKey declaration?", name, table.Name)
+		}
+		// TODO Set the attributes of the column type?
+	}
+
+	// TODO Add the unique clause to the table
+	return nil
+}
+
+// Constructor function for UniqueConstraint
+func Unique(names ...string) UniqueConstraint {
+	return UniqueConstraint(names)
 }
