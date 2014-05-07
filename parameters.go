@@ -12,6 +12,10 @@ func (p *Parameters) Add(i interface{}) int {
 	return len(p.args)
 }
 
+func (p *Parameters) Args() []interface{} {
+	return p.args
+}
+
 func (p *Parameters) Len() int {
 	return len(p.args)
 }
