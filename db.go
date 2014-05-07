@@ -19,6 +19,10 @@ func (db *DB) Close() error {
 	return db.conn.Close()
 }
 
+func (db *DB) Dialect() Dialect {
+	return db.dialect
+}
+
 func (db *DB) Execute(stmt Executable, args ...interface{}) (*Result, error) {
 	// Initialize a list of empty parameters
 	params := Params()
