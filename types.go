@@ -81,6 +81,19 @@ func (s Timestamp) Create(d Dialect) (string, error) {
 	return compiled, nil
 }
 
+type DateType struct {
+	NotNull    bool
+	PrimaryKey bool
+}
+
+func (s DateType) Create(d Dialect) (string, error) {
+	compiled := "DATE"
+	if s.NotNull {
+		compiled += " NOT NULL"
+	}
+	return compiled, nil
+}
+
 type Boolean struct {
 	NotNull bool
 }
