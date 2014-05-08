@@ -99,6 +99,14 @@ func (c ColumnElem) Equals(i interface{}) BinaryClause {
 	}
 }
 
+func (c ColumnElem) DoesNotEqual(i interface{}) BinaryClause {
+	return BinaryClause{
+		pre:  c,
+		post: &Parameter{i},
+		sep:  " != ",
+	}
+}
+
 func (c ColumnElem) LessThan(i interface{}) BinaryClause {
 	return BinaryClause{
 		pre:  c,
