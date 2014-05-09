@@ -45,7 +45,7 @@ func expectedPostGres(t *testing.T, stmt Compiles, expected string, p int) {
 	if params.Len() != p {
 		t.Errorf(
 			"Unexpected number of parameters for %s: %d != %d",
-			compiled,
+			expected,
 			params.Len(),
 			p,
 		)

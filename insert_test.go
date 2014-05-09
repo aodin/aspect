@@ -49,11 +49,19 @@ func TestInsert(t *testing.T) {
 	// Structs do not need to be complete if fields are named
 	admin := user{Name: "admin", Password: "secret"}
 	client := user{Name: "client", Password: "1234"}
-	stmt = Insert(users.C["name"], users.C["password"]).Values(admin, client)
 
+	single := stmt.Values(admin)
 	expectedPostGres(
 		t,
-		stmt,
+		single,
+		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
+		2,
+	)
+
+	bulk := stmt.Values([]user{admin, client})
+	expectedPostGres(
+		t,
+		bulk,
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2), ($3, $4)`,
 		4,
 	)

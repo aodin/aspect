@@ -12,6 +12,8 @@ type InsertStmt struct {
 	columns []ColumnElem
 	args    []interface{}
 	err     error
+	l       int
+	alias   []string
 }
 
 var (
@@ -24,6 +26,11 @@ func (stmt InsertStmt) String() string {
 }
 
 func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
+	// Check for delayed errors
+	if stmt.err != nil {
+		return "", stmt.err
+	}
+
 	c := len(stmt.columns)
 	// No columns? no statement!
 	if c == 0 {
@@ -105,50 +112,67 @@ func fieldAlias(cs []ColumnElem, i interface{}) []string {
 	return alias
 }
 
-// There must be at least one arg
-func (stmt InsertStmt) Values(arg interface{}, args ...interface{}) InsertStmt {
+// Get the value of the field struct by name
+func (stmt *InsertStmt) argsByName(elem reflect.Value) {
+	for _, n := range stmt.alias {
+		stmt.args = append(stmt.args, elem.FieldByName(n).Interface())
+	}
+}
 
-	var l int // Expected length of each argument, set by first arg
-	elem := reflect.Indirect(reflect.ValueOf(arg))
+// Read every value of the struct in order
+func (stmt *InsertStmt) argsByIndex(elem reflect.Value) {
+	for i := 0; i < stmt.l; i += 1 {
+		stmt.args = append(stmt.args, elem.Field(i).Interface())
+	}
+}
+
+// There must be at least one arg
+func (stmt InsertStmt) Values(args interface{}) InsertStmt {
+	// For now, inserts can be performed on pointers or values
+	// TODO If auto-updating fields are required, they will need pointers
+	elem := reflect.Indirect(reflect.ValueOf(args))
 
 	// TODO What if there are existing values attached to the stmt?
+	// Skip these checks if there is a populated alias / l
 
-	// TODO Allow slice types
-	if elem.Kind() == reflect.Struct {
-		// TODO Args must match the types and length of any previous args
-		l = elem.NumField()
-
+	switch elem.Kind() {
+	case reflect.Struct:
 		// If the number of columns does not match the number of fields,
 		// attempt to build an alias object
-		if l != len(stmt.columns) {
+		stmt.l = elem.NumField()
+		if stmt.l != len(stmt.columns) {
 			// TODO confirm that the alias is fully populated
-			alias := fieldAlias(stmt.columns, arg)
+			// TODO fieldAlias should be a method that can only be set once
+			stmt.alias = fieldAlias(stmt.columns, args)
+			stmt.argsByName(elem)
+		} else {
+			stmt.argsByIndex(elem)
+		}
+	case reflect.Slice:
+		sliceLen := elem.Len()
+		if sliceLen < 0 {
+			// TODO There must be values - a delayed error?
+			return stmt
+		}
+		firstElem := elem.Index(0)
 
-			// Get the value of the field struct by name
-			for _, n := range alias {
-				stmt.args = append(stmt.args, elem.FieldByName(n).Interface())
-			}
-			for _, arg := range args {
-				e := reflect.Indirect(reflect.ValueOf(arg))
-				for _, n := range alias {
-					stmt.args = append(stmt.args, e.FieldByName(n).Interface())
-				}
+		// TODO Slice elements must be structs for now
+		stmt.l = firstElem.NumField()
+
+		if stmt.l != len(stmt.columns) {
+			// TODO confirm that the alias is fully populated
+			stmt.alias = fieldAlias(stmt.columns, firstElem.Interface())
+
+			// Add every slice element to the args by field name
+			for i := 0; i < sliceLen; i++ {
+				stmt.argsByName(elem.Index(i))
 			}
 		} else {
-			// Read every value of the struct in order
-			for i := 0; i < l; i += 1 {
-				stmt.args = append(stmt.args, elem.Field(i).Interface())
-			}
-			for _, arg := range args {
-				e := reflect.Indirect(reflect.ValueOf(arg))
-				for i := 0; i < l; i += 1 {
-					stmt.args = append(stmt.args, e.Field(i).Interface())
-				}
+			// And every slice elem's fields to the args
+			for i := 0; i < sliceLen; i++ {
+				stmt.argsByIndex(elem.Index(i))
 			}
 		}
-	} else {
-		// Single value arguments. How many columns are specified by the
-		// insert statement? Group the arguments by the number of columns.
 	}
 	return stmt
 }
@@ -164,19 +188,20 @@ func Insert(column ColumnElem, columns ...ColumnElem) InsertStmt {
 
 	for _, column := range columns {
 		if column.table != stmt.table {
-			// TODO How to handle delayed errors?
-			continue
+			// TODO How to best handle delayed errors?
+			stmt.err = fmt.Errorf("All columns must belong to the same table")
+			break
 		}
 		stmt.columns = append(stmt.columns, column)
 	}
 	return stmt
 }
 
-func InsertTableValues(t *TableElem, arg interface{}, args ...interface{}) InsertStmt {
+func InsertTableValues(t *TableElem, args interface{}) InsertStmt {
 	stmt := InsertStmt{
 		table:   t,
 		columns: t.Columns(),
 		args:    make([]interface{}, 0),
 	}
-	return stmt.Values(arg, args...)
+	return stmt.Values(args)
 }
