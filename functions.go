@@ -26,7 +26,7 @@ func DatePart(c ColumnElem, part string) ColumnElem {
 	// Add the given date part as a parameter
 	c.inner = FuncClause{
 		clause: ArrayClause{
-			clauses: []Clause{&Parameter{part}, c.inner},
+			clauses: []Clause{StringClause{part}, c.inner},
 			sep:     ", ",
 		},
 		f: "DATE_PART",

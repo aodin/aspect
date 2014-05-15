@@ -15,7 +15,7 @@ func TestFunctions(t *testing.T) {
 	expectedPostGres(
 		t,
 		datePart,
-		`DATE_PART($1, "views"."timestamp")`,
-		1,
+		`DATE_PART('quarter', "views"."timestamp")`,
+		0,
 	)
 }

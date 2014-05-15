@@ -10,6 +10,19 @@ type Clause interface {
 	Compiles
 }
 
+type StringClause struct {
+	name string
+}
+
+func (c StringClause) String() string {
+	compiled, _ := c.Compile(&PostGres{}, Params())
+	return compiled
+}
+
+func (c StringClause) Compile(d Dialect, params *Parameters) (string, error) {
+	return fmt.Sprintf(`'%s'`, c.name), nil
+}
+
 // Special clause type used for column selections
 type ColumnClause struct {
 	table *TableElem
