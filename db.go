@@ -48,6 +48,15 @@ func (db *DB) Execute(stmt Executable, args ...interface{}) (*Result, error) {
 	return &Result{rows: rows, stmt: s}, nil
 }
 
+// Execute the query statement and return all results
+func (db *DB) QueryAll(s Executable, i interface{}) error {
+	result, err := db.Execute(s)
+	if err != nil {
+		return err
+	}
+	return result.All(i)
+}
+
 func (db *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
 	return db.conn.Exec(query, args...)
 }
