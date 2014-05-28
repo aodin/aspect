@@ -12,7 +12,7 @@ func Count(c ColumnElem) ColumnElem {
 	return c
 }
 
-func Date(c ColumnElem) ColumnElem {
+func DateOf(c ColumnElem) ColumnElem {
 	c.inner = FuncClause{clause: c.inner, f: "DATE"}
 	return c
 }

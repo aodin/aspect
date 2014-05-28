@@ -9,9 +9,12 @@ func TestFunctions(t *testing.T) {
 	count := Count(views.C["id"])
 	expectedPostGres(t, count, `COUNT("views"."id")`, 0)
 
+	// DATE()
+	date := DateOf(views.C["timestamp"])
+	expectedPostGres(t, date, `DATE("views"."timestamp")`, 0)
+
 	// DATE_PART()
 	datePart := DatePart(views.C["timestamp"], "quarter")
-	// TODO expect one parameter?
 	expectedPostGres(
 		t,
 		datePart,

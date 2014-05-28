@@ -13,7 +13,7 @@ func TestColumn(t *testing.T) {
 	}
 	expectedPostGres(
 		t,
-		Date(views.C["timestamp"].InLocation(denver)),
+		DateOf(views.C["timestamp"].InLocation(denver)),
 		`DATE("views"."timestamp"::TIMESTAMP WITH TIME ZONE AT TIME ZONE $1)`,
 		1,
 	)
