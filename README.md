@@ -3,16 +3,27 @@ Aspect
 
 A relational database toolkit in Go.
 
-### SQL
+The purpose of Aspect is to:
 
-Executing SQL returns a results structure with methods for unpacking returned rows into structs and other data types.
+1. Create reusable and cross-dialect SQL statements
+2. Provide a complete replacement for the `database/sql` package and required driver packages
+
+Instead of a `struct` to represent SQL schema, Aspect uses a custom `Table` function. To insert and select values, `struct` elements are used, and can be partially populated.
 
 ```go
+package main
+
 import (
-    "fmt"
-    "github.com/aodin/aspect"
-    _ "github.com/lib/pq"
+    . "github.com/aodin/aspect"
+    _ "github.com/aodin/aspect/sqlite3"
     "log"
+)
+
+var Users = Table("users",
+    Column("id", Integer{NotNull: true}),
+    Column("name", String{Length: 32, NotNull: true}),
+    Column("password", String{Length: 128}),
+    PrimaryKey("id"),
 )
 
 type User struct {
@@ -21,63 +32,40 @@ type User struct {
     Password string `db:"password"`
 }
 
-func (u User) String() string {
-    return fmt.Sprintf("%d: %s", u.Id, u.Name)
-}
-
 func main() {
-    conn, err := aspect.Connect(
-        "postgres",
-        "host=localhost port=5432 dbname=db user=postgres password=pass",
-    )
+    db, err := Connect("sqlite3", ":memory:")
     if err != nil {
-        log.Fatal("Could not connect to database")
+        panic(err)
     }
-    defer conn.Close()
+    defer db.Close()
 
-    // Multiple result structs
-    var users []User
-    if err := conn.MustExecuteSQL(`SELECT id, name, password FROM users`).All(&users); err != nil {
-        log.Fatal(err)
+    // Create the users table
+    _, err = db.Execute(Users.Create())
+    if err != nil {
+        panic(err)
     }
-    fmt.Println(users)
-    // [1: admin 2: client 3: daemon]
 
-    // Single result struct
+    // Insert a user
+    // Structs can be inserted by value or reference
+    admin := User{Id: 1, Name: "admin", Password: "secret"}
+    _, err = db.Execute(Users.Insert(admin))
+    if err != nil {
+        panic(err)
+    }
+
+    // Select a user
+    // Query must be given a pointer
     var user User
-    if err = conn.MustExecuteSQL(`SELECT id, name, password FROM users WHERE id = $1`, 1).One(&user); err != nil {
-        log.Fatal(err)
+    err = db.QueryOne(Users.Select(), &user)
+    if err != nil {
+        panic(err)
     }
-    fmt.Println(user)
-    // 1: admin
-
-    // Other result types that match the returned values
-    var ids []int64
-    if err = conn.MustExecuteSQL(`SELECT id FROM users`).All(&ids); err != nil {
-        log.Fatal(err)
-    }
-    fmt.Println(ids)
-    // [1 2 3]
+    log.Println(user)
 }
-
 ```
 
-### Schema
-
-More advanced operations require schemas. A simple users table:
-
-```go
-import (
-    * "github.com/aodin/aspect"
-)
-
-var Users = Table("users",
-    Column("id", Integer{}),
-    Column("name", String{"Length": 32}),
-    Column("password", String{}),
-    PrimaryKey("id"),
-)
-```
+Example Statements
+------------------
 
 ### INSERT
 
@@ -86,7 +74,7 @@ insertUsers := Users.Insert(
     User{1, "admin", "secret"}, 
     User{2, "client", "1234"},
 )
-conn.MustExecute(insertUsers)
+db.Execute(insertUsers)
 ```
 ```sql
 INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3), ($4, $5, $6)
@@ -104,8 +92,8 @@ type User struct {
 admin := User{Name: "admin", Password: "secret"}
 client := User{Name: "client", Password: "1234"}
 
-insert := Insert(Users.C["name"], Users.C["password"]).Values(admin, client)
-conn.MustExecute(insert)
+insertStmt := Insert(Users.C["name"], Users.C["password"]).Values(admin, client)
+db.Execute(insertStmt)
 ```
 
 ```sql
@@ -131,10 +119,7 @@ Results can be returned directly into structs:
 
 ```go
 var users []User
-result, err := conn.Execute(Users.Select())
-if err != nil {
-    result.All(&users)
-}
+err := db.QueryAll(Users.Select(), &users)
 fmt.Println(users)
 // [1: admin 2: client 3: daemon]
 ```
@@ -151,7 +136,9 @@ SELECT "users"."id" FROM "users" ORDER BY "users"."id" DESC
 
 ```go
 var ids []int64
-conn.MustExecute(s).All(&ids)
+if err := db.QueryAll(s, &ids); err != nil {
+    log.Fatal(err)
+}
 fmt.Println(ids)
 // [3, 2, 1]
 ```
