@@ -4,6 +4,9 @@ import (
 	"database/sql"
 )
 
+// TODO The db should be able to determine if a stmt should be used with
+// either Exec() or Query()
+
 // TODO How to distiguish between full statements and fragments?
 type Executable interface {
 	Compiles
@@ -23,7 +26,7 @@ func (db *DB) Dialect() Dialect {
 	return db.dialect
 }
 
-func (db *DB) Execute(stmt Executable, args ...interface{}) (*Result, error) {
+func (db *DB) Query(stmt Executable, args ...interface{}) (*Result, error) {
 	// Initialize a list of empty parameters
 	params := Params()
 
@@ -35,7 +38,7 @@ func (db *DB) Execute(stmt Executable, args ...interface{}) (*Result, error) {
 
 	// TODO When to use the given arguments?
 	// TODO If args are structs, maps, or slices, unpack them
-	// Use any arguments given in Execute() over compiled arguments
+	// Use any arguments given to Query() over compiled arguments
 	if len(args) == 0 {
 		args = params.args
 	}
@@ -48,57 +51,45 @@ func (db *DB) Execute(stmt Executable, args ...interface{}) (*Result, error) {
 	return &Result{rows: rows, stmt: s}, nil
 }
 
-// Execute the query statement and populate the interface with all results
+// Query the statement and populate the interface with all results
 func (db *DB) QueryAll(s Executable, i interface{}) error {
-	result, err := db.Execute(s)
+	result, err := db.Query(s)
 	if err != nil {
 		return err
 	}
 	return result.All(i)
 }
 
-func (db *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return db.conn.Exec(query, args...)
-}
-
-func (db *DB) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	return db.conn.Query(query, args...)
-}
-
-// A version of Execute that will panic if there is an error
-func (db *DB) MustExecute(stmt Executable, args ...interface{}) *Result {
-	result, err := db.Execute(stmt, args...)
+// Query the statement and populate the interface with one result
+// TODO Return an error if there is more tha one result?
+func (db *DB) QueryOne(s Executable, i interface{}) error {
+	result, err := db.Query(s)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	return result
+	return result.One(i)
 }
 
-func (db *DB) ExecuteSQL(s string, args ...interface{}) (*Result, error) {
-	rows, err := db.conn.Query(s, args...)
-	if err != nil {
-		return nil, err
-	}
-	// Wrap the sql rows in a result
-	return &Result{rows: rows, stmt: s}, nil
-}
+// Execute the statement
+// Execute should be used when no results are expected
+// TODO What should the return type be?
+func (db *DB) Execute(stmt Executable, args ...interface{}) (sql.Result, error) {
+	// Initialize a list of empty parameters
+	params := Params()
 
-// A version of Execute that will panic if there is an error
-func (db *DB) MustExecuteSQL(s string, args ...interface{}) *Result {
-	result, err := db.ExecuteSQL(s, args...)
-	if err != nil {
-		panic(err)
-	}
-	return result
-}
-
-func ConnectUsing(driver string, db *sql.DB) (*DB, error) {
-	// Get the dialect
-	dialect, err := GetDialect(driver)
+	// TODO Columns are needed for name return types, tag matching, etc...
+	s, err := stmt.Compile(db.dialect, params)
 	if err != nil {
 		return nil, err
 	}
-	return &DB{conn: db, dialect: dialect}, nil
+
+	// TODO When to use the given arguments?
+	// TODO If args are structs, maps, or slices, unpack them
+	// Use any arguments given to Query() over compiled arguments
+	if len(args) == 0 {
+		args = params.args
+	}
+	return db.conn.Exec(s, args...)
 }
 
 func Connect(driver, credentials string) (*DB, error) {

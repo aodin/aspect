@@ -14,12 +14,6 @@ func (d *PostGres) Parameterize(i int) string {
 	return fmt.Sprintf(`$%d`, i)
 }
 
-type Sqlite3 struct{}
-
-func (d *Sqlite3) Parameterize(i int) string {
-	return `?`
-}
-
 // Registry of available dialects
 var dialects = make(map[string]Dialect)
 
@@ -44,5 +38,4 @@ func GetDialect(name string) (Dialect, error) {
 func init() {
 	// Register all declared dialects
 	RegisterDialect("postgres", &PostGres{})
-	RegisterDialect("sqlite3", &Sqlite3{})
 }
