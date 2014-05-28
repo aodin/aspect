@@ -61,9 +61,11 @@ func (db *DB) QueryAll(s Executable, i interface{}) error {
 }
 
 // Query the statement and populate the interface with one result
-// TODO Return an error if there is more tha one result?
+// TODO Return an error if there is more than one result?
 func (db *DB) QueryOne(s Executable, i interface{}) error {
 	result, err := db.Query(s)
+	// Close the result rows or sqlite3 will open another connection
+	defer result.rows.Close()
 	if err != nil {
 		return err
 	}

@@ -27,10 +27,15 @@ var views = Table("views",
 )
 
 var edges = Table("edges",
-	Column("vertex_a", Integer{}),
-	Column("vertex_b", Integer{}),
-	Unique("vertex_a", "vertex_b"),
+	Column("a", Integer{}),
+	Column("b", Integer{}),
+	PrimaryKey("a", "b"),
 )
+
+type edge struct {
+	A int64 `db:"a"`
+	B int64 `db:"b"`
+}
 
 // A short test for testing that an SQL statement was compiled as expected
 func expectedPostGres(t *testing.T, stmt Compiles, expected string, p int) {

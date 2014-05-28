@@ -26,7 +26,7 @@ type TableModifier interface {
 
 type TableElem struct {
 	Name  string
-	C     ColumnSet // TODO Should this be a pointer?
+	C     ColumnSet
 	order []string
 	pk    PrimaryKeyArray
 }
