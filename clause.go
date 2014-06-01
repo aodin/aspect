@@ -56,6 +56,10 @@ func (c FuncClause) Compile(d Dialect, params *Parameters) (string, error) {
 	return fmt.Sprintf("%s(%s)", c.f, cc), nil
 }
 
+func MakeFuncClause(f string, clause Clause) FuncClause {
+	return FuncClause{f: f, clause: clause}
+}
+
 type BinaryClause struct {
 	pre, post Clause
 	sep       string
@@ -98,6 +102,10 @@ func (c ArrayClause) Compile(d Dialect, params *Parameters) (string, error) {
 		}
 	}
 	return strings.Join(compiled, c.sep), nil
+}
+
+func MakeArrayClause(sep string, clauses []Clause) ArrayClause {
+	return ArrayClause{sep: sep, clauses: clauses}
 }
 
 func AllOf(clauses ...Clause) ArrayClause {

@@ -39,6 +39,15 @@ func (c ColumnElem) String() string {
 	return compiled
 }
 
+func (c ColumnElem) Inner() Clause {
+	return c.inner
+}
+
+func (c ColumnElem) SetInner(clause Clause) ColumnElem {
+	c.inner = clause
+	return c
+}
+
 func (c ColumnElem) Compile(d Dialect, params *Parameters) (string, error) {
 	if c.inner == nil {
 		// Old behavior

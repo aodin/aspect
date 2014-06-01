@@ -136,6 +136,30 @@ func (s Double) Create(d Dialect) (string, error) {
 	return compiled, nil
 }
 
+type Real struct {
+	NotNull    bool
+	Unique     bool
+	PrimaryKey bool
+}
+
+func (s Real) Create(d Dialect) (string, error) {
+	compiled := "REAL"
+	attrs := make([]string, 0)
+	if s.PrimaryKey {
+		attrs = append(attrs, "PRIMARY KEY")
+	}
+	if s.NotNull {
+		attrs = append(attrs, "NOT NULL")
+	}
+	if s.Unique {
+		attrs = append(attrs, "UNIQUE")
+	}
+	if len(attrs) > 0 {
+		compiled += fmt.Sprintf(" %s", strings.Join(attrs, " "))
+	}
+	return compiled, nil
+}
+
 type Inet struct {
 	NotNull    bool
 	Unique     bool
