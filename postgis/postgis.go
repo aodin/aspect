@@ -3,7 +3,10 @@ package postgis
 import (
 	"fmt"
 	"github.com/aodin/aspect"
+	_ "github.com/aodin/aspect/postgres"
 )
+
+// Importing PostGIS implies you'll be using PostGres
 
 type LatLong struct {
 	Latitude, Longitude float64
