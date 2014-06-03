@@ -10,19 +10,6 @@ type Clause interface {
 	Compiles
 }
 
-type StringClause struct {
-	name string
-}
-
-func (c StringClause) String() string {
-	compiled, _ := c.Compile(&PostGres{}, Params())
-	return compiled
-}
-
-func (c StringClause) Compile(d Dialect, params *Parameters) (string, error) {
-	return fmt.Sprintf(`'%s'`, c.name), nil
-}
-
 // Special clause type used for column selections
 type ColumnClause struct {
 	table *TableElem
@@ -38,9 +25,23 @@ func (c ColumnClause) Compile(d Dialect, params *Parameters) (string, error) {
 	return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name), nil
 }
 
+// TODO This is a dangerous clause that leads to parameters not being escaped
+type StringClause struct {
+	Name string
+}
+
+func (c StringClause) String() string {
+	compiled, _ := c.Compile(&PostGres{}, Params())
+	return compiled
+}
+
+func (c StringClause) Compile(d Dialect, params *Parameters) (string, error) {
+	return fmt.Sprintf(`'%s'`, c.Name), nil
+}
+
 type FuncClause struct {
-	clause Clause
-	f      string
+	Inner Clause
+	F     string
 }
 
 func (c FuncClause) String() string {
@@ -49,20 +50,16 @@ func (c FuncClause) String() string {
 }
 
 func (c FuncClause) Compile(d Dialect, params *Parameters) (string, error) {
-	cc, err := c.clause.Compile(d, params)
+	cc, err := c.Inner.Compile(d, params)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s(%s)", c.f, cc), nil
-}
-
-func MakeFuncClause(f string, clause Clause) FuncClause {
-	return FuncClause{f: f, clause: clause}
+	return fmt.Sprintf("%s(%s)", c.F, cc), nil
 }
 
 type BinaryClause struct {
-	pre, post Clause
-	sep       string
+	Pre, Post Clause
+	Sep       string
 }
 
 func (c BinaryClause) String() string {
@@ -71,20 +68,20 @@ func (c BinaryClause) String() string {
 }
 
 func (c BinaryClause) Compile(d Dialect, params *Parameters) (string, error) {
-	prec, err := c.pre.Compile(d, params)
+	prec, err := c.Pre.Compile(d, params)
 	if err != nil {
 		return "", err
 	}
-	postc, err := c.post.Compile(d, params)
+	postc, err := c.Post.Compile(d, params)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s%s%s", prec, c.sep, postc), nil
+	return fmt.Sprintf("%s%s%s", prec, c.Sep, postc), nil
 }
 
 type ArrayClause struct {
-	clauses []Clause
-	sep     string
+	Clauses []Clause
+	Sep     string
 }
 
 func (c ArrayClause) String() string {
@@ -93,19 +90,15 @@ func (c ArrayClause) String() string {
 }
 
 func (c ArrayClause) Compile(d Dialect, params *Parameters) (string, error) {
-	compiled := make([]string, len(c.clauses))
+	compiled := make([]string, len(c.Clauses))
 	var err error
-	for i, clause := range c.clauses {
+	for i, clause := range c.Clauses {
 		compiled[i], err = clause.Compile(d, params)
 		if err != nil {
 			return "", err
 		}
 	}
-	return strings.Join(compiled, c.sep), nil
-}
-
-func MakeArrayClause(sep string, clauses []Clause) ArrayClause {
-	return ArrayClause{sep: sep, clauses: clauses}
+	return strings.Join(compiled, c.Sep), nil
 }
 
 func AllOf(clauses ...Clause) ArrayClause {

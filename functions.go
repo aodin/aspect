@@ -3,33 +3,33 @@ package aspect
 import ()
 
 func Avg(c ColumnElem) ColumnElem {
-	c.inner = FuncClause{clause: c.inner, f: "AVG"}
+	c.inner = FuncClause{Inner: c.inner, F: "AVG"}
 	return c
 }
 
 func Count(c ColumnElem) ColumnElem {
-	c.inner = FuncClause{clause: c.inner, f: "COUNT"}
+	c.inner = FuncClause{Inner: c.inner, F: "COUNT"}
 	return c
 }
 
 func DateOf(c ColumnElem) ColumnElem {
-	c.inner = FuncClause{clause: c.inner, f: "DATE"}
+	c.inner = FuncClause{Inner: c.inner, F: "DATE"}
 	return c
 }
 
 func Max(c ColumnElem) ColumnElem {
-	c.inner = FuncClause{clause: c.inner, f: "MAX"}
+	c.inner = FuncClause{Inner: c.inner, F: "MAX"}
 	return c
 }
 
 func DatePart(c ColumnElem, part string) ColumnElem {
 	// Add the given date part as a parameter
 	c.inner = FuncClause{
-		clause: ArrayClause{
-			clauses: []Clause{StringClause{part}, c.inner},
-			sep:     ", ",
+		Inner: ArrayClause{
+			Clauses: []Clause{StringClause{part}, c.inner},
+			Sep:     ", ",
 		},
-		f: "DATE_PART",
+		F: "DATE_PART",
 	}
 	return c
 }

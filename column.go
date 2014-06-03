@@ -102,69 +102,70 @@ func (c ColumnElem) NullsLast() OrderedColumn {
 
 func (c ColumnElem) Equals(i interface{}) BinaryClause {
 	return BinaryClause{
-		pre:  c,
-		post: &Parameter{i},
-		sep:  " = ",
+		Pre:  c,
+		Post: &Parameter{i},
+		Sep:  " = ",
 	}
 }
 
 func (c ColumnElem) DoesNotEqual(i interface{}) BinaryClause {
 	return BinaryClause{
-		pre:  c,
-		post: &Parameter{i},
-		sep:  " != ",
+		Pre:  c,
+		Post: &Parameter{i},
+		Sep:  " != ",
 	}
 }
 
 func (c ColumnElem) LessThan(i interface{}) BinaryClause {
 	return BinaryClause{
-		pre:  c,
-		post: &Parameter{i},
-		sep:  " < ",
+		Pre:  c,
+		Post: &Parameter{i},
+		Sep:  " < ",
 	}
 }
 
 func (c ColumnElem) GreaterThan(i interface{}) BinaryClause {
 	return BinaryClause{
-		pre:  c,
-		post: &Parameter{i},
-		sep:  " > ",
+		Pre:  c,
+		Post: &Parameter{i},
+		Sep:  " > ",
 	}
 }
 
 func (c ColumnElem) LTE(i interface{}) BinaryClause {
 	return BinaryClause{
-		pre:  c,
-		post: &Parameter{i},
-		sep:  " <= ",
+		Pre:  c,
+		Post: &Parameter{i},
+		Sep:  " <= ",
 	}
 }
 
 func (c ColumnElem) GTE(i interface{}) BinaryClause {
 	return BinaryClause{
-		pre:  c,
-		post: &Parameter{i},
-		sep:  " >= ",
+		Pre:  c,
+		Post: &Parameter{i},
+		Sep:  " >= ",
 	}
 }
 
-// interface is used because the args may be of any type: ints, strings...
+// An interface is used because the args may be of any type: ints, strings...
+// TODO an error if something other than a slice is added?
 func (c ColumnElem) In(args interface{}) BinaryClause {
 	// Create the inner array clause and parameters
-	a := ArrayClause{clauses: make([]Clause, 0), sep: ", "}
+	a := ArrayClause{Clauses: make([]Clause, 0), Sep: ", "}
 
 	// Use reflect to get arguments from the interface only if it is a slice
 	s := reflect.ValueOf(args)
 	switch s.Kind() {
 	case reflect.Slice:
 		for i := 0; i < s.Len(); i++ {
-			a.clauses = append(a.clauses, &Parameter{s.Index(i).Interface()})
+			a.Clauses = append(a.Clauses, &Parameter{s.Index(i).Interface()})
 		}
 	}
 	return BinaryClause{
-		pre:  c,
-		post: FuncClause{clause: a},
-		sep:  " IN ",
+		Pre:  c,
+		Post: FuncClause{Inner: a},
+		Sep:  " IN ",
 	}
 }
 
