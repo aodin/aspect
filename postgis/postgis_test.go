@@ -2,16 +2,18 @@ package postgis
 
 import (
 	"github.com/aodin/aspect"
+	"github.com/aodin/aspect/postgres"
 	"testing"
 )
 
 var shapes = aspect.Table("shapes",
-	aspect.Column("geom", GeometryPolygon{4326}),
+	aspect.Column("pt", Geometry{Geom: Point{}}),
+	aspect.Column("area", Geometry{Polygon{}, 4326}),
 )
 
 func expectedPostGres(t *testing.T, stmt aspect.Compiles, expected string, p int) {
 	params := aspect.Params()
-	compiled, err := stmt.Compile(&aspect.PostGres{}, params)
+	compiled, err := stmt.Compile(&postgres.PostGres{}, params)
 	if err != nil {
 		t.Error(err)
 	}
@@ -28,12 +30,12 @@ func expectedPostGres(t *testing.T, stmt aspect.Compiles, expected string, p int
 	}
 }
 
-func TestPoint(t *testing.T) {
-	p := Point{39.739167, -104.984722}
+func TestLatLong(t *testing.T) {
+	p := LatLong{39.739167, -104.984722}
 	expectedPostGres(
 		t,
 		p,
-		`ST_GeometryFromText('POINT(-104.984722 39.739167)', 4326)`,
+		`ST_SetSRID(ST_Point(-104.984722 39.739167), 4326)::geometry`,
 		0,
 	)
 }
@@ -41,13 +43,13 @@ func TestPoint(t *testing.T) {
 func TestWithin(t *testing.T) {
 	expectedPostGres(
 		t,
-		Within(shapes.C["geom"], Point{39.739167, -104.984722}),
-		`ST_Within(ST_GeometryFromText('POINT(-104.984722 39.739167)', 4326), "shapes"."geom")`,
+		Within(shapes.C["area"], Point{-104.984722, 39.739167}),
+		`ST_Within(ST_Point(-104.984722 39.739167), "shapes"."area")`,
 		0,
 	)
 }
 
 func TestGeoJSON(t *testing.T) {
-	c := GeoJSON(shapes.C["geom"])
-	expectedPostGres(t, c, `ST_AsGeoJSON("shapes"."geom")`, 0)
+	c := AsGeoJSON(shapes.C["area"])
+	expectedPostGres(t, c, `ST_AsGeoJSON("shapes"."area")`, 0)
 }
