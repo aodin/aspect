@@ -9,7 +9,7 @@ type DropStmt struct {
 }
 
 func (stmt DropStmt) String() string {
-	c, _ := stmt.Compile(&PostGres{}, Params())
+	c, _ := stmt.Compile(&defaultDialect{}, Params())
 	return c
 }
 

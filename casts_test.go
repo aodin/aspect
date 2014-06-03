@@ -11,7 +11,7 @@ func TestColumn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectedPostGres(
+	expectedSQL(
 		t,
 		DateOf(views.C["timestamp"].InLocation(denver)),
 		`DATE("views"."timestamp"::TIMESTAMP WITH TIME ZONE AT TIME ZONE $1)`,

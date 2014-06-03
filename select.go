@@ -57,7 +57,7 @@ func (stmt SelectStmt) CompileColumns(d Dialect, params *Parameters) []string {
 }
 
 func (stmt SelectStmt) String() string {
-	compiled, _ := stmt.Compile(&PostGres{}, Params())
+	compiled, _ := stmt.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 

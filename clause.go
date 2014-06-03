@@ -17,7 +17,7 @@ type ColumnClause struct {
 }
 
 func (c ColumnClause) String() string {
-	compiled, _ := c.Compile(&PostGres{}, Params())
+	compiled, _ := c.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 
@@ -31,12 +31,26 @@ type StringClause struct {
 }
 
 func (c StringClause) String() string {
-	compiled, _ := c.Compile(&PostGres{}, Params())
+	compiled, _ := c.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 
 func (c StringClause) Compile(d Dialect, params *Parameters) (string, error) {
 	return fmt.Sprintf(`'%s'`, c.Name), nil
+}
+
+// TODO This is a dangerous clause that leads to parameters not being escaped
+type IntClause struct {
+	D int
+}
+
+func (c IntClause) String() string {
+	compiled, _ := c.Compile(&defaultDialect{}, Params())
+	return compiled
+}
+
+func (c IntClause) Compile(d Dialect, params *Parameters) (string, error) {
+	return fmt.Sprintf(`%d`, c.D), nil
 }
 
 type FuncClause struct {
@@ -45,7 +59,7 @@ type FuncClause struct {
 }
 
 func (c FuncClause) String() string {
-	compiled, _ := c.Compile(&PostGres{}, Params())
+	compiled, _ := c.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 
@@ -63,7 +77,7 @@ type BinaryClause struct {
 }
 
 func (c BinaryClause) String() string {
-	compiled, _ := c.Compile(&PostGres{}, Params())
+	compiled, _ := c.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 
@@ -85,7 +99,7 @@ type ArrayClause struct {
 }
 
 func (c ArrayClause) String() string {
-	compiled, _ := c.Compile(&PostGres{}, Params())
+	compiled, _ := c.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 

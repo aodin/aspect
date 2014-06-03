@@ -35,7 +35,7 @@ type ColumnElem struct {
 }
 
 func (c ColumnElem) String() string {
-	compiled, _ := c.Compile(&PostGres{}, Params())
+	compiled, _ := c.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 

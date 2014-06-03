@@ -8,9 +8,10 @@ type Dialect interface {
 	Parameterize(int) string
 }
 
-type PostGres struct{}
+// Test dialect - uses postgres style parameterization
+type defaultDialect struct{}
 
-func (d *PostGres) Parameterize(i int) string {
+func (d *defaultDialect) Parameterize(i int) string {
 	return fmt.Sprintf(`$%d`, i)
 }
 
@@ -33,9 +34,4 @@ func GetDialect(name string) (Dialect, error) {
 		return nil, fmt.Errorf("aspect: unknown Dialect %s (did you remember to import it?)", name)
 	}
 	return d, nil
-}
-
-func init() {
-	// Register all declared dialects
-	RegisterDialect("postgres", &PostGres{})
 }

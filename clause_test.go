@@ -9,7 +9,7 @@ func TestClauses(t *testing.T) {
 	id := users.C["id"]
 
 	// Column clause
-	expectedPostGres(
+	expectedSQL(
 		t,
 		ColumnClause{table: users, name: id.Name()},
 		`"users"."id"`,
@@ -17,7 +17,7 @@ func TestClauses(t *testing.T) {
 	)
 
 	// Binary clause
-	expectedPostGres(
+	expectedSQL(
 		t,
 		id.Equals(2),
 		`"users"."id" = $1`,
@@ -29,7 +29,7 @@ func TestClauses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectedPostGres(
+	expectedSQL(
 		t,
 		views.C["timestamp"].InLocation(denver),
 		`"views"."timestamp"::TIMESTAMP WITH TIME ZONE AT TIME ZONE $1`,
@@ -37,7 +37,7 @@ func TestClauses(t *testing.T) {
 	)
 
 	// Array clause of binary clauses
-	expectedPostGres(
+	expectedSQL(
 		t,
 		AllOf(id.LessThan(5), id.GreaterThan(1)),
 		`"users"."id" < $1 AND "users"."id" > $2`,
@@ -45,19 +45,19 @@ func TestClauses(t *testing.T) {
 	)
 
 	// Composite clauses
-	expectedPostGres(
+	expectedSQL(
 		t,
 		id.Between(2, 5),
 		`"users"."id" >= $1 AND "users"."id" <= $2`,
 		2,
 	)
-	expectedPostGres(
+	expectedSQL(
 		t,
 		id.NotBetween(2, 5),
 		`"users"."id" < $1 OR "users"."id" > $2`,
 		2,
 	)
-	expectedPostGres(
+	expectedSQL(
 		t,
 		id.In([]int64{1, 5}),
 		`"users"."id" IN ($1, $2)`,

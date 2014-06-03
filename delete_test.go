@@ -21,7 +21,7 @@ func testFieldIndex(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	// Test a complete delete
-	expectedPostGres(
+	expectedSQL(
 		t,
 		users.Delete(),
 		`DELETE FROM "users"`,
@@ -29,7 +29,7 @@ func TestDelete(t *testing.T) {
 	)
 
 	// Test a delete with a WHERE
-	expectedPostGres(
+	expectedSQL(
 		t,
 		users.Delete().Where(users.C["id"].Equals(1)),
 		`DELETE FROM "users" WHERE "users"."id" = $1`,
@@ -39,14 +39,14 @@ func TestDelete(t *testing.T) {
 	// Delete by a schema's declared primary key
 	admin := user{Id: 1, Name: "admin", Password: "secret"}
 	client := user{Id: 2, Name: "client", Password: "secret"}
-	expectedPostGres(
+	expectedSQL(
 		t,
 		users.Delete(admin),
 		`DELETE FROM "users" WHERE "users"."id" = $1`,
 		1,
 	)
 
-	expectedPostGres(
+	expectedSQL(
 		t,
 		users.Delete(admin, client),
 		`DELETE FROM "users" WHERE "users"."id" IN ($1, $2)`,
@@ -57,7 +57,7 @@ func TestDelete(t *testing.T) {
 	// // edgeB := edge{A:2, B:3}
 
 	// // Test delete with a composite primary key
-	// expectedPostGres(
+	// expectedSQL(
 	// 	t,
 	// 	edges.Delete(edgeA),
 	// 	`DELETE FROM "edges" WHERE "edges"."a" = $1 AND "edges"."b" = $2`,

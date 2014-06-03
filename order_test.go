@@ -7,13 +7,13 @@ import (
 func TestOrder(t *testing.T) {
 	// Asc is implied
 	o := OrderedColumn{inner: users.C["id"]}
-	expectedPostGres(t, o, `"users"."id"`, 0)
+	expectedSQL(t, o, `"users"."id"`, 0)
 
 	// Desc
-	expectedPostGres(t, o.Desc(), `"users"."id" DESC`, 0)
+	expectedSQL(t, o.Desc(), `"users"."id" DESC`, 0)
 
 	// Desc, nulls first
-	expectedPostGres(
+	expectedSQL(
 		t,
 		o.Desc().NullsFirst(),
 		`"users"."id" DESC NULLS FIRST`,
@@ -21,5 +21,5 @@ func TestOrder(t *testing.T) {
 	)
 
 	// Nulls last
-	expectedPostGres(t, o.Asc().NullsLast(), `"users"."id" NULLS LAST`, 0)
+	expectedSQL(t, o.Asc().NullsLast(), `"users"."id" NULLS LAST`, 0)
 }

@@ -18,7 +18,7 @@ type OrderedColumn struct {
 }
 
 func (o OrderedColumn) String() string {
-	compiled, _ := o.Compile(&PostGres{}, Params())
+	compiled, _ := o.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 

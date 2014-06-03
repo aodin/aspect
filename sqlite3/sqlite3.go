@@ -2,7 +2,7 @@ package sqlite3
 
 import (
 	"github.com/aodin/aspect"
-    _ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // Implement the Dialect interface

@@ -38,7 +38,7 @@ func TestInsert(t *testing.T) {
 
 	// By default, an INSERT without values will assume a single entry
 	// TODO This statement should have zero parameters
-	expectedPostGres(
+	expectedSQL(
 		t,
 		stmt,
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
@@ -51,7 +51,7 @@ func TestInsert(t *testing.T) {
 	client := user{Name: "client", Password: "1234"}
 
 	single := stmt.Values(admin)
-	expectedPostGres(
+	expectedSQL(
 		t,
 		single,
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
@@ -59,7 +59,7 @@ func TestInsert(t *testing.T) {
 	)
 
 	bulk := stmt.Values([]user{admin, client})
-	expectedPostGres(
+	expectedSQL(
 		t,
 		bulk,
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2), ($3, $4)`,

@@ -30,7 +30,7 @@ type Parameter struct {
 }
 
 func (p *Parameter) String() string {
-	compiled, _ := p.Compile(&PostGres{}, Params())
+	compiled, _ := p.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 

@@ -5,5 +5,5 @@ import (
 )
 
 func TestDropStmt(t *testing.T) {
-	expectedPostGres(t, users.Drop(), `DROP TABLE "users"`, 0)
+	expectedSQL(t, users.Drop(), `DROP TABLE "users"`, 0)
 }

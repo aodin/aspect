@@ -22,7 +22,7 @@ var relations = Table("relations",
 
 func TestJoinStmt(t *testing.T) {
 	a := Select(tableA).Join(tableA.C["id"], relations.C["a_id"])
-	expectedPostGres(
+	expectedSQL(
 		t,
 		a,
 		`SELECT "a"."id", "a"."value" FROM "a" JOIN "relations" ON "a"."id" = "relations"."a_id"`,
@@ -39,7 +39,7 @@ func TestJoinStmt(t *testing.T) {
 		relations.C["b_id"],
 		tableB.C["id"],
 	)
-	expectedPostGres(
+	expectedSQL(
 		t,
 		b,
 		`SELECT "a"."value", "b"."value" FROM "relations" JOIN "a" ON "relations"."a_id" = "a"."id" JOIN "b" ON "relations"."b_id" = "b"."id"`,

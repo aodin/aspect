@@ -10,7 +10,7 @@ type CreateStmt struct {
 }
 
 func (stmt CreateStmt) String() string {
-	c, _ := stmt.Compile(&PostGres{}, Params())
+	c, _ := stmt.Compile(&defaultDialect{}, Params())
 	return c
 }
 

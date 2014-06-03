@@ -12,7 +12,7 @@ type DeleteStmt struct {
 }
 
 func (stmt DeleteStmt) String() string {
-	compiled, _ := stmt.Compile(&PostGres{}, Params())
+	compiled, _ := stmt.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 
