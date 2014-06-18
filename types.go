@@ -69,12 +69,16 @@ func (s Integer) Create(d Dialect) (string, error) {
 }
 
 type Timestamp struct {
-	NotNull    bool
-	PrimaryKey bool
+	NotNull      bool
+	PrimaryKey   bool
+	WithTimezone bool
 }
 
 func (s Timestamp) Create(d Dialect) (string, error) {
-	compiled := "DATETIME"
+	compiled := "TIMESTAMP"
+	if s.WithTimezone {
+		compiled += " WITH TIME ZONE"
+	}
 	if s.NotNull {
 		compiled += " NOT NULL"
 	}
