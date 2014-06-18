@@ -82,15 +82,21 @@ func (c BinaryClause) String() string {
 }
 
 func (c BinaryClause) Compile(d Dialect, params *Parameters) (string, error) {
-	prec, err := c.Pre.Compile(d, params)
-	if err != nil {
-		return "", err
+	var pre, post string
+	var err error
+	if c.Pre != nil {
+		pre, err = c.Pre.Compile(d, params)
+		if err != nil {
+			return "", err
+		}
 	}
-	postc, err := c.Post.Compile(d, params)
-	if err != nil {
-		return "", err
+	if c.Post != nil {
+		post, err = c.Post.Compile(d, params)
+		if err != nil {
+			return "", err
+		}
 	}
-	return fmt.Sprintf("%s%s%s", prec, c.Sep, postc), nil
+	return fmt.Sprintf("%s%s%s", pre, c.Sep, post), nil
 }
 
 type ArrayClause struct {

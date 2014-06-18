@@ -35,7 +35,7 @@ func TestLatLong(t *testing.T) {
 	expectedPostGres(
 		t,
 		p,
-		`ST_SetSRID(ST_Point(-104.984722 39.739167), 4326)::geometry`,
+		`ST_SetSRID(ST_Point(-104.984722, 39.739167), 4326)::geometry`,
 		0,
 	)
 }
@@ -44,7 +44,7 @@ func TestWithin(t *testing.T) {
 	expectedPostGres(
 		t,
 		Within(shapes.C["area"], Point{-104.984722, 39.739167}),
-		`ST_Within(ST_Point(-104.984722 39.739167), "shapes"."area")`,
+		`ST_Within(ST_Point(-104.984722, 39.739167), "shapes"."area")`,
 		0,
 	)
 }
