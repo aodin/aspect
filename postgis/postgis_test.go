@@ -35,7 +35,7 @@ func TestLatLong(t *testing.T) {
 	expectedPostGres(
 		t,
 		p,
-		`ST_SetSRID(ST_Point(-104.984722, 39.739167), 4326)::geometry`,
+		`ST_SetSRID(ST_Point(-104.984722, 39.739167), 4326)::geography`,
 		0,
 	)
 }

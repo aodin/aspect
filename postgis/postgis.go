@@ -16,7 +16,7 @@ type LatLong struct {
 // TODO parameterization
 func (p LatLong) Compile(d aspect.Dialect, params *aspect.Parameters) (string, error) {
 	return fmt.Sprintf(
-		`ST_SetSRID(ST_Point(%f, %f), 4326)::geometry`,
+		`ST_SetSRID(ST_Point(%f, %f), 4326)::geography`,
 		p.Longitude,
 		p.Latitude,
 	), nil
