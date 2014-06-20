@@ -63,6 +63,10 @@ func (table *TableElem) Select() SelectStmt {
 	return Select(table)
 }
 
+func (table *TableElem) SelectExcept(exceptions ...ColumnElem) SelectStmt {
+	return SelectExcept(table, exceptions...)
+}
+
 // Implement the sql.Selectable interface for building SELECT statements
 func (table *TableElem) Selectable() []ColumnElem {
 	columns := make([]ColumnElem, len(table.order))
