@@ -23,11 +23,21 @@ func Area(s Shape) aspect.Clause {
 	}
 }
 
-// Returns true if the given geometry is completely inside the given column
+// Within returns true if the given shape is completely inside the given column
 func Within(c aspect.ColumnElem, s Shape) aspect.Clause {
 	return aspect.FuncClause{
 		Inner: aspect.ArrayClause{Clauses: []aspect.Clause{s, c}, Sep: ", "},
 		F:     "ST_Within",
+	}
+}
+
+func DWithin(c aspect.ColumnElem, s Shape, d int) aspect.Clause {
+	return aspect.FuncClause{
+		Inner: aspect.ArrayClause{
+			Clauses: []aspect.Clause{s, c, aspect.IntClause{d}},
+			Sep:     ", ",
+		},
+		F: "ST_DWithin",
 	}
 }
 
