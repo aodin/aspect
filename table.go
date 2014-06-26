@@ -1,29 +1,19 @@
 package aspect
 
-import (
-	"fmt"
-)
+import "fmt"
 
-/*
-
-Table
------
-
-Create using the `Table()` constructor, `TableElem`s represent a Table within the SQL spec.
-
-The Table consists of any number of `TableModifier` interfaces, including `Column`, `ForeignKey`, `Constraint`, and `PrimaryKey` elements.
-
-It will panic when an improper schema is created.
-
-*/
-
-// Allow the implementing element to modify its parent Table.
+// TableModifer is an interface with a single method Modify, which allows
+// elements declared in a table schema to modify the parent table.
 // In the case of a ColumnElem, it will add the column after checking
 // for a namespace collision.
+// TODO make this an internal interface?
 type TableModifier interface {
 	Modify(*TableElem) error
 }
 
+// TableElem is underlying struct that holds an SQL TABLE schema. It is
+// returned from the Table constructor function.
+// TODO make this an internal struct?
 type TableElem struct {
 	Name  string
 	C     ColumnSet
@@ -31,17 +21,24 @@ type TableElem struct {
 	pk    PrimaryKeyArray
 }
 
+// String returns the table name.
 func (table *TableElem) String() string {
 	return table.Name
 }
 
+// PrimaryKey returns the table's primary key array.
+func (table *TableElem) PrimaryKey() PrimaryKeyArray {
+	return table.pk
+}
+
+// Compile implements the Compiles interface allowing its use in statements.
 // TODO Compile might not be the best name for this method, since it is
 // not a target for compilation
 func (table *TableElem) Compile(d Dialect, params *Parameters) string {
 	return fmt.Sprintf(`"%s"`, table.Name)
 }
 
-// Get the table columns in proper order
+// Columns returns the table's columns in proper order.
 func (table *TableElem) Columns() []ColumnElem {
 	columns := make([]ColumnElem, len(table.order))
 	for index, name := range table.order {
@@ -50,24 +47,30 @@ func (table *TableElem) Columns() []ColumnElem {
 	return columns
 }
 
+// Create generates the table's CREATE statement.
 func (table *TableElem) Create() CreateStmt {
 	return CreateStmt{table: table}
 }
 
+// Create generates the table's DROP statement.
 func (table *TableElem) Drop() DropStmt {
 	return DropStmt{table: table}
 }
 
-// Alias for Select(table) that will select all columns in the table
+// Select is an alias for Select(table). It will generate a SELECT statement
+// for all columns in the table.
 func (table *TableElem) Select() SelectStmt {
 	return Select(table)
 }
 
+// SelectExcept is an alias for SelectExcept(table). It will generate a SELECT
+// statement for all columns in the table except those provided as parameters.
 func (table *TableElem) SelectExcept(exceptions ...ColumnElem) SelectStmt {
 	return SelectExcept(table, exceptions...)
 }
 
-// Implement the sql.Selectable interface for building SELECT statements
+// Selectable allows the table to implement the Selectable interface, which
+// builds SELECT statements.
 func (table *TableElem) Selectable() []ColumnElem {
 	columns := make([]ColumnElem, len(table.order))
 	for index, name := range table.order {
@@ -76,7 +79,8 @@ func (table *TableElem) Selectable() []ColumnElem {
 	return columns
 }
 
-// Constructor Method for an DELETE statement tied to this table
+// Delete is an alias for Delete(table). It will generate a DELETE statement
+// for this table and the given arguments.
 func (table *TableElem) Delete(args ...interface{}) DeleteStmt {
 	return Delete(table, args...)
 }
@@ -85,28 +89,22 @@ func (table *TableElem) Insert(args interface{}) InsertStmt {
 	return InsertTableValues(table, args)
 }
 
-// Constructor function
+// Table is the constructor function for TableElem. It is provided a name and
+// any number of columns and constraints that implement the TableModifier
+// interface.
 func Table(name string, elements ...TableModifier) *TableElem {
-	// Create the table with its dynamic elements
-	mapping := ColumnSet{}
-	order := make([]string, 0)
-
-	// TODO Name safety
+	// TODO Confirm that the given name is a valid SQL table name.
 	table := &TableElem{
 		Name:  name,
-		C:     mapping,
-		order: order,
+		C:     ColumnSet{},
+		order: make([]string, 0),
 	}
-
 	// Pass the table to each element for potential modification
 	for _, element := range elements {
-		err := element.Modify(table)
 		// Panic on error since little can be done with a bad schema
-		// TODO Create an error-safe version of Table()? Use case?
-		if err != nil {
+		if err := element.Modify(table); err != nil {
 			panic(err)
 		}
 	}
-
 	return table
 }
