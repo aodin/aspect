@@ -5,13 +5,12 @@ import (
 	"strings"
 )
 
-// Primary Key
-// -----------
-// Implements the `TableModifier` interface.
-
-// Simply a list of columns
+// PrimaryKeyArray is a list of columns representing the table's primary key
+// array. It implements the TableModifier interface.
+// TODO Should this type not be exported?
 type PrimaryKeyArray []string
 
+// Create returns the proper syntax for CREATE TABLE commands.
 func (pk PrimaryKeyArray) Create(d Dialect) (string, error) {
 	cs := make([]string, len(pk))
 	for i, c := range pk {
@@ -20,8 +19,8 @@ func (pk PrimaryKeyArray) Create(d Dialect) (string, error) {
 	return fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(cs, ", ")), nil
 }
 
-// To implement the `TableModifier` interface, the struct must
-// have method Modify(). It does not need to modify its parent table.
+// Modify implements the TableModifier interface. It confirms that every column
+// given exists in the parent table.
 func (pk PrimaryKeyArray) Modify(table *TableElem) error {
 	// Confirm that all columns in the primary key exists
 	for _, name := range pk {
@@ -37,8 +36,7 @@ func (pk PrimaryKeyArray) Modify(table *TableElem) error {
 	return nil
 }
 
-// TODO Compilation and string output
-
+// Contains returns true if the PrimaryKeyArray contains the given column name.
 func (pk PrimaryKeyArray) Contains(key string) bool {
 	for _, name := range pk {
 		if name == key {
@@ -48,17 +46,18 @@ func (pk PrimaryKeyArray) Contains(key string) bool {
 	return false
 }
 
-// Constructor function for PrimaryKeyArray
+// PrimaryKey creates a new PrimaryKeyArray. Only one primary key is allowed
+// per table.
 func PrimaryKey(names ...string) PrimaryKeyArray {
 	return PrimaryKeyArray(names)
 }
 
-// Unique
-// -----------
-// A UNIQUE constraint that implements the `TableModifier` interface.
-
+// UniqueConstraint is the internal representation of a UNIQUE constraint. It
+// implements the TableModifier interface.
+// TODO Should this type not be exported?
 type UniqueConstraint []string
 
+// Create returns the proper syntax for CREATE TABLE commands.
 func (uc UniqueConstraint) Create(d Dialect) (string, error) {
 	cs := make([]string, len(uc))
 	for i, c := range uc {
@@ -67,8 +66,8 @@ func (uc UniqueConstraint) Create(d Dialect) (string, error) {
 	return fmt.Sprintf("UNIQUE (%s)", strings.Join(cs, ", ")), nil
 }
 
-// To implement the `TableModifier` interface, the struct must
-// have method Modify(). It does not need to modify its parent table.
+// Modify implements the TableModifier interface. It confirms that every column
+// given exists in the parent table.
 func (uc UniqueConstraint) Modify(table *TableElem) error {
 	// Confirm that all columns in the primary key exists
 	for _, name := range uc {
@@ -84,7 +83,7 @@ func (uc UniqueConstraint) Modify(table *TableElem) error {
 	return nil
 }
 
-// Constructor function for UniqueConstraint
+// Unique creates a new UniqueConstraint from the given column names.
 func Unique(names ...string) UniqueConstraint {
 	return UniqueConstraint(names)
 }
