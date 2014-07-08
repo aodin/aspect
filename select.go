@@ -10,12 +10,15 @@ var (
 	ErrNilSelect = errors.New("select received a non-existant table or column")
 )
 
-// Since an entire Table can be selected, this must return an array of columns
+// Selectable is an interface that allows both tables and columns to be
+// selected. It is implemented by TableElem and ColumnElem.
 type Selectable interface {
 	Selectable() []ColumnElem
 }
 
+// SelectStmt is an internal representation of a SELECT statement.
 // TODO Use clauses to build the parts of statement
+// TODO Should this struct be exported?
 type SelectStmt struct {
 	tables  []*TableElem
 	columns []ColumnElem
@@ -28,13 +31,7 @@ type SelectStmt struct {
 	err     error
 }
 
-// TODO Both the columns and tables should have their own methods for
-// order, existance, and string compilation
-// TODO Check the name or the physical column?
-func (stmt SelectStmt) ColumnExists(name string) bool {
-	return false
-}
-
+// TableExists checks if a table already exists in the SELECT statement.
 func (stmt SelectStmt) TableExists(name string) bool {
 	for _, table := range stmt.tables {
 		if table.Name == name {
@@ -62,11 +59,14 @@ func (stmt SelectStmt) CompileColumns(d Dialect, params *Parameters) []string {
 	return names
 }
 
+// String will return the string representation of the statement using a
+// default dialect.
 func (stmt SelectStmt) String() string {
 	compiled, _ := stmt.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 
+// Compile will compile the SELECT statement according to the given dialect.
 func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	if stmt.err != nil {
 		return "", stmt.err
@@ -117,9 +117,12 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	return compiled, nil
 }
 
-// Add a JOIN ... ON to the SELECT statement
+// Join adds a JOIN ... ON to the SELECT statement. The second column parameter
+// will be used as the join table and will be removed from the statement's
+// FROM selection.
+// TODO A smarter result for determining the JOIN table.
 func (stmt SelectStmt) Join(pre, post ColumnElem) SelectStmt {
-	//Get the table of the pre element
+	// Get the table of the pre element
 	preTable := pre.Table()
 
 	// If the preTable is not in the current select statement, add it
@@ -149,12 +152,17 @@ func (stmt SelectStmt) Join(pre, post ColumnElem) SelectStmt {
 	return stmt
 }
 
+// Where adds a conditional clause to the SELECT statement. Only one WHERE
+// is allowed per statement. Additional calls to Where will overwrite the
+// existing WHERE clause.
 func (stmt SelectStmt) Where(cond Clause) SelectStmt {
 	stmt.cond = cond
 	return stmt
 }
 
-// Add a GROUP BY to the SELECT statement
+// GroupBy adds a GROUP BY to the SELECT statement. Only one GROUP BY
+// is allowed per statement. Additional calls to GroupBy will overwrite the
+// existing GROUP BY clause.
 func (stmt SelectStmt) GroupBy(cs ...ColumnElem) SelectStmt {
 	groupBy := make([]ColumnElem, len(cs))
 	// Since columns may be given without an ordering method, perform the
@@ -166,7 +174,9 @@ func (stmt SelectStmt) GroupBy(cs ...ColumnElem) SelectStmt {
 	return stmt
 }
 
-// Add an ORDER BY to the SELECT statement
+// OrderBy adds an ORDER BY to the SELECT statement. Only one ORDER BY
+// is allowed per statement. Additional calls to OrderBy will overwrite the
+// existing ORDER BY clause.
 func (stmt SelectStmt) OrderBy(params ...Orderable) SelectStmt {
 	order := make([]OrderedColumn, len(params))
 	// Since columns may be given without an ordering method, perform the
@@ -178,18 +188,22 @@ func (stmt SelectStmt) OrderBy(params ...Orderable) SelectStmt {
 	return stmt
 }
 
-// Add a LIMIT to the SELECT statement
+// Limit adds a LIMIT to the SELECT statement. Only one LIMIT is allowed per // statement. Additional calls to Limit will overwrite the existing LIMIT
+// clause.
 func (stmt SelectStmt) Limit(limit int) SelectStmt {
 	stmt.limit = limit
 	return stmt
 }
 
-// Add an OFFSET to the SELECT statement
+// Offset adds an OFFSET to the SELECT statement. Only one OFFSET is allowed
+// per statement. Additional calls to Offset will overwrite the existing
+// OFFSET clause.
 func (stmt SelectStmt) Offset(offset int) SelectStmt {
 	stmt.offset = offset
 	return stmt
 }
 
+// Select generates a new SELECT statement from the given columns and tables.
 func Select(selections ...Selectable) SelectStmt {
 	stmt := SelectStmt{
 		columns: make([]ColumnElem, 0),
@@ -219,6 +233,8 @@ func Select(selections ...Selectable) SelectStmt {
 	return stmt
 }
 
+// SelectExcept generates a new SELECT statement from the given table except
+// for the given columns.
 func SelectExcept(table *TableElem, exceptions ...ColumnElem) SelectStmt {
 	stmt := SelectStmt{
 		tables: []*TableElem{table},
