@@ -183,9 +183,13 @@ func (c ColumnElem) NotBetween(a, b interface{}) ArrayClause {
 // To implement the TableModifier interface the ColumnElem must
 // have method Modify(). It does not need to modify its parent table.
 func (c ColumnElem) Modify(t *TableElem) error {
-	// No re-using columns across tables!
+	// TODO Add more rules for column names
+	if c.name == "" {
+		return fmt.Errorf("columns must have a name")
+	}
+	// No re-using columns across tables
 	if c.table != nil {
-		return fmt.Errorf("Column %s already belongs to table %s", c.name, t.Name)
+		return fmt.Errorf("column %s already belongs to table %s", c.name, t.Name)
 	}
 
 	// Set the parent table of this column

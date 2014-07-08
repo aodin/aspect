@@ -1,8 +1,13 @@
 package aspect
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+)
+
+var (
+	ErrNilSelect = errors.New("select received a non-existant table or column")
 )
 
 // Since an entire Table can be selected, this must return an array of columns
@@ -20,6 +25,7 @@ type SelectStmt struct {
 	order   []OrderedColumn
 	limit   int
 	offset  int
+	err     error
 }
 
 // TODO Both the columns and tables should have their own methods for
@@ -62,6 +68,9 @@ func (stmt SelectStmt) String() string {
 }
 
 func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
+	if stmt.err != nil {
+		return "", stmt.err
+	}
 	compiled := fmt.Sprintf(
 		"SELECT %s FROM %s",
 		strings.Join(stmt.CompileColumns(d, params), ", "),
@@ -189,9 +198,17 @@ func Select(selections ...Selectable) SelectStmt {
 
 	// Iterate through the selections and get the columns in the selection
 	for _, selection := range selections {
+		if selection == nil {
+			stmt.err = ErrNilSelect
+			return stmt
+		}
 		columns := selection.Selectable()
 		for _, column := range columns {
 			// TODO Test for name conflicts
+			if column.Name() == "" {
+				stmt.err = ErrNilSelect
+				return stmt
+			}
 			stmt.columns = append(stmt.columns, column)
 
 			if !stmt.TableExists(column.Table().Name) {
