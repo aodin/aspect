@@ -7,6 +7,11 @@ func Avg(c ColumnElem) ColumnElem {
 	return c
 }
 
+func Sum(c ColumnElem) ColumnElem {
+	c.inner = FuncClause{Inner: c.inner, F: "SUM"}
+	return c
+}
+
 func Count(c ColumnElem) ColumnElem {
 	c.inner = FuncClause{Inner: c.inner, F: "COUNT"}
 	return c

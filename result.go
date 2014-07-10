@@ -2,8 +2,12 @@ package aspect
 
 import (
 	"database/sql"
-	"fmt"
+	"errors"
 	"reflect"
+)
+
+var (
+	ErrNoResult = errors.New("aspect: no result to return")
 )
 
 type Result struct {
@@ -23,7 +27,7 @@ func (r *Result) Next() bool {
 func (r *Result) One(i interface{}) error {
 	// Confirm that there is a row to return
 	if ok := r.rows.Next(); !ok {
-		return fmt.Errorf("No more rows to return")
+		return ErrNoResult
 	}
 
 	// Get the value of the given interface
