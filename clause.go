@@ -5,24 +5,31 @@ import (
 	"strings"
 )
 
-// All clauses must implement the Compiles interface
+// Clause is a common interface that most components implement.
 type Clause interface {
 	Compiles
 }
 
-// Special clause type used for column selections
+// ColumnClause is a clause used for column selections.
 type ColumnClause struct {
 	table *TableElem
 	name  string
 }
 
+// String returns the ColumnClause's SQL using the default dialect.
 func (c ColumnClause) String() string {
 	compiled, _ := c.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 
+// Compile creates the SQL to represent a table column using the given
+// dialect, optionally without a table prefix.
 func (c ColumnClause) Compile(d Dialect, params *Parameters) (string, error) {
-	return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name), nil
+	if c.table == nil {
+		return fmt.Sprintf(`"%s"`, c.name), nil
+	} else {
+		return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name), nil
+	}
 }
 
 // TODO This is a dangerous clause that leads to parameters not being escaped

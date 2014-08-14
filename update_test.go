@@ -9,7 +9,7 @@ func TestUpdate(t *testing.T) {
 	expectedSQL(
 		t,
 		s1,
-		`UPDATE "users" SET "users"."name" = $1`,
+		`UPDATE "users" SET "name" = $1`,
 		1,
 	)
 
@@ -22,7 +22,7 @@ func TestUpdate(t *testing.T) {
 	expectedSQL(
 		t,
 		s2,
-		`UPDATE "users" SET "users"."name" = $1 AND "users"."password" = $2 WHERE "users"."id" = $3`,
+		`UPDATE "users" SET "name" = $1 AND "password" = $2 WHERE "users"."id" = $3`,
 		3,
 	)
 

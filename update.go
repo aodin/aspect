@@ -26,7 +26,7 @@ func (stmt UpdateStmt) Compile(d Dialect, params *Parameters) (string, error) {
 		return "", stmt.err
 	}
 	// Compile the values
-	valuesStmt, err := stmt.values.CompileForTable(stmt.table, d, params)
+	valuesStmt, err := stmt.values.Compile(d, params)
 	if err != nil {
 		return "", err
 	}
@@ -56,22 +56,13 @@ func (stmt UpdateStmt) Where(cond Clause) UpdateStmt {
 // Values is a map of column names to parameters.
 type Values map[string]interface{}
 
-// CompileForTable converts all key value pairs into a binary clauses.
-func (v Values) CompileForTable(table *TableElem, d Dialect, params *Parameters) (string, error) {
+// Compile converts all key value pairs into a binary clauses.
+func (v Values) Compile(d Dialect, params *Parameters) (string, error) {
 	clauses := make([]Clause, len(v))
 	var i int
 	for key, value := range v {
-		// TODO This error is duplicated from the Update() function
-		column, ok := table.C[key]
-		if !ok {
-			return "", fmt.Errorf(
-				`No column "%s" exists in the table "%s"`,
-				key,
-				table.Name,
-			)
-		}
 		clauses[i] = BinaryClause{
-			Pre:  column,
+			Pre:  ColumnClause{name: key},
 			Post: &Parameter{value},
 			Sep:  " = ",
 		}
