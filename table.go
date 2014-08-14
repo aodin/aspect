@@ -85,8 +85,16 @@ func (table *TableElem) Delete(args ...interface{}) DeleteStmt {
 	return Delete(table, args...)
 }
 
+// Insert is an alias for InsertTableValues(table, args). It will create an
+// INSERT statement with the given arguments.
 func (table *TableElem) Insert(args interface{}) InsertStmt {
 	return InsertTableValues(table, args)
+}
+
+// Update is an alias for Update(table, values). It will create an UPDATE
+// statement with the given values.
+func (table *TableElem) Update(values Values) UpdateStmt {
+	return Update(table, values)
 }
 
 // Table is the constructor function for TableElem. It is provided a name and
