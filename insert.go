@@ -17,7 +17,7 @@ type InsertStmt struct {
 }
 
 var (
-	ErrNoColumns = errors.New("aspect: an INSERT must have associated columns")
+	ErrNoColumns = errors.New("aspect: statments must have associated columns")
 )
 
 func (stmt InsertStmt) String() string {
@@ -177,9 +177,9 @@ func (stmt InsertStmt) Values(args interface{}) InsertStmt {
 	return stmt
 }
 
-// There must be at least one column
+// Insert creates an INSERT statement for the given columns. There must be at
+// least one column and all columns must belong to the same table.
 func Insert(column ColumnElem, columns ...ColumnElem) InsertStmt {
-	// All columns must belong to the same table
 	stmt := InsertStmt{
 		table:   column.table,
 		columns: []ColumnElem{column},

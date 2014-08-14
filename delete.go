@@ -71,6 +71,7 @@ func getFieldByIndex(i interface{}, index int) interface{} {
 	return elem.Field(index).Interface()
 }
 
+// Delete creates a DELETE statement for the given table.
 func Delete(table *TableElem, args ...interface{}) DeleteStmt {
 	stmt := DeleteStmt{table: table}
 	// If the table has a primary key and was given args, create a conditional
