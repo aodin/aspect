@@ -53,24 +53,6 @@ func (stmt UpdateStmt) Where(cond Clause) UpdateStmt {
 	return stmt
 }
 
-// Values is a map of column names to parameters.
-type Values map[string]interface{}
-
-// Compile converts all key value pairs into a binary clauses.
-func (v Values) Compile(d Dialect, params *Parameters) (string, error) {
-	clauses := make([]Clause, len(v))
-	var i int
-	for key, value := range v {
-		clauses[i] = BinaryClause{
-			Pre:  ColumnClause{name: key},
-			Post: &Parameter{value},
-			Sep:  " = ",
-		}
-		i += 1
-	}
-	return AllOf(clauses...).Compile(d, params)
-}
-
 // Update creates an UPDATE statement for the given table and values.
 func Update(table *TableElem, values Values) (stmt UpdateStmt) {
 	// TODO Or Update(TableElem, interface{}) for multiple or single structs
