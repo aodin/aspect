@@ -25,6 +25,10 @@ func (stmt InsertStmt) String() string {
 	return compiled
 }
 
+func (stmt InsertStmt) Error() error {
+	return stmt.err
+}
+
 func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	// Check for delayed errors
 	if stmt.err != nil {
@@ -44,7 +48,11 @@ func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
 
 	// Column length must divide args without remainder
 	if len(stmt.args)%c != 0 {
-		return "", fmt.Errorf("Size mismatch between arguments and columns: %d is not a multiple of %d", len(stmt.args), c)
+		return "", fmt.Errorf(
+			`aspect: size mismatch between arguments and columns: %d is not a multiple of %d`,
+			len(stmt.args),
+			c,
+		)
 	}
 
 	g := len(stmt.args) / c
@@ -173,7 +181,34 @@ func (stmt InsertStmt) Values(args interface{}) InsertStmt {
 				stmt.argsByIndex(elem.Index(i))
 			}
 		}
+	case reflect.Map:
+		// Set the table columns according to the values
+		stmt.columns = make([]ColumnElem, 0)
+
+		// Cast back to Values
+		values, ok := args.(Values)
+		if !ok {
+			stmt.err = fmt.Errorf(
+				"aspect: to insert maps they must of type aspect.Values",
+			)
+			return stmt
+		}
+		for _, key := range values.Keys() {
+			column, exists := stmt.table.C[key]
+			if !exists {
+				stmt.err = fmt.Errorf(
+					`aspect: no column "%s" exists in the table "%s"`,
+					key,
+					stmt.table.Name,
+				)
+				return stmt
+			}
+			stmt.columns = append(stmt.columns, column)
+			stmt.args = append(stmt.args, values[key])
+		}
+		// TODO Allow []Values, which must have the same columns
 	}
+
 	return stmt
 }
 

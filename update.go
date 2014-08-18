@@ -69,7 +69,7 @@ func Update(table *TableElem, values Values) (stmt UpdateStmt) {
 	for key := range values {
 		if _, ok := table.C[key]; !ok {
 			stmt.err = fmt.Errorf(
-				`No column "%s" exists in the table "%s"`,
+				`aspect: no column "%s" exists in the table "%s"`,
 				key,
 				table.Name,
 			)

@@ -22,8 +22,7 @@ func (v Values) Keys() []string {
 // produce repeatable SQL statements (especially for testing)
 func (v Values) Compile(d Dialect, params *Parameters) (string, error) {
 	clauses := make([]Clause, len(v))
-	keys := v.Keys()
-	for i, key := range keys {
+	for i, key := range v.Keys() {
 		clauses[i] = BinaryClause{
 			Pre:  ColumnClause{name: key},
 			Post: &Parameter{v[key]},
