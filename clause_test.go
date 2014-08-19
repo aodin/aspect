@@ -63,4 +63,18 @@ func TestClauses(t *testing.T) {
 		`"users"."id" IN ($1, $2)`,
 		2,
 	)
+
+	// Unary clauses
+	expectedSQL(
+		t,
+		id.IsNull(),
+		`"users"."id" IS NULL`,
+		0,
+	)
+	expectedSQL(
+		t,
+		id.IsNotNull(),
+		`"users"."id" IS NOT NULL`,
+		0,
+	)
 }

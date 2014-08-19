@@ -148,6 +148,20 @@ func (c ColumnElem) GTE(i interface{}) BinaryClause {
 	}
 }
 
+func (c ColumnElem) IsNull() UnaryClause {
+	return UnaryClause{
+		Pre: c,
+		Sep: " IS NULL",
+	}
+}
+
+func (c ColumnElem) IsNotNull() UnaryClause {
+	return UnaryClause{
+		Pre: c,
+		Sep: " IS NOT NULL",
+	}
+}
+
 // An interface is used because the args may be of any type: ints, strings...
 // TODO an error if something other than a slice is added?
 func (c ColumnElem) In(args interface{}) BinaryClause {

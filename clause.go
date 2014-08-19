@@ -78,6 +78,28 @@ func (c FuncClause) Compile(d Dialect, params *Parameters) (string, error) {
 	return fmt.Sprintf("%s(%s)", c.F, cc), nil
 }
 
+type UnaryClause struct {
+	Pre Clause
+	Sep string
+}
+
+func (c UnaryClause) String() string {
+	compiled, _ := c.Compile(&defaultDialect{}, Params())
+	return compiled
+}
+
+func (c UnaryClause) Compile(d Dialect, params *Parameters) (string, error) {
+	var pre string
+	var err error
+	if c.Pre != nil {
+		pre, err = c.Pre.Compile(d, params)
+		if err != nil {
+			return "", err
+		}
+	}
+	return fmt.Sprintf("%s%s", pre, c.Sep), nil
+}
+
 type BinaryClause struct {
 	Pre, Post Clause
 	Sep       string
