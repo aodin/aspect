@@ -100,12 +100,17 @@ func (s Date) Create(d Dialect) (string, error) {
 
 type Boolean struct {
 	NotNull bool
+	Default string
 }
 
 func (s Boolean) Create(d Dialect) (string, error) {
 	compiled := "BOOL"
 	if s.NotNull {
 		compiled += " NOT NULL"
+	}
+	if s.Default != "" {
+		compiled += " DEFAULT "
+		compiled += s.Default
 	}
 	return compiled, nil
 }
