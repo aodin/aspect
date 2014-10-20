@@ -72,6 +72,7 @@ type Timestamp struct {
 	NotNull      bool
 	PrimaryKey   bool
 	WithTimezone bool
+	Default      string // TODO Should be a clause that can compile?
 }
 
 func (s Timestamp) Create(d Dialect) (string, error) {
@@ -81,6 +82,9 @@ func (s Timestamp) Create(d Dialect) (string, error) {
 	}
 	if s.NotNull {
 		compiled += " NOT NULL"
+	}
+	if s.Default != "" {
+		compiled += fmt.Sprintf(" DEFAULT (%s)", s.Default)
 	}
 	return compiled, nil
 }
