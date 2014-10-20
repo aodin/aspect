@@ -5,6 +5,12 @@ import (
 	"testing"
 )
 
+type user struct {
+	ID       int64  `db:"id"`
+	Name     string `db:"name"`
+	Password string `db:"password"`
+}
+
 // A short test for testing that an SQL statement was compiled as expected
 func expectedSQL(t *testing.T, stmt aspect.Compiles, expected string, p int) {
 	params := aspect.Params()
@@ -45,6 +51,16 @@ func TestInsert(t *testing.T) {
 	expectedSQL(
 		t,
 		stmt,
+		`INSERT INTO "users" ("name", "password") VALUES ($1, $2) RETURNING "users"."id"`,
+		2,
+	)
+
+	// Adding values should set parameters
+	admin := user{Name: "admin", Password: "secret"}
+	single := stmt.Values(admin)
+	expectedSQL(
+		t,
+		single,
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2) RETURNING "users"."id"`,
 		2,
 	)
