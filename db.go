@@ -4,6 +4,18 @@ import (
 	"database/sql"
 )
 
+// Connection is a common interface for database connections or transactions
+type Connection interface {
+	Query(stmt Executable, args ...interface{}) (*Result, error)
+	QueryAll(stmt Executable, i interface{}) error
+	QueryOne(stmt Executable, i interface{}) error
+	Execute(stmt Executable, args ...interface{}) (sql.Result, error)
+}
+
+// Both DB and TX should implement the Connection interface
+var _ Connection = &DB{}
+var _ Connection = &TX{}
+
 // TODO The db should be able to determine if a stmt should be used with
 // either Exec() or Query()
 
@@ -58,8 +70,8 @@ func (db *DB) Query(stmt Executable, args ...interface{}) (*Result, error) {
 
 // QueryAll will query the statement and populate the interface with all
 // results
-func (db *DB) QueryAll(s Executable, i interface{}) error {
-	result, err := db.Query(s)
+func (db *DB) QueryAll(stmt Executable, i interface{}) error {
+	result, err := db.Query(stmt)
 	if err != nil {
 		return err
 	}
@@ -67,8 +79,8 @@ func (db *DB) QueryAll(s Executable, i interface{}) error {
 }
 
 // QueryOne will query the statement and populate the interface with one result
-func (db *DB) QueryOne(s Executable, i interface{}) error {
-	result, err := db.Query(s)
+func (db *DB) QueryOne(stmt Executable, i interface{}) error {
+	result, err := db.Query(stmt)
 	// Close the result rows or sqlite3 will open another connection
 	defer result.rows.Close()
 	if err != nil {
@@ -146,8 +158,8 @@ func (tx *TX) Query(stmt Executable, args ...interface{}) (*Result, error) {
 
 // QueryAll will query the statement and populate the interface with all
 // results
-func (tx *TX) QueryAll(s Executable, i interface{}) error {
-	result, err := tx.Query(s)
+func (tx *TX) QueryAll(stmt Executable, i interface{}) error {
+	result, err := tx.Query(stmt)
 	if err != nil {
 		return err
 	}
@@ -155,8 +167,8 @@ func (tx *TX) QueryAll(s Executable, i interface{}) error {
 }
 
 // QueryOne will query the statement and populate the interface with one result
-func (tx *TX) QueryOne(s Executable, i interface{}) error {
-	result, err := tx.Query(s)
+func (tx *TX) QueryOne(stmt Executable, i interface{}) error {
+	result, err := tx.Query(stmt)
 	// Close the result rows or sqlite3 will open another connection
 	defer result.rows.Close()
 	if err != nil {
