@@ -35,6 +35,14 @@ func (stmt CreateStmt) Compile(d Dialect, p *Parameters) (string, error) {
 		cs = append(cs, pkc)
 	}
 
+	for _, constraint := range stmt.table.uniques {
+		compiledConstraint, err := constraint.Create(d)
+		if err != nil {
+			return "", nil
+		}
+		cs = append(cs, compiledConstraint)
+	}
+
 	t := fmt.Sprintf(
 		"CREATE TABLE \"%s\" (\n  %s\n);",
 		stmt.table.Name,

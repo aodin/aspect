@@ -15,10 +15,11 @@ type TableModifier interface {
 // returned from the Table constructor function.
 // TODO make this an internal struct?
 type TableElem struct {
-	Name  string
-	C     ColumnSet
-	order []string
-	pk    PrimaryKeyArray
+	Name    string
+	C       ColumnSet
+	order   []string
+	pk      PrimaryKeyArray
+	uniques []UniqueConstraint
 }
 
 // String returns the table name.

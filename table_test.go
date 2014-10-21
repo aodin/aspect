@@ -32,6 +32,13 @@ var edges = Table("edges",
 	PrimaryKey("a", "b"),
 )
 
+var attrs = Table("attrs",
+	Column("id", Integer{PrimaryKey: true}),
+	Column("a", Integer{}),
+	Column("b", Integer{}),
+	Unique("a", "b"),
+)
+
 type edge struct {
 	A int64 `db:"a"`
 	B int64 `db:"b"`

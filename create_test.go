@@ -13,4 +13,13 @@ func TestCreateStmt(t *testing.T) {
   PRIMARY KEY ("id")
 );`
 	expectedSQL(t, stmt, expected, 0)
+
+	stmt = attrs.Create()
+	expected = `CREATE TABLE "attrs" (
+  "id" INTEGER PRIMARY KEY,
+  "a" INTEGER,
+  "b" INTEGER,
+  UNIQUE ("a", "b")
+);`
+	expectedSQL(t, stmt, expected, 0)
 }

@@ -79,7 +79,8 @@ func (uc UniqueConstraint) Modify(table *TableElem) error {
 		// TODO Set the attributes of the column type?
 	}
 
-	// TODO Add the unique clause to the table
+	// Add the unique clause to the table
+	table.uniques = append(table.uniques, uc)
 	return nil
 }
 
