@@ -2,8 +2,9 @@ package aspect
 
 import ()
 
-// TODO Or just type Parameters []interface{} ?
+// Parameters holds
 type Parameters struct {
+	// TODO Or just type Parameters []interface{} ?
 	args []interface{}
 }
 
@@ -24,8 +25,9 @@ func Params() *Parameters {
 	return &Parameters{args: make([]interface{}, 0)}
 }
 
-// TODO Or just type Parameter []interface{}
+// Parameter stores a single value of type interface{}
 type Parameter struct {
+	// TODO Or just type Parameter []interface{}?
 	Value interface{}
 }
 
