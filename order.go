@@ -7,15 +7,20 @@ type Orderable interface {
 	Orderable() OrderedColumn
 }
 
-// From the PostGres documentation:
+// OrderedColumn represents a ColumnElem that will be used in an ORDER BY
+// clause within SELECT statements. It provides additional sorting
+// features, such as ASC, DESC, NULLS FIRST, and NULLS LAST.
+// If not specified, ASC is assumed by default.
+// In Postgres: the default behavior is NULLS LAST when ASC is specified or
+// implied, and NULLS FIRST when DESC is specified
 // http://www.postgresql.org/docs/9.2/static/sql-select.html#SQL-ORDERBY
-// * If not specified, ASC is assumed by default.
-// * the default behavior is NULLS LAST when ASC is specified or implied, and
-// NULLS FIRST when DESC is specified
 type OrderedColumn struct {
 	inner                       ColumnElem
 	desc, nullsFirst, nullsLast bool
 }
+
+// OrderedColumn should implement the Orderable interface
+var _ Orderable = OrderedColumn{}
 
 func (o OrderedColumn) String() string {
 	compiled, _ := o.Compile(&defaultDialect{}, Params())

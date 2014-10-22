@@ -204,38 +204,37 @@ func (stmt SelectStmt) Offset(offset int) SelectStmt {
 }
 
 // Select generates a new SELECT statement from the given columns and tables.
-func Select(selections ...Selectable) SelectStmt {
-	stmt := SelectStmt{
-		columns: make([]ColumnElem, 0),
-		tables:  make([]*TableElem, 0),
-	}
-
+func Select(selections ...Selectable) (stmt SelectStmt) {
 	// Iterate through the selections and get the columns in the selection
 	for _, selection := range selections {
 		if selection == nil {
 			stmt.err = ErrNilSelect
-			return stmt
+			return
 		}
+		// Each selection may return multiple columns (as with a table)
 		columns := selection.Selectable()
 		for _, column := range columns {
-			// TODO Test for name conflicts
+			// Adding a bad column will pass a zero-initialized ColumnElem and
+			// since blank column names are invalid SQL we can reject them
 			if column.Name() == "" {
 				stmt.err = ErrNilSelect
-				return stmt
+				return
 			}
 			stmt.columns = append(stmt.columns, column)
 
+			// Add the table to the stmt tables if it does not already exist
 			if !stmt.TableExists(column.Table().Name) {
 				stmt.tables = append(stmt.tables, column.Table())
 			}
 		}
 	}
-	return stmt
+	return
 }
 
 // SelectExcept generates a new SELECT statement from the given table except
 // for the given columns.
 func SelectExcept(table *TableElem, exceptions ...ColumnElem) SelectStmt {
+	// TODO This func should proxy to Select in case behavior changes
 	stmt := SelectStmt{
 		tables: []*TableElem{table},
 	}

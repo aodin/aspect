@@ -82,7 +82,6 @@ func TestTableSchema(t *testing.T) {
 	}
 
 	// Test improper schemas
-	// TODO A better way to recover from panic?
 	{
 		defer func() {
 			if panicked := recover(); panicked == nil {

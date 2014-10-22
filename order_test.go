@@ -20,6 +20,16 @@ func TestOrder(t *testing.T) {
 		0,
 	)
 
-	// Nulls last
+	// Asc, Nulls last
 	expectedSQL(t, o.Asc().NullsLast(), `"users"."id" NULLS LAST`, 0)
+
+	// Calling Orderable on an OrderableColumn should return a copy of itself
+	copy := o.Orderable()
+	if copy.inner.Name() != o.inner.Name() {
+		t.Fatal(
+			"unexpected inner name during orderable copy: %s != %s",
+			copy.inner.Name(),
+			o.inner.Name(),
+		)
+	}
 }
