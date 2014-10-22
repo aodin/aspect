@@ -1,6 +1,9 @@
 package aspect
 
 import (
+	"fmt"
+	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -44,19 +47,62 @@ type edge struct {
 	B int64 `db:"b"`
 }
 
+// CallerInfo returns a string containing the file and line number of the
+// assert call that failed.
+// https://github.com/stretchr/testify/blob/master/assert/assertions.go
+// Copyright (c) 2012 - 2013 Mat Ryer and Tyler Bunnell
+func CallerInfo() string {
+	file := ""
+	line := 0
+	ok := false
+
+	for i := 2; ; i++ {
+		_, file, line, ok = runtime.Caller(i)
+		if !ok {
+			return ""
+		}
+		parts := strings.Split(file, "/")
+		file = parts[len(parts)-1]
+
+		// TODO Separate this file so break can be called on file name
+		// dir := parts[len(parts)-2]
+		// if (dir != "assert" && dir != "mock" && dir != "require") || file == "mock_test.go" {
+		// 	break
+		// }
+
+		break
+	}
+
+	return fmt.Sprintf("%s:%d", file, line)
+}
+
 // A short test for testing that an SQL statement was compiled as expected
 func expectedSQL(t *testing.T, stmt Compiles, expected string, p int) {
+	// Get caller information in case of failure
+	caller := CallerInfo()
+
+	// Call both Compile and String
 	params := Params()
+	str := stmt.String()
 	compiled, err := stmt.Compile(&defaultDialect{}, params)
 	if err != nil {
-		t.Error(err)
+		t.Error("%s: unexpected error from compile: %s", caller, err)
 	}
 	if compiled != expected {
-		t.Errorf("Unexpected SQL: %s != %s", compiled, expected)
+		t.Errorf("%s: unexpected SQL: %s != %s", caller, compiled, expected)
+	}
+	if compiled != str {
+		t.Errorf(
+			"%s: compile %s should match the default string output %s",
+			caller,
+			compiled,
+			str,
+		)
 	}
 	if params.Len() != p {
 		t.Errorf(
-			"Unexpected number of parameters for %s: %d != %d",
+			"%s: unexpected number of parameters for %s: %d != %d",
+			caller,
 			expected,
 			params.Len(),
 			p,

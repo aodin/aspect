@@ -5,6 +5,7 @@ import ()
 // The main SQL statement interface. All clauses must implement this
 // interface in order to be executable.
 type Compiles interface {
+	String() string // For simple, parameter-less output
 	Compile(Dialect, *Parameters) (string, error)
 }
 
