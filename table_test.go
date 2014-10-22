@@ -22,7 +22,7 @@ var views = Table("views",
 	Column("id", Integer{PrimaryKey: true}),
 	Column("user_id", Integer{}),
 	Column("url", String{}),
-	Column("ip", Inet{}),
+	Column("ip", String{}),
 	Column("timestamp", Timestamp{}),
 )
 
@@ -85,7 +85,7 @@ func TestTableSchema(t *testing.T) {
 	// TODO A better way to recover from panic?
 	{
 		defer func() {
-			if r := recover(); r == nil {
+			if panicked := recover(); panicked == nil {
 				t.Errorf("Table failed to panic when a bad schema was created")
 			}
 		}()
@@ -99,7 +99,7 @@ func TestTableSchema(t *testing.T) {
 
 	{
 		defer func() {
-			if r := recover(); r == nil {
+			if panicked := recover(); panicked == nil {
 				t.Errorf("Table failed to panic when a bad schema was created")
 			}
 		}()
