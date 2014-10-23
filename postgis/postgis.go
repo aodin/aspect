@@ -3,13 +3,19 @@ package postgis
 import (
 	"fmt"
 	"github.com/aodin/aspect"
-	_ "github.com/aodin/aspect/postgres"
+	"github.com/aodin/aspect/postgres"
 )
 
 // Importing PostGIS implies you'll be using PostGres
 
 type LatLong struct {
 	Latitude, Longitude float64
+}
+
+// String returns the element's SQL using the default dialect.
+func (p LatLong) String() string {
+	compiled, _ := p.Compile(&postgres.PostGres{}, aspect.Params())
+	return compiled
 }
 
 // A point with the implied SRID of 4326
@@ -54,6 +60,12 @@ type MultiPoint struct {
 	Points []Point
 }
 
+// String returns the element's SQL using the default dialect.
+func (p MultiPoint) String() string {
+	compiled, _ := p.Compile(&postgres.PostGres{}, aspect.Params())
+	return compiled
+}
+
 // TODO
 func (p MultiPoint) Compile(d aspect.Dialect, params *aspect.Parameters) (string, error) {
 	return "", nil
@@ -67,6 +79,12 @@ type Linestring struct {
 	Points []Point
 }
 
+// String returns the element's SQL using the default dialect.
+func (p Linestring) String() string {
+	compiled, _ := p.Compile(&postgres.PostGres{}, aspect.Params())
+	return compiled
+}
+
 func (p Linestring) Compile(d aspect.Dialect, params *aspect.Parameters) (string, error) {
 	return "", nil
 }
@@ -78,6 +96,12 @@ func (p Linestring) Create(d aspect.Dialect) (string, error) {
 type Polygon struct {
 	Exterior  Linestring
 	Interiors []Linestring
+}
+
+// String returns the element's SQL using the default dialect.
+func (p Polygon) String() string {
+	compiled, _ := p.Compile(&postgres.PostGres{}, aspect.Params())
+	return compiled
 }
 
 func (p Polygon) Compile(d aspect.Dialect, params *aspect.Parameters) (string, error) {
