@@ -14,19 +14,24 @@ Implements the `TableModifier` interface.
 
 */
 
-// Maintains a unique set of columns
+// ColumnSet maintains a map of ColumnElem instances by column name
 type ColumnSet map[string]ColumnElem
 
 // Returns an error if a ColumnElem by this name already exists
 // TODO Make this a private method?
 func (set ColumnSet) Add(c ColumnElem) error {
 	if _, exists := set[c.name]; exists {
-		return fmt.Errorf("A column with the name %s already exists", c.name)
+		return fmt.Errorf(
+			"aspect: column with the name %s already exists",
+			c.name,
+		)
 	}
 	set[c.name] = c
 	return nil
 }
 
+// ColumnElem represents a table column. It implements the Compiles,
+// Selectable, and Orderable interfaces.
 type ColumnElem struct {
 	inner Clause
 	name  string
@@ -48,6 +53,8 @@ func (c ColumnElem) SetInner(clause Clause) ColumnElem {
 	return c
 }
 
+// Compile produces the dialect specific SQL and adds any parameters
+// in the clause to the given Parameters instance
 func (c ColumnElem) Compile(d Dialect, params *Parameters) (string, error) {
 	if c.inner == nil {
 		// Old behavior
@@ -57,17 +64,18 @@ func (c ColumnElem) Compile(d Dialect, params *Parameters) (string, error) {
 	}
 }
 
-// TODO remove these
+// Name returns the column's name
 func (c ColumnElem) Name() string {
 	return c.name
 }
 
-// TODO remove these
+// Table returns the column's table
 func (c ColumnElem) Table() *TableElem {
 	return c.table
 }
 
-// Implement the sql.Selectable interface for building SELECT statements
+// Selectable implements the sql.Selectable interface for building SELECT
+// statements from ColumnElem instances.
 func (c ColumnElem) Selectable() []ColumnElem {
 	return []ColumnElem{c}
 }
@@ -197,13 +205,24 @@ func (c ColumnElem) NotBetween(a, b interface{}) ArrayClause {
 // To implement the TableModifier interface the ColumnElem must
 // have method Modify(). It does not need to modify its parent table.
 func (c ColumnElem) Modify(t *TableElem) error {
+	// No modifing nil table elements
+	if t == nil {
+		return fmt.Errorf("aspect: columns cannot modify a nil table")
+	}
+
+	// Column names cannot be blank
 	// TODO Add more rules for column names
 	if c.name == "" {
-		return fmt.Errorf("columns must have a name")
+		return fmt.Errorf("aspect: columns must have a name")
 	}
+
 	// No re-using columns across tables
 	if c.table != nil {
-		return fmt.Errorf("column %s already belongs to table %s", c.name, t.Name)
+		return fmt.Errorf(
+			"aspect: column %s already belongs to table %s",
+			c.name,
+			t.Name,
+		)
 	}
 
 	// Set the parent table of this column
@@ -218,16 +237,19 @@ func (c ColumnElem) Modify(t *TableElem) error {
 	}
 
 	// Add the name to the table order
-	// TODO Something other than an append operation
 	t.order = append(t.order, c.name)
 	return nil
 }
 
-// Constructor function
+// Column constructs a ColumnElem with the given name and dbType.
 // TODO The constructor function does not need to return a ColumnElem,
 // it can return a struct that modifies the table and adds a column.
 func Column(name string, t dbType) ColumnElem {
 	// Set the inner clause of the column to the incomplete ColumnClause.
 	// This will be overwritten by the table modify function.
-	return ColumnElem{inner: ColumnClause{name: name}, name: name, typ: t}
+	return ColumnElem{
+		inner: ColumnClause{name: name},
+		name:  name,
+		typ:   t,
+	}
 }
