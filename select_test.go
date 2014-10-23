@@ -37,4 +37,20 @@ func TestSelect(t *testing.T) {
 		`SELECT "users"."name" FROM "users" WHERE "users"."id" = $1`,
 		1,
 	)
+
+	// Test limit
+	expectedSQL(
+		t,
+		Select(users.C["name"]).Limit(1),
+		`SELECT "users"."name" FROM "users" LIMIT 1`,
+		0,
+	)
+
+	// Test Offset
+	expectedSQL(
+		t,
+		Select(users.C["name"]).Offset(1),
+		`SELECT "users"."name" FROM "users" OFFSET 1`,
+		0,
+	)
 }
