@@ -5,10 +5,10 @@ import (
 )
 
 func TestUpdate(t *testing.T) {
-	s1 := Update(users, Values{"name": "client"})
+	stmt := Update(users, Values{"name": "client"})
 	expectedSQL(
 		t,
-		s1,
+		stmt,
 		`UPDATE "users" SET "name" = $1`,
 		1,
 	)
@@ -18,19 +18,25 @@ func TestUpdate(t *testing.T) {
 		"password": "blank",
 	}
 
-	s2 := Update(users, values).Where(users.C["id"].Equals(1))
+	stmt = Update(users, values).Where(users.C["id"].Equals(1))
 	expectedSQL(
 		t,
-		s2,
+		stmt,
 		`UPDATE "users" SET "name" = $1 AND "password" = $2 WHERE "users"."id" = $3`,
 		3,
 	)
 
-	// The statement should have an error if a values key does not have an
-	// associated column
-	s3 := Update(users, Values{})
-	_, err := s3.Compile(&defaultDialect{}, Params())
+	// The statement should have an error if the values map is empty
+	stmt = Update(users, Values{})
+	_, err := stmt.Compile(&defaultDialect{}, Params())
 	if err == nil {
 		t.Fatalf("No error returned from column-less UPDATE")
+	}
+
+	// Attempt to update values with keys that do not correspond to columns
+	stmt = Update(users, Values{"nope": "what"})
+	_, err = stmt.Compile(&defaultDialect{}, Params())
+	if err == nil {
+		t.Fatalf("no error returned from UPDATE without corresponding column")
 	}
 }
