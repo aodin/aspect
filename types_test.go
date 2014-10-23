@@ -90,6 +90,18 @@ func TestTimestamp(t *testing.T) {
 	}
 }
 
+func TestDate(t *testing.T) {
+	s := Date{PrimaryKey: true, NotNull: true, Unique: true}
+	output, err := s.Create(&defaultDialect{})
+	expected := "DATE PRIMARY KEY NOT NULL UNIQUE"
+	if err != nil {
+		t.Fatalf("unexpected error during %s create: %s", expected, err)
+	}
+	if output != expected {
+		t.Fatalf("expected %s, got %s", expected, output)
+	}
+}
+
 func TestBoolean(t *testing.T) {
 	s := Boolean{}
 

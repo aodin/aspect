@@ -103,13 +103,24 @@ func (s Timestamp) Create(d Dialect) (string, error) {
 type Date struct {
 	NotNull    bool
 	PrimaryKey bool
+	Unique     bool
 }
 
 // Create returns the syntax need to create this column in CREATE statements.
 func (s Date) Create(d Dialect) (string, error) {
 	compiled := "DATE"
+	attrs := make([]string, 0)
+	if s.PrimaryKey {
+		attrs = append(attrs, "PRIMARY KEY")
+	}
 	if s.NotNull {
-		compiled += " NOT NULL"
+		attrs = append(attrs, "NOT NULL")
+	}
+	if s.Unique {
+		attrs = append(attrs, "UNIQUE")
+	}
+	if len(attrs) > 0 {
+		compiled += fmt.Sprintf(" %s", strings.Join(attrs, " "))
 	}
 	return compiled, nil
 }
