@@ -1,63 +1,61 @@
 Aspect
 ======
 
-A relational database toolkit in Go.
+A relational database toolkit in Go that aims to:
 
-The purpose of Aspect is to:
+* Build complete database schemas
+* Create reusable and cross-dialect SQL statements
+* Allow struct instances and slices to be directly populated by the database
 
-1. Create reusable and cross-dialect SQL statements
-2. Provide a complete replacement for the `database/sql` package and required driver packages
-
-Instead of a `struct` to represent SQL schema, Aspect uses a custom `Table` function. To insert and select values, `struct` elements are used, and can be partially populated.
+### Quickstart
 
 ```go
 package main
 
 import (
-    . "github.com/aodin/aspect"
-    _ "github.com/aodin/aspect/sqlite3"
     "log"
+
+    sql "github.com/aodin/aspect"
+    _ "github.com/aodin/aspect/sqlite3"
 )
 
-var Users = Table("users",
-    Column("id", Integer{NotNull: true}),
-    Column("name", String{Length: 32, NotNull: true}),
-    Column("password", String{Length: 128}),
-    PrimaryKey("id"),
+// Create a database schema using aspect's Table function
+var Users = sql.Table("users",
+    sql.Column("id", sql.Integer{NotNull: true}),
+    sql.Column("name", sql.String{Length: 32, NotNull: true}),
+    sql.Column("password", sql.String{Length: 128}),
+    sql.PrimaryKey("id"),
 )
 
+// Structs are used to send and receive values to the database
 type User struct {
-    Id       int64  `db:"id"`
+    ID       int64  `db:"id"`
     Name     string `db:"name"`
     Password string `db:"password"`
 }
 
 func main() {
-    db, err := Connect("sqlite3", ":memory:")
+    // Connect to an in-memory sqlite3 instance
+    db, err := sql.Connect("sqlite3", ":memory:")
     if err != nil {
         panic(err)
     }
     defer db.Close()
 
     // Create the users table
-    _, err = db.Execute(Users.Create())
-    if err != nil {
+    if _, err = db.Execute(Users.Create()); err != nil {
         panic(err)
     }
 
-    // Insert a user
-    // Structs can be inserted by value or reference
-    admin := User{Id: 1, Name: "admin", Password: "secret"}
-    _, err = db.Execute(Users.Insert(admin))
-    if err != nil {
+    // Insert a user - they can be inserted by value or reference
+    admin := User{ID: 1, Name: "admin", Password: "secret"}
+    if _, err = db.Execute(Users.Insert(admin)); err != nil {
         panic(err)
     }
 
-    // Select a user
-    // Query must be given a pointer
+    // Select a user - query methods must be given a pointer
     var user User
-    err = db.QueryOne(Users.Select(), &user)
-    if err != nil {
+    if err = db.QueryOne(Users.Select(), &user); err != nil {
         panic(err)
     }
     log.Println(user)
@@ -84,7 +82,7 @@ Structs can be partially inserted by specifying the columns. For this to work, t
 
 ```go
 type User struct {
-    Id       int64  `db:"id"`
+    ID       int64  `db:"id"`
     Name     string `db:"name"`
     Password string `db:"password"`
 }
