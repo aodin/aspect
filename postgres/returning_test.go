@@ -6,21 +6,6 @@ import (
 	"github.com/aodin/aspect"
 )
 
-type user struct {
-	ID       int64  `db:"id"`
-	Name     string `db:"name"`
-	Password string `db:"password"`
-}
-
-// TODO Schemas sould live in a single file
-
-var users = aspect.Table("users",
-	aspect.Column("id", aspect.Integer{NotNull: true}),
-	aspect.Column("name", aspect.String{Length: 32, NotNull: true}),
-	aspect.Column("password", aspect.String{Length: 128}),
-	aspect.PrimaryKey("id"),
-)
-
 func TestInsert(t *testing.T) {
 	expect := aspect.NewTester(t, &PostGres{})
 

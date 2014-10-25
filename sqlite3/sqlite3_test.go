@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-// TODO Explain the choice of sqlite3 driver
-
 var users = Table("users",
 	Column("id", Integer{NotNull: true}),
 	Column("name", String{Length: 32, NotNull: true}),

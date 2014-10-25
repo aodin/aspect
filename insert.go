@@ -120,10 +120,14 @@ func fieldAlias(cs []ColumnElem, i interface{}) []string {
 	return alias
 }
 
-// Get the value of the field struct by name
+// Get the value of the field struct by name. Fields that do not exist in
+// the elem will be silently dropped.
 func (stmt *InsertStmt) argsByName(elem reflect.Value) {
-	for _, n := range stmt.alias {
-		stmt.args = append(stmt.args, elem.FieldByName(n).Interface())
+	for _, name := range stmt.alias {
+		field := elem.FieldByName(name)
+		if field.IsValid() {
+			stmt.args = append(stmt.args, field.Interface())
+		}
 	}
 }
 
