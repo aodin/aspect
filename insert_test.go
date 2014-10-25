@@ -34,35 +34,35 @@ func TestFieldAlias(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
+	expect := NewTester(t, &defaultDialect{})
+
 	stmt := Insert(users.C["name"], users.C["password"])
 
 	// By default, an INSERT without values will assume a single entry
 	// TODO This statement should have zero parameters
-	expectedSQL(
-		t,
-		stmt,
+	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
-		2,
+		stmt,
+		nil,
+		nil,
 	)
 
 	// Adding multiple values will generate a bulk insert statement
 	// Structs do not need to be complete if fields are named
 	admin := user{Name: "admin", Password: "secret"}
 	client := user{Name: "client", Password: "1234"}
-
-	single := stmt.Values(admin)
-	expectedSQL(
-		t,
-		single,
+	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
-		2,
+		stmt.Values(admin),
+		"admin",
+		"secret",
 	)
-
-	bulk := stmt.Values([]user{admin, client})
-	expectedSQL(
-		t,
-		bulk,
+	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2), ($3, $4)`,
-		4,
+		stmt.Values([]user{admin, client}),
+		"admin",
+		"secret",
+		"client",
+		"1234",
 	)
 }

@@ -5,12 +5,12 @@ import (
 )
 
 func TestUpdate(t *testing.T) {
-	stmt := Update(users, Values{"name": "client"})
-	expectedSQL(
-		t,
-		stmt,
+	expect := NewTester(t, &defaultDialect{})
+
+	expect.SQL(
 		`UPDATE "users" SET "name" = $1`,
-		1,
+		Update(users, Values{"name": "client"}),
+		"client",
 	)
 
 	values := Values{
@@ -18,16 +18,16 @@ func TestUpdate(t *testing.T) {
 		"password": "blank",
 	}
 
-	stmt = Update(users, values).Where(users.C["id"].Equals(1))
-	expectedSQL(
-		t,
-		stmt,
+	expect.SQL(
 		`UPDATE "users" SET "name" = $1 AND "password" = $2 WHERE "users"."id" = $3`,
-		3,
+		Update(users, values).Where(users.C["id"].Equals(1)),
+		"admin",
+		"blank",
+		1,
 	)
 
 	// The statement should have an error if the values map is empty
-	stmt = Update(users, Values{})
+	stmt := Update(users, Values{})
 	_, err := stmt.Compile(&defaultDialect{}, Params())
 	if err == nil {
 		t.Fatalf("No error returned from column-less UPDATE")

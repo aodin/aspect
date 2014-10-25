@@ -1,55 +1,38 @@
 package postgis
 
 import (
+	"testing"
+
 	"github.com/aodin/aspect"
 	"github.com/aodin/aspect/postgres"
-	"testing"
 )
+
+// TODO Schemas should live in one file
 
 var shapes = aspect.Table("shapes",
 	aspect.Column("pt", Geometry{Geom: Point{}}),
 	aspect.Column("area", Geometry{Polygon{}, 4326}),
 )
 
-func expectedPostGres(t *testing.T, stmt aspect.Compiles, expected string, p int) {
-	params := aspect.Params()
-	compiled, err := stmt.Compile(&postgres.PostGres{}, params)
-	if err != nil {
-		t.Error(err)
-	}
-	if compiled != expected {
-		t.Errorf("Unexpected SQL: %s != %s", compiled, expected)
-	}
-	if params.Len() != p {
-		t.Errorf(
-			"Unexpected number of parameters for %s: %d != %d",
-			expected,
-			params.Len(),
-			p,
-		)
-	}
-}
-
 func TestLatLong(t *testing.T) {
-	p := LatLong{39.739167, -104.984722}
-	expectedPostGres(
-		t,
-		p,
+	expect := aspect.NewTester(t, &postgres.PostGres{})
+
+	// TODO parameterization?
+	expect.SQL(
 		`ST_SetSRID(ST_Point(-104.984722, 39.739167), 4326)::geography`,
-		0,
+		LatLong{39.739167, -104.984722},
 	)
 }
 
 func TestWithin(t *testing.T) {
-	expectedPostGres(
-		t,
-		Within(shapes.C["area"], Point{-104.984722, 39.739167}),
+	expect := aspect.NewTester(t, &postgres.PostGres{})
+	expect.SQL(
 		`ST_Within(ST_Point(-104.984722, 39.739167), "shapes"."area")`,
-		0,
+		Within(shapes.C["area"], Point{-104.984722, 39.739167}),
 	)
 }
 
 func TestGeoJSON(t *testing.T) {
-	c := AsGeoJSON(shapes.C["area"])
-	expectedPostGres(t, c, `ST_AsGeoJSON("shapes"."area")`, 0)
+	expect := aspect.NewTester(t, &postgres.PostGres{})
+	expect.SQL(`ST_AsGeoJSON("shapes"."area")`, AsGeoJSON(shapes.C["area"]))
 }

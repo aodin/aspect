@@ -4,6 +4,8 @@ import (
 	"testing"
 )
 
+// TODO All table schemas should live in one file
+
 var parents = Table("parents",
 	Column("id", Integer{}),
 	Column("name", String{}),
@@ -14,11 +16,12 @@ var children = Table("children",
 	Column("name", String{}),
 )
 
-func TestForeignKey(t *testing.T) {
-	stmt := children.Create()
+func TestForeignKey_Create(t *testing.T) {
+	expect := NewTester(t, &defaultDialect{})
+
 	expected := `CREATE TABLE "children" (
   "parent_id" INTEGER REFERENCES parents("id"),
   "name" VARCHAR
 );`
-	expectedSQL(t, stmt, expected, 0)
+	expect.SQL(expected, children.Create())
 }

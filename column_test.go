@@ -5,42 +5,46 @@ import (
 )
 
 func TestColumnElem(t *testing.T) {
+	expect := NewTester(t, &defaultDialect{})
+
 	// Calling inner should return the inner ColumnClause
 	col := users.C["id"]
 	copy := col.Inner()
-	expectedSQL(t, copy, `"users"."id"`, 0)
+	expect.SQL(`"users"."id"`, copy)
 
 	// Change the inner
 	resetCol := col.SetInner(copy)
-	expectedSQL(t, resetCol, `"users"."id"`, 0)
+	expect.SQL(`"users"."id"`, resetCol)
 
 	// Test the old compilation behavior
 	chad := ColumnElem{
 		table: users,
 		name:  "chad",
 	}
-	expectedSQL(t, chad, `"users"."chad"`, 0)
+	expect.SQL(`"users"."chad"`, chad)
 }
 
 func TestColumnOrdering(t *testing.T) {
-	expectedSQL(t, users.C["id"].Orderable(), `"users"."id"`, 0)
-	expectedSQL(t, users.C["id"].Asc(), `"users"."id"`, 0)
-	expectedSQL(t, users.C["id"].Desc(), `"users"."id" DESC`, 0)
-	expectedSQL(t, users.C["id"].NullsFirst(), `"users"."id" NULLS FIRST`, 0)
-	expectedSQL(t, users.C["id"].NullsLast(), `"users"."id" NULLS LAST`, 0)
+	expect := NewTester(t, &defaultDialect{})
+	expect.SQL(`"users"."id"`, users.C["id"].Orderable())
+	expect.SQL(`"users"."id"`, users.C["id"].Asc())
+	expect.SQL(`"users"."id" DESC`, users.C["id"].Desc())
+	expect.SQL(`"users"."id" NULLS FIRST`, users.C["id"].NullsFirst())
+	expect.SQL(`"users"."id" NULLS LAST`, users.C["id"].NullsLast())
 }
 
 func TestColumnConditionals(t *testing.T) {
-	expectedSQL(t, users.C["id"].Equals(1), `"users"."id" = $1`, 1)
-	expectedSQL(t, users.C["id"].DoesNotEqual(1), `"users"."id" != $1`, 1)
-	expectedSQL(t, users.C["id"].LessThan(1), `"users"."id" < $1`, 1)
-	expectedSQL(t, users.C["id"].GreaterThan(1), `"users"."id" > $1`, 1)
-	expectedSQL(t, users.C["id"].LTE(1), `"users"."id" <= $1`, 1)
-	expectedSQL(t, users.C["id"].GTE(1), `"users"."id" >= $1`, 1)
-	expectedSQL(t, users.C["name"].Like(1), `"users"."name" like $1`, 1)
-	expectedSQL(t, users.C["name"].ILike(1), `"users"."name" ilike $1`, 1)
-	expectedSQL(t, users.C["id"].IsNull(), `"users"."id" IS NULL`, 0)
-	expectedSQL(t, users.C["id"].IsNotNull(), `"users"."id" IS NOT NULL`, 0)
+	expect := NewTester(t, &defaultDialect{})
+	expect.SQL(`"users"."id" = $1`, users.C["id"].Equals(1), 1)
+	expect.SQL(`"users"."id" != $1`, users.C["id"].DoesNotEqual(1), 1)
+	expect.SQL(`"users"."id" < $1`, users.C["id"].LessThan(1), 1)
+	expect.SQL(`"users"."id" > $1`, users.C["id"].GreaterThan(1), 1)
+	expect.SQL(`"users"."id" <= $1`, users.C["id"].LTE(1), 1)
+	expect.SQL(`"users"."id" >= $1`, users.C["id"].GTE(1), 1)
+	expect.SQL(`"users"."name" like $1`, users.C["name"].Like(1), 1)
+	expect.SQL(`"users"."name" ilike $1`, users.C["name"].ILike(1), 1)
+	expect.SQL(`"users"."id" IS NULL`, users.C["id"].IsNull())
+	expect.SQL(`"users"."id" IS NOT NULL`, users.C["id"].IsNotNull())
 }
 
 func TestColumnElem_Modify(t *testing.T) {

@@ -6,75 +6,62 @@ import (
 )
 
 func TestClauses(t *testing.T) {
+	expect := NewTester(t, &defaultDialect{})
+
 	id := users.C["id"]
 
 	// Column clause
-	expectedSQL(
-		t,
-		ColumnClause{table: users, name: id.Name()},
-		`"users"."id"`,
-		0,
-	)
+	expect.SQL(`"users"."id"`, ColumnClause{table: users, name: id.Name()})
 
 	// Binary clause
-	expectedSQL(
-		t,
-		id.Equals(2),
-		`"users"."id" = $1`,
-		1,
-	)
+	expect.SQL(`"users"."id" = $1`, id.Equals(2), 2)
 
 	// Load the Denver timezone
 	denver, err := time.LoadLocation("America/Denver")
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectedSQL(
-		t,
-		views.C["timestamp"].InLocation(denver),
+	expect.SQL(
 		`"views"."timestamp"::TIMESTAMP WITH TIME ZONE AT TIME ZONE $1`,
-		1,
+		views.C["timestamp"].InLocation(denver),
+		denver.String(),
 	)
 
 	// Array clause of binary clauses
-	expectedSQL(
-		t,
-		AllOf(id.LessThan(5), id.GreaterThan(1)),
+	expect.SQL(
 		`"users"."id" < $1 AND "users"."id" > $2`,
-		2,
+		AllOf(id.LessThan(5), id.GreaterThan(1)),
+		5,
+		1,
 	)
 
 	// Composite clauses
-	expectedSQL(
-		t,
-		id.Between(2, 5),
+	expect.SQL(
 		`"users"."id" >= $1 AND "users"."id" <= $2`,
+		id.Between(2, 5),
 		2,
+		5,
 	)
-	expectedSQL(
-		t,
-		id.NotBetween(2, 5),
+	expect.SQL(
 		`"users"."id" < $1 OR "users"."id" > $2`,
+		id.NotBetween(2, 5),
 		2,
+		5,
 	)
-	expectedSQL(
-		t,
-		id.In([]int64{1, 5}),
+	expect.SQL(
 		`"users"."id" IN ($1, $2)`,
-		2,
+		id.In([]int64{1, 5}),
+		1,
+		5,
 	)
 
 	// Unary clauses
-	expectedSQL(
-		t,
-		id.IsNull(),
+	expect.SQL(
 		`"users"."id" IS NULL`,
-		0,
+		id.IsNull(),
 	)
-	expectedSQL(
-		t,
-		id.IsNotNull(),
+	expect.SQL(
 		`"users"."id" IS NOT NULL`,
-		0,
+		id.IsNotNull(),
 	)
 }

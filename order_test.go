@@ -5,23 +5,23 @@ import (
 )
 
 func TestOrder(t *testing.T) {
+	expect := NewTester(t, &defaultDialect{})
+
 	// Asc is implied
 	o := OrderedColumn{inner: users.C["id"]}
-	expectedSQL(t, o, `"users"."id"`, 0)
+	expect.SQL(`"users"."id"`, o)
 
 	// Desc
-	expectedSQL(t, o.Desc(), `"users"."id" DESC`, 0)
+	expect.SQL(`"users"."id" DESC`, o.Desc())
 
 	// Desc, nulls first
-	expectedSQL(
-		t,
-		o.Desc().NullsFirst(),
+	expect.SQL(
 		`"users"."id" DESC NULLS FIRST`,
-		0,
+		o.Desc().NullsFirst(),
 	)
 
 	// Asc, Nulls last
-	expectedSQL(t, o.Asc().NullsLast(), `"users"."id" NULLS LAST`, 0)
+	expect.SQL(`"users"."id" NULLS LAST`, o.Asc().NullsLast())
 
 	// Calling Orderable on an OrderableColumn should return a copy of itself
 	copy := o.Orderable()

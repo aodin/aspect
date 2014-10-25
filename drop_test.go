@@ -5,5 +5,6 @@ import (
 )
 
 func TestDropStmt(t *testing.T) {
-	expectedSQL(t, users.Drop(), `DROP TABLE "users"`, 0)
+	expect := NewTester(t, &defaultDialect{})
+	expect.SQL(`DROP TABLE "users"`, users.Drop())
 }

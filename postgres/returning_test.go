@@ -1,8 +1,9 @@
 package postgres
 
 import (
-	"github.com/aodin/aspect"
 	"testing"
+
+	"github.com/aodin/aspect"
 )
 
 type user struct {
@@ -11,25 +12,7 @@ type user struct {
 	Password string `db:"password"`
 }
 
-// A short test for testing that an SQL statement was compiled as expected
-func expectedSQL(t *testing.T, stmt aspect.Compiles, expected string, p int) {
-	params := aspect.Params()
-	compiled, err := stmt.Compile(&PostGres{}, params)
-	if err != nil {
-		t.Error(err)
-	}
-	if compiled != expected {
-		t.Errorf("Unexpected SQL: %s != %s", compiled, expected)
-	}
-	if params.Len() != p {
-		t.Errorf(
-			"Unexpected number of parameters for %s: %d != %d",
-			expected,
-			params.Len(),
-			p,
-		)
-	}
-}
+// TODO Schemas sould live in a single file
 
 var users = aspect.Table("users",
 	aspect.Column("id", aspect.Integer{NotNull: true}),
@@ -39,6 +22,8 @@ var users = aspect.Table("users",
 )
 
 func TestInsert(t *testing.T) {
+	expect := aspect.NewTester(t, &PostGres{})
+
 	stmt := Insert(
 		users.C["name"],
 		users.C["password"],
@@ -47,33 +32,27 @@ func TestInsert(t *testing.T) {
 	)
 
 	// By default, an INSERT without values will assume a single entry
-	// TODO This statement should have zero parameters
-	expectedSQL(
-		t,
-		stmt,
+	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2) RETURNING "users"."id"`,
-		2,
+		stmt,
+		nil,
+		nil,
 	)
 
 	// Adding values should set parameters
 	admin := user{Name: "admin", Password: "secret"}
-	single := stmt.Values(admin)
-	expectedSQL(
-		t,
-		single,
+	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2) RETURNING "users"."id"`,
-		2,
+		stmt.Values(admin),
+		"admin",
+		"secret",
 	)
 
 	// Statements with a returning clause should be unaffected
-	stmt2 := Insert(
-		users.C["name"],
-		users.C["password"],
-	)
-	expectedSQL(
-		t,
-		stmt2,
+	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
-		2,
+		Insert(users.C["name"], users.C["password"]),
+		nil,
+		nil,
 	)
 }

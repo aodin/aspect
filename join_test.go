@@ -4,6 +4,8 @@ import (
 	"testing"
 )
 
+// TODO All table schemas should live in one file
+
 var tableA = Table("a",
 	Column("id", Integer{}),
 	Column("value", String{}),
@@ -21,15 +23,14 @@ var relations = Table("relations",
 )
 
 func TestJoinStmt(t *testing.T) {
-	a := Select(tableA).Join(tableA.C["id"], relations.C["a_id"])
-	expectedSQL(
-		t,
-		a,
+	expect := NewTester(t, &defaultDialect{})
+
+	expect.SQL(
 		`SELECT "a"."id", "a"."value" FROM "a" JOIN "relations" ON "a"."id" = "relations"."a_id"`,
-		0,
+		Select(tableA).Join(tableA.C["id"], relations.C["a_id"]),
 	)
 
-	b := Select(
+	stmt := Select(
 		tableA.C["value"],
 		tableB.C["value"],
 	).Join(
@@ -39,10 +40,8 @@ func TestJoinStmt(t *testing.T) {
 		relations.C["b_id"],
 		tableB.C["id"],
 	)
-	expectedSQL(
-		t,
-		b,
+	expect.SQL(
 		`SELECT "a"."value", "b"."value" FROM "relations" JOIN "a" ON "relations"."a_id" = "a"."id" JOIN "b" ON "relations"."b_id" = "b"."id"`,
-		0,
+		stmt,
 	)
 }

@@ -4,9 +4,7 @@ import (
 	"testing"
 )
 
-// TODO make admin and client globals
-
-func testFieldIndex(t *testing.T) {
+func TestFieldIndex(t *testing.T) {
 	admin := user{Id: 1, Name: "admin"}
 	index, err := fieldIndex(admin, "id")
 	if err != nil {
@@ -15,52 +13,39 @@ func testFieldIndex(t *testing.T) {
 	if index != 0 {
 		t.Errorf(`Unexpected index of the user "id" column: %d`, index)
 	}
-
 	getFieldByIndex(admin, 0)
 }
 
 func TestDelete(t *testing.T) {
+	expect := NewTester(t, &defaultDialect{})
+
 	// Test a complete delete
-	expectedSQL(
-		t,
-		users.Delete(),
+	expect.SQL(
 		`DELETE FROM "users"`,
-		0,
+		users.Delete(),
 	)
 
 	// Test a delete with a WHERE
-	expectedSQL(
-		t,
-		users.Delete().Where(users.C["id"].Equals(1)),
+	expect.SQL(
 		`DELETE FROM "users" WHERE "users"."id" = $1`,
+		users.Delete().Where(users.C["id"].Equals(1)),
 		1,
 	)
 
 	// Delete by a schema's declared primary key
 	admin := user{Id: 1, Name: "admin", Password: "secret"}
 	client := user{Id: 2, Name: "client", Password: "secret"}
-	expectedSQL(
-		t,
-		users.Delete(admin),
+	expect.SQL(
 		`DELETE FROM "users" WHERE "users"."id" = $1`,
+		users.Delete(admin),
 		1,
 	)
 
-	expectedSQL(
-		t,
-		users.Delete(admin, client),
+	expect.SQL(
 		`DELETE FROM "users" WHERE "users"."id" IN ($1, $2)`,
+		users.Delete(admin, client),
+		1,
 		2,
 	)
 
-	// edgeA := edge{A:1, B:2}
-	// // edgeB := edge{A:2, B:3}
-
-	// // Test delete with a composite primary key
-	// expectedSQL(
-	// 	t,
-	// 	edges.Delete(edgeA),
-	// 	`DELETE FROM "edges" WHERE "edges"."a" = $1 AND "edges"."b" = $2`,
-	// 	2,
-	// )
 }
