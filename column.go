@@ -156,6 +156,22 @@ func (c ColumnElem) GTE(i interface{}) BinaryClause {
 	}
 }
 
+func (c ColumnElem) Like(i interface{}) BinaryClause {
+	return BinaryClause{
+		Pre:  c,
+		Post: &Parameter{i},
+		Sep:  " like ",
+	}
+}
+
+func (c ColumnElem) ILike(i interface{}) BinaryClause {
+	return BinaryClause{
+		Pre:  c,
+		Post: &Parameter{i},
+		Sep:  " ilike ",
+	}
+}
+
 func (c ColumnElem) IsNull() UnaryClause {
 	return UnaryClause{
 		Pre: c,

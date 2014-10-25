@@ -37,6 +37,8 @@ func TestColumnConditionals(t *testing.T) {
 	expectedSQL(t, users.C["id"].GreaterThan(1), `"users"."id" > $1`, 1)
 	expectedSQL(t, users.C["id"].LTE(1), `"users"."id" <= $1`, 1)
 	expectedSQL(t, users.C["id"].GTE(1), `"users"."id" >= $1`, 1)
+	expectedSQL(t, users.C["name"].Like(1), `"users"."name" like $1`, 1)
+	expectedSQL(t, users.C["name"].ILike(1), `"users"."name" ilike $1`, 1)
 	expectedSQL(t, users.C["id"].IsNull(), `"users"."id" IS NULL`, 0)
 	expectedSQL(t, users.C["id"].IsNotNull(), `"users"."id" IS NOT NULL`, 0)
 }
