@@ -28,10 +28,8 @@ func callerInfo() string {
 		if file == "testing.go" {
 			continue
 		}
-
 		break
 	}
-
 	return fmt.Sprintf("%s:%d", file, line)
 }
 
@@ -41,7 +39,7 @@ type sqlTest struct {
 }
 
 // SQL tests that the given Compiles instance matches the expected string for
-// the test's current dialect, and that the parameters match.
+// the current dialect.
 func (t *sqlTest) SQL(expect string, stmt Compiles, ps ...interface{}) {
 	// Get caller information in case of failure
 	caller := callerInfo()
@@ -53,6 +51,7 @@ func (t *sqlTest) SQL(expect string, stmt Compiles, ps ...interface{}) {
 	actual, err := stmt.Compile(t.dialect, params)
 	if err != nil {
 		t.t.Error("%s: unexpected error from compile: %s", caller, err)
+		return
 	}
 
 	if expect != actual {
@@ -63,7 +62,7 @@ func (t *sqlTest) SQL(expect string, stmt Compiles, ps ...interface{}) {
 			actual,
 		)
 	}
-	// TODO Test that the parameters are equal
+	// Test that the parameters are equal
 	if params.Len() != len(ps) {
 		t.t.Errorf(
 			"%s: unexpected number of parameters for %s: expect %d, got %d",
@@ -72,7 +71,10 @@ func (t *sqlTest) SQL(expect string, stmt Compiles, ps ...interface{}) {
 			params.Len(),
 			len(ps),
 		)
+		return
 	}
+
+	// TODO Examine individual parameters for equality
 }
 
 func NewTester(t *testing.T, d Dialect) *sqlTest {

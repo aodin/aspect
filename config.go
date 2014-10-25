@@ -47,15 +47,15 @@ func (db DatabaseConfig) Credentials() string {
 }
 
 // Parse will create a DatabaseConfig using the file at the given path.
-func Parse(filename string) (DatabaseConfig, error) {
+func ParseConfig(filename string) (DatabaseConfig, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return DatabaseConfig{}, err
 	}
-	return parse(f)
+	return parseConfig(f)
 }
 
-func parse(f io.Reader) (c DatabaseConfig, err error) {
+func parseConfig(f io.Reader) (c DatabaseConfig, err error) {
 	b, err := ioutil.ReadAll(f)
 	if err != nil {
 		return
