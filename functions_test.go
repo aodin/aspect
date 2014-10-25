@@ -14,6 +14,7 @@ func TestFunctions(t *testing.T) {
 		`DATE("views"."timestamp")`,
 		0,
 	)
+	expectedSQL(t, Lower(views.C["id"]), `LOWER("views"."id")`, 0)
 	expectedSQL(t, Max(views.C["id"]), `MAX("views"."id")`, 0)
 	expectedSQL(
 		t,

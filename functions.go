@@ -27,6 +27,11 @@ func Max(c ColumnElem) ColumnElem {
 	return c
 }
 
+func Lower(c ColumnElem) ColumnElem {
+	c.inner = FuncClause{Inner: c.inner, F: "LOWER"}
+	return c
+}
+
 func DatePart(c ColumnElem, part string) ColumnElem {
 	// Add the given date part as a parameter
 	c.inner = FuncClause{
