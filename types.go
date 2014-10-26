@@ -5,6 +5,14 @@ import (
 	"strings"
 )
 
+// Provide a nullable boolean for Boolean type default values
+var (
+	internalTrue  bool = true
+	internalFalse bool = false
+	True               = &internalTrue
+	False              = &internalFalse
+)
+
 type dbType interface {
 	Create(Dialect) (string, error)
 }
@@ -125,10 +133,11 @@ func (s Date) Create(d Dialect) (string, error) {
 	return compiled, nil
 }
 
-// Boolean represents BOOL column types.
+// Boolean represents BOOL column types. It contains a Default field that
+// can left nil, or set with the variables True or False
 type Boolean struct {
 	NotNull bool
-	Default string
+	Default *bool
 }
 
 // Create returns the syntax need to create this column in CREATE statements.
@@ -137,9 +146,8 @@ func (s Boolean) Create(d Dialect) (string, error) {
 	if s.NotNull {
 		compiled += " NOT NULL"
 	}
-	if s.Default != "" {
-		compiled += " DEFAULT "
-		compiled += s.Default
+	if s.Default != nil {
+		compiled += strings.ToUpper(fmt.Sprintf(" DEFAULT %t", *s.Default))
 	}
 	return compiled, nil
 }

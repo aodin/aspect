@@ -124,7 +124,7 @@ func TestBoolean(t *testing.T) {
 		t.Fatalf("Unexpected %s creation output: %s", expected, output)
 	}
 
-	s = Boolean{NotNull: true, Default: "FALSE"}
+	s = Boolean{NotNull: true, Default: False}
 	output, err = s.Create(&defaultDialect{})
 	expected = "BOOL NOT NULL DEFAULT FALSE"
 	if err != nil {
