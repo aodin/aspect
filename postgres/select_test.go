@@ -44,11 +44,30 @@ func TestSelect(t *testing.T) {
 
 	// Insert users as values or pointers
 	admin := user{Name: "admin", IsActive: true}
-	_, err = tx.Execute(users.Insert(admin))
+	stmt := aspect.Insert(
+		users.C["name"],
+		users.C["password"],
+		users.C["is_active"],
+	)
+	_, err = tx.Execute(stmt.Values(admin))
+	require.Nil(t, err)
+
+	_, err = tx.Execute(stmt.Values(&admin))
 	require.Nil(t, err)
 
 	var u user
 	require.Nil(t, tx.QueryOne(users.Select(), &u))
 	assert.Equal("admin", u.Name)
 	assert.Equal(true, u.IsActive)
+
+	// Select using a returning clause
+	client := user{Name: "client", Password: "1234"}
+	returningStmt := Insert(
+		users.C["name"],
+		users.C["password"],
+	).Returning(
+		users.C["id"],
+	)
+	require.Nil(t, tx.QueryOne(returningStmt.Values(client), &client.ID))
+	assert.NotEqual(0, client.ID) // The ID should be anything but zero
 }

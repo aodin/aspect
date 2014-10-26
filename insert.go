@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+var (
+	ErrNoColumns = errors.New("aspect: statments must have associated columns")
+)
+
 type InsertStmt struct {
 	table   *TableElem
 	columns []ColumnElem
@@ -16,10 +20,6 @@ type InsertStmt struct {
 	alias   []string
 }
 
-var (
-	ErrNoColumns = errors.New("aspect: statments must have associated columns")
-)
-
 func (stmt InsertStmt) String() string {
 	compiled, _ := stmt.Compile(&defaultDialect{}, Params())
 	return compiled
@@ -27,6 +27,18 @@ func (stmt InsertStmt) String() string {
 
 func (stmt InsertStmt) Error() error {
 	return stmt.err
+}
+
+func (stmt InsertStmt) SetError(err error) {
+	stmt.err = err
+}
+
+func (stmt InsertStmt) Table() *TableElem {
+	return stmt.table
+}
+
+func (stmt InsertStmt) AppendColumn(c ColumnElem) {
+	stmt.columns = append(stmt.columns, c)
 }
 
 func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
