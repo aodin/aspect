@@ -134,7 +134,7 @@ func (s Date) Create(d Dialect) (string, error) {
 }
 
 // Boolean represents BOOL column types. It contains a Default field that
-// can left nil, or set with the variables True or False
+// can be left nil, or set with the included variables True and False.
 type Boolean struct {
 	NotNull bool
 	Default *bool

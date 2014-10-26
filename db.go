@@ -6,10 +6,11 @@ import (
 
 // Connection is a common interface for database connections or transactions
 type Connection interface {
+	Execute(stmt Executable, args ...interface{}) (sql.Result, error)
 	Query(stmt Executable, args ...interface{}) (*Result, error)
 	QueryAll(stmt Executable, i interface{}) error
 	QueryOne(stmt Executable, i interface{}) error
-	Execute(stmt Executable, args ...interface{}) (sql.Result, error)
+	String(stmt Executable) string // Parameter-less output for logging
 }
 
 // Both DB and TX should implement the Connection interface
@@ -111,6 +112,13 @@ func (db *DB) Execute(stmt Executable, args ...interface{}) (sql.Result, error) 
 	return db.conn.Exec(s, args...)
 }
 
+// String returns parameter-less SQL. If an error occurred during compilation,
+// then an empty string will be returned.
+func (db *DB) String(stmt Executable) string {
+	compiled, _ := stmt.Compile(db.dialect, Params())
+	return compiled
+}
+
 func Connect(driver, credentials string) (*DB, error) {
 	// Connect to the database using the given credentials
 	db, err := sql.Open(driver, credentials)
@@ -126,6 +134,7 @@ func Connect(driver, credentials string) (*DB, error) {
 	return &DB{conn: db, dialect: dialect}, nil
 }
 
+// TODO behavior should be inherited from the DB field instance
 type TX struct {
 	*sql.Tx
 	db *DB
@@ -197,4 +206,11 @@ func (tx *TX) Execute(stmt Executable, args ...interface{}) (sql.Result, error) 
 		args = params.args
 	}
 	return tx.Exec(s, args...)
+}
+
+// String returns parameter-less SQL. If an error occurred during compilation,
+// then an empty string will be returned.
+func (tx *TX) String(stmt Executable) string {
+	compiled, _ := stmt.Compile(tx.db.dialect, Params())
+	return compiled
 }
