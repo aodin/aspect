@@ -108,9 +108,8 @@ func (table *TableElem) Update() UpdateStmt {
 func Table(name string, elements ...TableModifier) *TableElem {
 	// TODO Confirm that the given name is a valid SQL table name.
 	table := &TableElem{
-		Name:  name,
-		C:     ColumnSet{},
-		order: make([]string, 0),
+		Name: name,
+		C:    ColumnSet{},
 	}
 	// Pass the table to each element for potential modification
 	for _, element := range elements {

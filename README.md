@@ -215,6 +215,66 @@ INSERT INTO "users" ("name") VALUES (?)
 Keys in `Values` maps must match column names or the statement will error.
 
 
+### UPDATE
+
+Rows in a table can be updated using either of:
+
+```go
+Users.Update()
+sql.Update(Users)
+```
+
+Both will produce the same output:
+
+```sql
+UPDATE "users" SET "id" = ? AND "name" = ? AND "password" = ?
+```
+
+Columns are set according to the values given. Values keys that do not match a column will error.
+
+```go
+Users.Update().Values(sql.Values{"name": "Ronaldo", "password": "STRIKER"})
+```
+
+```sql
+UPDATE "users" SET "name" = ? AND "password" = ?
+```
+
+Conditionals can be specified with the `Where()` method:
+
+```go
+Users.Update().Values(
+    sql.Values{"password": "FIFA2014"},
+).Where(Users.C["name"].Equals("Ronaldo"))
+```
+
+```sql
+UPDATE "users" SET "password" = ? WHERE "users"."name" = ?
+```
+
+
+### DELETE
+
+```go
+Users.Delete()
+```
+
+```sql
+DELETE FROM "users"
+```
+
+If the schema has a primary key specified, deletes can be performed with structs:
+
+```go
+admin = User{1, "admin", "secret"}
+Users.Delete(admin)
+```
+
+```sql
+DELETE FROM "users" WHERE "users"."id" = $1
+```
+
+
 ### SELECT
 
 Each of the following statements will produce the same SQL:
@@ -257,26 +317,9 @@ fmt.Println(ids)
 // [3, 2, 1]
 ```
 
-### DELETE
+Happy Hacking!
 
-```go
-Users.Delete()
-```
-
-```sql
-DELETE FROM "users"
-```
-
-If the schema has a primary key specified, deletes can be performed with structs:
-
-```go
-admin = User{1, "admin", "secret"}
-Users.Delete(admin)
-```
-
-```sql
-DELETE FROM "users" WHERE "users"."id" = $1
-```
+aodin, 2014
 
 > Death and Light are everywhere, always, and they begin, end, strive,
 > attend, into and upon the Dream of the Nameless that is the world,

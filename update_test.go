@@ -7,6 +7,16 @@ import (
 func TestUpdate(t *testing.T) {
 	expect := NewTester(t, &defaultDialect{})
 
+	// Values do not need to be attached to produce an UPDATE statement. It
+	// will default to all columns in the table with nil parameters.
+	expect.SQL(
+		`UPDATE "users" SET "id" = $1 AND "name" = $2 AND "password" = $3`,
+		users.Update(),
+		nil,
+		nil,
+		nil,
+	)
+
 	expect.SQL(
 		`UPDATE "users" SET "name" = $1`,
 		users.Update().Values(Values{"name": "client"}),

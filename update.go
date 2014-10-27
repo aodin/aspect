@@ -25,17 +25,28 @@ func (stmt UpdateStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	if stmt.err != nil {
 		return "", stmt.err
 	}
+
+	// If no values were attached, then create a default values map
+	if stmt.values == nil {
+		stmt.values = Values{}
+		for _, column := range stmt.table.Columns() {
+			stmt.values[column.Name()] = nil
+		}
+	}
+
 	// Compile the values
 	valuesStmt, err := stmt.values.Compile(d, params)
 	if err != nil {
 		return "", err
 	}
+
 	// Begin building the SQL UPDATE statement
 	compiled := fmt.Sprintf(
 		`UPDATE "%s" SET %s`,
 		stmt.table.Name,
 		valuesStmt,
 	)
+
 	// Add a conditional statement if it exists
 	if stmt.cond != nil {
 		cc, err := stmt.cond.Compile(d, params)
