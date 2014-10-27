@@ -60,6 +60,7 @@ func (stmt UpdateStmt) Compile(d Dialect, params *Parameters) (string, error) {
 
 // Values attaches the given values to the statement. The keys of values
 // must match columns in the table.
+// TODO Allow structs to be used if a primary key is specified in the schema
 func (stmt UpdateStmt) Values(values Values) UpdateStmt {
 	// There must be some columns to update!
 	if len(values) == 0 {
@@ -88,13 +89,11 @@ func (stmt UpdateStmt) Where(cond Clause) UpdateStmt {
 	return stmt
 }
 
-// Update creates an UPDATE statement for the given table and values.
-// TODO separate the Update() and Values() methods?
-// TODO Allow structs to be used if a primary key is specified in the schema
+// Update creates an UPDATE statement for the given table.
 func Update(table *TableElem) (stmt UpdateStmt) {
 	if table == nil {
 		stmt.err = fmt.Errorf(
-			"aspect: attempting to UPDATE a table that does not exist",
+			"aspect: attempting to UPDATE a nil table",
 		)
 		return
 	}

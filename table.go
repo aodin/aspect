@@ -81,9 +81,10 @@ func (table *TableElem) Selectable() []ColumnElem {
 }
 
 // Delete is an alias for Delete(table). It will generate a DELETE statement
-// for this table and the given arguments.
-func (table *TableElem) Delete(args ...interface{}) DeleteStmt {
-	return Delete(table, args...)
+// for this table. Conditionals can be added with the Where() method or
+// by specifying structs or slices of structs with Values()
+func (table *TableElem) Delete() DeleteStmt {
+	return Delete(table)
 }
 
 // Insert will create an INSERT statement for the entire table with the given

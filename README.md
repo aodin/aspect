@@ -62,8 +62,8 @@ func main() {
 }
 ```
 
-Example Statements
-------------------
+Statements
+----------
 
 Don't forget to import aspect and at least one driver you'll be using. I often alias the aspect package to `sql` as below:
 
@@ -255,6 +255,8 @@ UPDATE "users" SET "password" = ? WHERE "users"."name" = ?
 
 ### DELETE
 
+If you want to delete all the rows in a table:
+
 ```go
 Users.Delete()
 ```
@@ -263,26 +265,45 @@ Users.Delete()
 DELETE FROM "users"
 ```
 
-If the schema has a primary key specified, deletes can be performed with structs:
+A conditional delete can be created with `Where()`:
 
 ```go
-admin = User{1, "admin", "secret"}
-Users.Delete(admin)
+Users.Delete().Where(Users.C["name"].Equals("Ronaldo"))
+```
+
+```sql
+DELETE FROM "users" WHERE "users"."name" = ?
+```
+
+If the schema has a single column primary key specified, deletes can be performed with structs:
+
+```go
+Users.Delete().Values(User{ID: 1})
 ```
 
 ```sql
 DELETE FROM "users" WHERE "users"."id" = $1
 ```
 
+Or slices of structs:
+
+```go
+Users.Delete().Values([]User{{ID: 1}, {ID: 2}})
+```
+
+```sql
+DELETE FROM "users" WHERE "users"."id" IN ($1, $2)
+```
+
 
 ### SELECT
 
-Each of the following statements will produce the same SQL:
+Results can be queried in a number of ways. Each of the following statements will produce the same SQL:
 
 ```go
 Users.Select()
-aspect.Select(Users)
-aspect.Select(Users.C["id"], Users.C["name"], Users.C["password"])
+sql.Select(Users)
+sql.Select(Users.C["id"], Users.C["name"], Users.C["password"])
 ```
 
 ```sql

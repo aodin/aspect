@@ -41,7 +41,7 @@ func fieldMap(columns []ColumnElem, i interface{}) (map[string]string, error) {
 		for i := 0; i < elem.NumField(); i += 1 {
 			f := elem.Field(i)
 			tag := f.Tag.Get("db")
-			if tag == name || name == f.Name {
+			if tag == name || f.Name == name {
 				alias[name] = f.Name
 				break
 			}

@@ -5,21 +5,29 @@ import (
 	"reflect"
 )
 
+// DeleteStmt is the internal representation of a DELETE statement.
 type DeleteStmt struct {
-	table *TableElem
-	args  []interface{}
-	cond  Clause
+	table   *TableElem
+	args    []interface{}
+	cond    Clause
+	err     error
+	pkField int
 }
 
+// String outputs the parameter-less DELETE statement in a neutral dialect.
 func (stmt DeleteStmt) String() string {
 	compiled, _ := stmt.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 
+// Compile outputs the DELETE statement using the given dialect and parameters.
+// An error may be returned because of a pre-existing error or because
+// an error occurred during compilation.
 func (stmt DeleteStmt) Compile(d Dialect, params *Parameters) (string, error) {
+	if stmt.err != nil {
+		return "", stmt.err
+	}
 	compiled := fmt.Sprintf(`DELETE FROM "%s"`, stmt.table.Name)
-
-	// TODO Add any existing arguments to the parameters
 
 	if stmt.cond != nil {
 		cc, err := stmt.cond.Compile(d, params)
@@ -31,81 +39,110 @@ func (stmt DeleteStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	return compiled, nil
 }
 
+// Values sets the conditional clause using the given struct or
+// slice of structs. The table must have a single primary key field.
+func (stmt DeleteStmt) Values(arg interface{}) DeleteStmt {
+	// The must be a primary key
+	if len(stmt.table.pk) == 0 {
+		stmt.err = fmt.Errorf("aspect: a table must have a primary key to delete by values")
+		return stmt
+	}
+
+	if len(stmt.table.pk) > 1 {
+		stmt.err = fmt.Errorf("aspect: deletion by composite primary keys is currently not supported")
+		return stmt
+	}
+
+	// Get the actual pk column
+	pk := stmt.table.C[stmt.table.pk[0]]
+
+	// Determine the primary key field in the given struct (or slice)
+	elem := reflect.Indirect(reflect.ValueOf(arg))
+
+	switch elem.Kind() {
+	case reflect.Struct:
+		// Match the primary key column to the field
+		if stmt.err = stmt.setPkField(arg, pk.Name()); stmt.err != nil {
+			return stmt
+		}
+
+		// Set the conditional
+		stmt.cond = pk.Equals(elem.Field(stmt.pkField).Interface())
+
+	case reflect.Slice:
+		if elem.Len() < 1 {
+			stmt.err = fmt.Errorf(
+				"aspect: values cannot be set for deletion by empty slices",
+			)
+			return stmt
+		}
+
+		// Only slices of structs are acceptable
+		elem0 := elem.Index(0)
+		if elem0.Kind() != reflect.Struct {
+			stmt.err = fmt.Errorf(
+				"aspect: unsupported slice element for deletion by values: %s",
+				elem0.Kind(),
+			)
+			return stmt
+		}
+
+		// Build the pk parameters slice and In conditional
+		var pks []interface{}
+		for i := 0; i < elem.Len(); i++ {
+			pks = append(pks, elem.Index(i).Field(stmt.pkField).Interface())
+		}
+		stmt.cond = pk.In(pks)
+
+	default:
+		stmt.err = fmt.Errorf(
+			"aspect: unsupported type for deletion by values: %s",
+			elem.Kind(),
+		)
+	}
+
+	return stmt
+}
+
+// Where adds a conditional WHERE clause to the DELETE statement.
 func (stmt DeleteStmt) Where(cond Clause) DeleteStmt {
 	stmt.cond = cond
 	return stmt
 }
 
-// Return the index of the field with the given name or db tag
-func fieldIndex(i interface{}, name string) (int, error) {
-	t := reflect.TypeOf(i)
+// Find the index of the field with a name or db tag that matches the given
+// name.
+func (stmt *DeleteStmt) setPkField(arg interface{}, name string) error {
+	// Get the type of the interface pointer
+	t := reflect.TypeOf(arg)
 	if t.Kind() != reflect.Ptr {
 		t = reflect.PtrTo(t)
 	}
+
+	// TODO There must be an underlying struct
 	elem := t.Elem()
-	if elem.Kind() != reflect.Struct {
-		return 0, fmt.Errorf("Cannot take a field index of a non-struct")
-	}
+
+	// For each field, try the tag name, then the field name
+	// TODO copied from fieldMap, generalize
 	for i := 0; i < elem.NumField(); i += 1 {
 		f := elem.Field(i)
-		if f.Name == name {
-			return i, nil
-		}
 		tag := f.Tag.Get("db")
-		if tag == name {
-			return i, nil
+		if tag == name || f.Name == name {
+			stmt.pkField = i
+			return nil
 		}
 	}
-	return 0, fmt.Errorf("No field matching this tag found")
-}
-
-func getFieldByIndex(i interface{}, index int) interface{} {
-	elem := reflect.Indirect(reflect.ValueOf(i))
-	if elem.Kind() != reflect.Struct {
-		return nil
-	}
-	if index >= elem.NumField() {
-		return nil
-	}
-	return elem.Field(index).Interface()
+	return fmt.Errorf("aspect: could not find a field for column %s", name)
 }
 
 // Delete creates a DELETE statement for the given table.
-func Delete(table *TableElem, args ...interface{}) DeleteStmt {
-	stmt := DeleteStmt{table: table}
-	// If the table has a primary key and was given args, create a conditional
-	// statement using its pk columns and the values from the given args
-	if table.pk == nil || len(table.pk) == 0 || len(args) == 0 {
-		return stmt
+func Delete(table *TableElem) (stmt DeleteStmt) {
+	if table == nil {
+		stmt.err = fmt.Errorf(
+			"aspect: attempting to DELETE a nil table",
+		)
+		return
 	}
-
-	// TODO Create delayed errors or fail silently?
-	// The args must be structs with either fields or fields with tags
-	// matching the declared primary keys
-	if len(table.pk) == 1 {
-		// Does the given arg have a field matching the primary key?
-		index, err := fieldIndex(args[0], table.pk[0])
-		if err != nil {
-			return stmt
-		}
-
-		// Get the ColumnElem named by the pk
-		pk := table.C[table.pk[0]]
-
-		// Turn the arguments primary key into a parameter
-		// TODO All args must be the same - how to enforce?
-		if len(args) > 1 {
-			pks := make([]interface{}, len(args))
-			for i, arg := range args {
-				pks[i] = getFieldByIndex(arg, index)
-			}
-			stmt.cond = pk.In(pks)
-		} else {
-			stmt.cond = pk.Equals(getFieldByIndex(args[0], index))
-		}
-	} else {
-		// TODO composite keys
-	}
-
-	return stmt
+	stmt.table = table
+	return
 }

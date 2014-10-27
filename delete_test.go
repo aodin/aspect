@@ -4,18 +4,6 @@ import (
 	"testing"
 )
 
-func TestFieldIndex(t *testing.T) {
-	admin := user{ID: 1, Name: "admin"}
-	index, err := fieldIndex(admin, "id")
-	if err != nil {
-		t.Fatalf("Unexpected error during fieldIndex(): %s", err)
-	}
-	if index != 0 {
-		t.Errorf(`Unexpected index of the user "id" column: %d`, index)
-	}
-	getFieldByIndex(admin, 0)
-}
-
 func TestDelete(t *testing.T) {
 	expect := NewTester(t, &defaultDialect{})
 
@@ -37,15 +25,34 @@ func TestDelete(t *testing.T) {
 	client := user{ID: 2, Name: "client", Password: "secret"}
 	expect.SQL(
 		`DELETE FROM "users" WHERE "users"."id" = $1`,
-		users.Delete(admin),
+		users.Delete().Values(admin),
 		1,
 	)
 
 	expect.SQL(
 		`DELETE FROM "users" WHERE "users"."id" IN ($1, $2)`,
-		users.Delete(admin, client),
+		users.Delete().Values([]user{admin, client}),
 		1,
 		2,
 	)
 
+	// Attempt to delete an empty slice
+	expect.Error(users.Delete().Values([]user{}))
+
+	// Attempt to delete a value with no pk (it has to be "id"s)
+	var what = struct {
+		ID int64
+	}{
+		ID: 0,
+	}
+	expect.Error(users.Delete().Values(what))
+
+	// No pk specified
+	expect.Error(singleColumn.Delete().Values(what))
+
+	// Composite pk
+	expect.Error(edges.Delete().Values(what))
+
+	// Non-struct slice
+	expect.Error(users.Delete().Values([]int64{1, 2, 3}))
 }
