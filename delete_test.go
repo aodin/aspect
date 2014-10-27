@@ -39,7 +39,7 @@ func TestDelete(t *testing.T) {
 	// Attempt to delete an empty slice
 	expect.Error(users.Delete().Values([]user{}))
 
-	// Attempt to delete a value with no pk (it has to be "id"s)
+	// Attempt to delete a value with no pk (it has to be "id")
 	var what = struct {
 		ID int64
 	}{

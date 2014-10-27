@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-// UpdateStmt represents an SQL UPDATE statement.
+// UpdateStmt is the internal representation of an SQL UPDATE statement.
 type UpdateStmt struct {
 	table  *TableElem
 	values Values
@@ -12,14 +12,15 @@ type UpdateStmt struct {
 	cond   Clause
 }
 
-// String returns an UPDATE statement using a default dialect.
-// Parameters are discarded.
+// String outputs the parameter-less UPDATE statement in a neutral dialect.
 func (stmt UpdateStmt) String() string {
 	compiled, _ := stmt.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 
-// Compile returns an UPDATE statement using the given dialect.
+// Compile outputs the UPDATE statement using the given dialect and parameters.
+// An error may be returned because of a pre-existing error or because
+// an error occurred during compilation.
 func (stmt UpdateStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	// Check for delayed errors
 	if stmt.err != nil {
@@ -40,7 +41,7 @@ func (stmt UpdateStmt) Compile(d Dialect, params *Parameters) (string, error) {
 		return "", err
 	}
 
-	// Begin building the SQL UPDATE statement
+	// Begin building the UPDATE statement
 	compiled := fmt.Sprintf(
 		`UPDATE "%s" SET %s`,
 		stmt.table.Name,
@@ -83,7 +84,7 @@ func (stmt UpdateStmt) Values(values Values) UpdateStmt {
 	return stmt
 }
 
-// Where adds a conditional statement to the UPDATE statement.
+// Where adds a conditional WHERE clause to the UPDATE statement.
 func (stmt UpdateStmt) Where(cond Clause) UpdateStmt {
 	stmt.cond = cond
 	return stmt

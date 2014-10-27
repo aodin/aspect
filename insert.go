@@ -13,6 +13,7 @@ var (
 	)
 )
 
+// InsertStmt is the internal representation of an INSERT statement.
 type InsertStmt struct {
 	table   *TableElem
 	columns []ColumnElem
@@ -21,6 +22,7 @@ type InsertStmt struct {
 	alias   map[string]string
 }
 
+// String outputs the parameter-less INSERT statement in a neutral dialect.
 func (stmt InsertStmt) String() string {
 	compiled, _ := stmt.Compile(&defaultDialect{}, Params())
 	return compiled
@@ -51,6 +53,9 @@ func (stmt InsertStmt) HasColumn(name string) bool {
 	return false
 }
 
+// Compile outputs the INSERT statement using the given dialect and parameters.
+// An error may be returned because of a pre-existing error or because
+// an error occurred during compilation.
 func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	// Check for delayed errors
 	if stmt.err != nil {

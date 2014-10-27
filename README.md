@@ -278,27 +278,27 @@ DELETE FROM "users" WHERE "users"."name" = ?
 If the schema has a single column primary key specified, deletes can be performed with structs:
 
 ```go
-Users.Delete().Values(User{ID: 1})
+Users.Delete().Values(user{ID: 1})
 ```
 
 ```sql
-DELETE FROM "users" WHERE "users"."id" = $1
+DELETE FROM "users" WHERE "users"."id" = ?
 ```
 
 Or slices of structs:
 
 ```go
-Users.Delete().Values([]User{{ID: 1}, {ID: 2}})
+Users.Delete().Values([]user{{ID: 1}, {ID: 2}})
 ```
 
 ```sql
-DELETE FROM "users" WHERE "users"."id" IN ($1, $2)
+DELETE FROM "users" WHERE "users"."id" IN (?, ?)
 ```
 
 
 ### SELECT
 
-Results can be queried in a number of ways. Each of the following statements will produce the same SQL:
+Results can be queried in a number of ways. Each of the following statements will produce the same SQL output:
 
 ```go
 Users.Select()
