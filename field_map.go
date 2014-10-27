@@ -49,3 +49,18 @@ func fieldMap(columns []ColumnElem, i interface{}) (map[string]string, error) {
 	}
 	return alias, nil
 }
+
+// TODO better way to pass columns than byusing the whole statement?
+func valuesMap(s InsertStmt, values Values) (map[string]string, error) {
+	alias := make(map[string]string)
+	for k, _ := range values {
+		if !s.HasColumn(k) {
+			return alias, fmt.Errorf(
+				"aspect: cannot INSERT a value of key '%s' as it has no corresponding column",
+				k,
+			)
+		}
+		alias[k] = k
+	}
+	return alias, nil
+}

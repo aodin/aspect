@@ -4,6 +4,13 @@ import (
 	"testing"
 )
 
+// TODO Should this be an illegal schema?
+var noColumns = Table("none")
+
+var singleColumn = Table("single",
+	Column("name", String{}),
+)
+
 // Declare schemas that can be used package-wide
 var users = Table("users",
 	Column("id", Integer{NotNull: true}),
@@ -13,7 +20,7 @@ var users = Table("users",
 )
 
 type user struct {
-	Id       int64  `db:"id"`
+	ID       int64  `db:"id"`
 	Name     string `db:"name"`
 	Password string `db:"password"`
 }
@@ -167,10 +174,17 @@ func TestTableInsert(t *testing.T) {
 	// Insert a single value into the table
 	expect.SQL(
 		`INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3)`,
-		users.Insert(&admin),
+		users.Insert().Values(&admin),
 		1,
 		"admin",
 		"secret",
+	)
+
+	// Test a single column
+	expect.SQL(
+		`INSERT INTO "single" ("name") VALUES ($1)`,
+		singleColumn.Insert().Values(struct{ Name string }{Name: "hello"}),
+		"hello",
 	)
 }
 

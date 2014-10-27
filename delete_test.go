@@ -5,7 +5,7 @@ import (
 )
 
 func TestFieldIndex(t *testing.T) {
-	admin := user{Id: 1, Name: "admin"}
+	admin := user{ID: 1, Name: "admin"}
 	index, err := fieldIndex(admin, "id")
 	if err != nil {
 		t.Fatalf("Unexpected error during fieldIndex(): %s", err)
@@ -33,8 +33,8 @@ func TestDelete(t *testing.T) {
 	)
 
 	// Delete by a schema's declared primary key
-	admin := user{Id: 1, Name: "admin", Password: "secret"}
-	client := user{Id: 2, Name: "client", Password: "secret"}
+	admin := user{ID: 1, Name: "admin", Password: "secret"}
+	client := user{ID: 2, Name: "client", Password: "secret"}
 	expect.SQL(
 		`DELETE FROM "users" WHERE "users"."id" = $1`,
 		users.Delete(admin),

@@ -4,33 +4,21 @@ import (
 	"testing"
 )
 
-func TestFieldAlias(t *testing.T) {
-	columns := []ColumnElem{users.C["name"], users.C["password"]}
+// Removing the tag will prevent the database from attempting to insert it
+type managedUser struct {
+	ID       int64
+	Name     string `db:"name"`
+	Contacts []string
+	manager  string
+}
 
-	// Get the alias fields for the users struct
-	var u user
-	alias := fieldAlias(columns, &u)
-	if len(alias) != len(columns) {
-		t.Fatalf("Expected alias of length %d, received %d", len(columns), len(alias))
-	}
-	if alias[0] != "Name" {
-		t.Errorf("Unexpected alias: %s != Name", alias[0])
-	}
-	if alias[1] != "Password" {
-		t.Errorf("Unexpected alias: %s != Password", alias[1])
-	}
+type username struct {
+	Name string
+}
 
-	// Alias should work with addresses or values
-	alias = fieldAlias(columns, u)
-	if len(alias) != len(columns) {
-		t.Fatalf("Expected alias of length %d, received %d", len(columns), len(alias))
-	}
-	if alias[0] != "Name" {
-		t.Errorf("Unexpected alias: %s != Name", alias[0])
-	}
-	if alias[1] != "Password" {
-		t.Errorf("Unexpected alias: %s != Password", alias[1])
-	}
+type mismatch struct {
+	ID   int64  `db:"idx"`
+	Name string `db:"namex"`
 }
 
 func TestInsert(t *testing.T) {
@@ -39,7 +27,6 @@ func TestInsert(t *testing.T) {
 	stmt := Insert(users.C["name"], users.C["password"])
 
 	// By default, an INSERT without values will assume a single entry
-	// TODO This statement should have zero parameters
 	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
 		stmt,
@@ -65,4 +52,75 @@ func TestInsert(t *testing.T) {
 		"client",
 		"1234",
 	)
+
+	// Complete table inserts will build dynamically from the given values
+	// If a struct does not have fields that match the given columns,
+	// those columns will not be included in the compiled statement
+	expect.SQL(
+		`INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3)`,
+		users.Insert().Values(user{ID: 1, Name: "client"}),
+		1,
+		"client",
+		"",
+	)
+	expect.SQL(
+		`INSERT INTO "users" ("name") VALUES ($1)`,
+		users.Insert().Values(managedUser{Name: "client"}),
+		"client",
+	)
+
+	// Multiple managed users
+	expect.SQL(
+		`INSERT INTO "users" ("name") VALUES ($1), ($2)`,
+		users.Insert().Values([]managedUser{{Name: "alice"}, {Name: "bob"}}),
+		"alice",
+		"bob",
+	)
+
+	// Insert a struct without db tags
+	expect.SQL(
+		`INSERT INTO "users" ("name") VALUES ($1)`,
+		Insert(users.C["name"]).Values(username{Name: "Solo"}),
+		"Solo",
+	)
+
+	// Insert a struct without matching tags
+	expect.Error(users.Insert().Values(mismatch{}))
+
+	// Attempt to insert columns that do not exist
+	expect.Error(Insert(ColumnElem{name: "what"}))
+	expect.Error(Insert(users.C["id"], users.C["what"]))
+	expect.Error(Insert(users.C["what"]))
+
+	// The statement columns should be modified according to the given Values
+	expect.SQL(
+		`INSERT INTO "users" ("name") VALUES ($1)`,
+		users.Insert().Values(Values{"name": "Hotspur"}),
+		"Hotspur",
+	)
+
+	// A slice of Values is valid
+	vs := []Values{
+		{"name": "Totti"},
+		{"name": "De Rossi"},
+	}
+	expect.SQL(
+		`INSERT INTO "users" ("name") VALUES ($1), ($2)`,
+		users.Insert().Values(vs),
+		"Totti",
+		"De Rossi",
+	)
+
+	// TODO what about mismatched []Values? Should having different keys
+	// cause an error?
+
+	// Extra values should cause an error
+	v := Values{
+		"name": "Tottenham",
+		"what": "Field?",
+	}
+	expect.Error(users.Insert().Values(v))
+
+	// Insert instances other than structs, values, or slices of either
+	expect.Error(users.Insert().Values([]int64{1, 2, 3}))
 }

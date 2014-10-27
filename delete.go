@@ -36,7 +36,6 @@ func (stmt DeleteStmt) Where(cond Clause) DeleteStmt {
 	return stmt
 }
 
-// TODO Merge with insert/fieldAlias()
 // Return the index of the field with the given name or db tag
 func fieldIndex(i interface{}, name string) (int, error) {
 	t := reflect.TypeOf(i)

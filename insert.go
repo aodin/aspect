@@ -8,7 +8,9 @@ import (
 )
 
 var (
-	ErrNoColumns = errors.New("aspect: statments must have associated columns")
+	ErrNoColumns = errors.New(
+		"aspect: attempt to create a statement with zero columns",
+	)
 )
 
 type InsertStmt struct {
@@ -16,8 +18,7 @@ type InsertStmt struct {
 	columns []ColumnElem
 	args    []interface{}
 	err     error
-	l       int
-	alias   []string
+	alias   map[string]string
 }
 
 func (stmt InsertStmt) String() string {
@@ -37,8 +38,17 @@ func (stmt InsertStmt) Table() *TableElem {
 	return stmt.table
 }
 
-func (stmt InsertStmt) AppendColumn(c ColumnElem) {
+func (stmt *InsertStmt) AppendColumn(c ColumnElem) {
 	stmt.columns = append(stmt.columns, c)
+}
+
+func (stmt InsertStmt) HasColumn(name string) bool {
+	for _, column := range stmt.columns {
+		if column.Name() == name {
+			return true
+		}
+	}
+	return false
 }
 
 func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
@@ -101,158 +111,187 @@ func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	), nil
 }
 
-// Iterate through the struct fields and see if the tags match
-// the given column names.
-// Return the field names matching their respective columns.
-// The field tag takes precendence over the name.
-func fieldAlias(cs []ColumnElem, i interface{}) []string {
-	// Get the type of the interface pointer
-	t := reflect.TypeOf(i)
-	if t.Kind() != reflect.Ptr {
-		t = reflect.PtrTo(t)
-	}
-	// TODO Confirm that the given interface is a struct
-
-	alias := make([]string, len(cs))
-	// For each field, try the tag name, then the field name
-	elem := t.Elem()
-	for ci, column := range cs {
-		name := column.Name()
-		for i := 0; i < elem.NumField(); i += 1 {
-			f := elem.Field(i)
-			fname := f.Name
-			tag := f.Tag.Get("db")
-			if tag == name || name == fname {
-				alias[ci] = fname
-				break
-			}
-		}
-	}
-	// TODO Were all the columns matched?
-	return alias
-}
-
-// Get the value of the field struct by name. Fields that do not exist in
-// the elem will be silently dropped.
-func (stmt *InsertStmt) argsByName(elem reflect.Value) {
-	for _, name := range stmt.alias {
-		field := elem.FieldByName(name)
-		if field.IsValid() {
-			stmt.args = append(stmt.args, field.Interface())
-		}
+func (stmt *InsertStmt) argsByAlias(elem reflect.Value) {
+	// Since alias is a map, columns must be read in order and then aliased
+	for _, column := range stmt.columns {
+		alias := stmt.alias[column.Name()]
+		stmt.args = append(stmt.args, elem.FieldByName(alias).Interface())
 	}
 }
 
 // Read every value of the struct in order
 func (stmt *InsertStmt) argsByIndex(elem reflect.Value) {
-	for i := 0; i < stmt.l; i += 1 {
+	for i, _ := range stmt.columns {
 		stmt.args = append(stmt.args, elem.Field(i).Interface())
 	}
 }
 
-// There must be at least one arg
-func (stmt InsertStmt) Values(args interface{}) InsertStmt {
-	// For now, inserts can be performed on pointers or values
-	// TODO If auto-updating fields are required, they will need pointers
-	elem := reflect.Indirect(reflect.ValueOf(args))
+func (stmt *InsertStmt) argsByValues(values Values) {
+	// Since alias is a map, columns must be read in order and then aliased
+	for _, column := range stmt.columns {
+		stmt.args = append(stmt.args, values[stmt.alias[column.Name()]])
+	}
+}
 
-	// TODO What if there are existing values attached to the stmt?
-	// Skip these checks if there is a populated alias / l
+// setColumns removes any columns that weren't matched by the alias.
+func (stmt *InsertStmt) setColumns() {
+	// TODO keep actual target columns separate from requested in case
+	// the statement is updated?
+	if len(stmt.alias) != len(stmt.columns) {
+		var matched []ColumnElem
+		for _, column := range stmt.columns {
+			if _, exists := stmt.alias[column.Name()]; exists {
+				matched = append(matched, column)
+			}
+		}
+		stmt.columns = matched
+	}
+}
+
+// Values adds parameters to the INSERT statement. If the given values do not
+// match the statement's current columns, the columns will be updated.
+// Valid values include structs, Values maps, or slices of structs or Values.
+func (s InsertStmt) Values(arg interface{}) InsertStmt {
+	// TODO reset args everytime this method is called?
+	// For now, inserts can be performed on pointers or values
+	// NOTE: If auto-updating fields are required, they will need pointers
+	elem := reflect.Indirect(reflect.ValueOf(arg))
 
 	switch elem.Kind() {
 	case reflect.Struct:
-		// If the number of columns does not match the number of fields,
-		// attempt to build an alias object
-		stmt.l = elem.NumField()
-		if stmt.l != len(stmt.columns) {
-			// TODO confirm that the alias is fully populated
-			// TODO fieldAlias should be a method that can only be set once
-			stmt.alias = fieldAlias(stmt.columns, args)
-			stmt.argsByName(elem)
-		} else {
-			stmt.argsByIndex(elem)
+		// Map the column names to fields on the given struct
+		if s.alias, s.err = fieldMap(s.columns, arg); s.err != nil {
+			return s
 		}
+		// If no columns were detected and the number of fields matches the
+		// columns requested, then insert the struct's values as is.
+		if len(s.alias) == 0 && len(s.columns) == elem.NumField() {
+			s.argsByIndex(elem)
+			return s
+		} else if len(s.alias) == 0 {
+			s.err = fmt.Errorf("aspect: cannot insert given struct, no fields match columns - were `db` struct tags set?")
+			return s
+		}
+
+		// Remove unmatched columns
+		s.setColumns()
+
+		// Add the args using the created field map
+		s.argsByAlias(elem)
+
 	case reflect.Slice:
-		sliceLen := elem.Len()
-		if sliceLen < 0 {
-			// TODO There must be values - a delayed error?
-			return stmt
+		if elem.Len() < 1 {
+			s.err = fmt.Errorf("aspect: args cannot be set by empty slices")
+			return s
 		}
-		firstElem := elem.Index(0)
-
-		// TODO Slice elements must be structs for now
-		stmt.l = firstElem.NumField()
-
-		if stmt.l != len(stmt.columns) {
-			// TODO confirm that the alias is fully populated
-			stmt.alias = fieldAlias(stmt.columns, firstElem.Interface())
-
-			// Add every slice element to the args by field name
-			for i := 0; i < sliceLen; i++ {
-				stmt.argsByName(elem.Index(i))
+		// Slices of structs or Values are acceptable
+		// TODO check kind of elem directly?
+		elem0 := elem.Index(0)
+		if elem0.Kind() == reflect.Struct {
+			// TODO Remove code duplication
+			if s.alias, s.err = fieldMap(s.columns, elem0.Interface()); s.err != nil {
+				return s
 			}
-		} else {
-			// And every slice elem's fields to the args
-			for i := 0; i < sliceLen; i++ {
-				stmt.argsByIndex(elem.Index(i))
+			// If no columns were detected and the number of fields matches the
+			// columns requested, then insert the struct's values as is.
+			if len(s.alias) == 0 && len(s.columns) == elem.NumField() {
+				for i := 0; i < elem.Len(); i++ {
+					s.argsByIndex(elem.Index(i))
+				}
+				return s
+			} else if len(s.alias) == 0 {
+				s.err = fmt.Errorf("aspect: cannot insert given struct, no fields match columns - were `db` struct tags set?")
+				return s
 			}
-		}
-	case reflect.Map:
-		// Set the table columns according to the values
-		stmt.columns = make([]ColumnElem, 0)
 
-		// Cast back to Values
-		values, ok := args.(Values)
-		if !ok {
-			stmt.err = fmt.Errorf(
-				"aspect: to insert maps they must of type aspect.Values",
-			)
-			return stmt
+			// Remove unmatched columns
+			s.setColumns()
+
+			// Add the args using the created field map
+			for i := 0; i < elem.Len(); i++ {
+				s.argsByAlias(elem.Index(i))
+			}
+
+			return s
 		}
-		for _, key := range values.Keys() {
-			column, exists := stmt.table.C[key]
-			if !exists {
-				stmt.err = fmt.Errorf(
-					`aspect: no column "%s" exists in the table "%s"`,
-					key,
-					stmt.table.Name,
+
+		valuesSlice, ok := arg.([]Values)
+		if ok {
+			if len(valuesSlice) < 1 {
+				s.err = fmt.Errorf(
+					"aspect: cannot insert []Values of length zero",
 				)
-				return stmt
+				return s
 			}
-			stmt.columns = append(stmt.columns, column)
-			stmt.args = append(stmt.args, values[key])
-		}
-		// TODO Allow []Values, which must have the same columns
-	}
 
-	return stmt
+			// Set the table columns according to the first values
+			if s.alias, s.err = valuesMap(s, valuesSlice[0]); s.err != nil {
+				return s
+			}
+
+			// Remove unmatched columns
+			s.setColumns()
+
+			// Add the args in the values
+			// TODO what to do about varying values in the slice?
+			for _, v := range valuesSlice {
+				s.argsByValues(v)
+			}
+
+			return s
+		}
+
+		s.err = fmt.Errorf("aspect: unsupported type for INSERT %s - values must be of type struct, Values, or a slice of either")
+
+	case reflect.Map:
+		// The only allowed map type is Values
+		values, ok := arg.(Values)
+		if !ok {
+			s.err = fmt.Errorf(
+				"aspect: inserted maps must be of type Values",
+			)
+			return s
+		}
+
+		// Set the table columns according to the values
+		if s.alias, s.err = valuesMap(s, values); s.err != nil {
+			return s
+		}
+
+		// Remove unmatched columns
+		s.setColumns()
+
+		// Add the args in the values
+		s.argsByValues(values)
+
+	}
+	return s
 }
 
 // Insert creates an INSERT statement for the given columns. There must be at
 // least one column and all columns must belong to the same table.
-func Insert(column ColumnElem, columns ...ColumnElem) InsertStmt {
-	stmt := InsertStmt{
-		table:   column.table,
-		columns: []ColumnElem{column},
-		args:    make([]interface{}, 0),
+func Insert(column ColumnElem, columns ...ColumnElem) (stmt InsertStmt) {
+	// The table is set from the first column
+	if column.table == nil {
+		stmt.err = fmt.Errorf("aspect: attempting to INSERT to a column unattached to a table")
+		return
 	}
+	stmt.table = column.table
 
-	for _, column := range columns {
-		if column.table != stmt.table {
-			// TODO How to best handle delayed errors?
-			stmt.err = fmt.Errorf("All columns must belong to the same table")
-			break
+	// Prepend the first column
+	for _, c := range append([]ColumnElem{column}, columns...) {
+		// Columns must have a name or they wouldn't exist (and probably
+		// don't if the name is missing - the most common error case will
+		// be a mistyped name in table.C)
+		if c.Name() == "" {
+			stmt.err = fmt.Errorf("aspect: cannot INSERT to a column that does not exist - are selected columns named correctly?")
+			return
 		}
-		stmt.columns = append(stmt.columns, column)
+		if c.table != stmt.table {
+			stmt.err = fmt.Errorf("aspect: columns of an INSERT must all belong to the same table")
+			return
+		}
+		stmt.columns = append(stmt.columns, c)
 	}
-	return stmt
-}
-
-func InsertTableValues(t *TableElem, args interface{}) InsertStmt {
-	stmt := InsertStmt{
-		table:   t,
-		columns: t.Columns(),
-		args:    make([]interface{}, 0),
-	}
-	return stmt.Values(args)
+	return
 }
