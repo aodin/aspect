@@ -38,6 +38,14 @@ type sqlTest struct {
 	dialect Dialect
 }
 
+// Error tests that the given Compiles instances generates an error for the
+// current dialect.
+func (t *sqlTest) Error(stmt Compiles) {
+	if _, err := stmt.Compile(t.dialect, Params()); err == nil {
+		t.t.Errorf("%s: expected error, received nil", callerInfo())
+	}
+}
+
 // SQL tests that the given Compiles instance matches the expected string for
 // the current dialect.
 func (t *sqlTest) SQL(expect string, stmt Compiles, ps ...interface{}) {
@@ -50,7 +58,7 @@ func (t *sqlTest) SQL(expect string, stmt Compiles, ps ...interface{}) {
 	// Compile the given stmt with the tester's dialect
 	actual, err := stmt.Compile(t.dialect, params)
 	if err != nil {
-		t.t.Error("%s: unexpected error from compile: %s", caller, err)
+		t.t.Errorf("%s: unexpected error from compile: %s", caller, err)
 		return
 	}
 
