@@ -194,6 +194,7 @@ func (s InsertStmt) Values(arg interface{}) InsertStmt {
 			}
 			// If no columns were detected and the number of fields matches the
 			// columns requested, then insert the struct's values as is.
+			// TODO This does not ignore unexported fields - it should
 			if len(s.alias) == 0 && len(s.columns) == elem.NumField() {
 				for i := 0; i < elem.Len(); i++ {
 					s.argsByIndex(elem.Index(i))

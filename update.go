@@ -47,6 +47,30 @@ func (stmt UpdateStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	return compiled, nil
 }
 
+// Values attaches the given values to the statement. The keys of values
+// must match columns in the table.
+func (stmt UpdateStmt) Values(values Values) UpdateStmt {
+	// There must be some columns to update!
+	if len(values) == 0 {
+		stmt.err = fmt.Errorf("aspect: there must be at least one value in a Values instance")
+		return stmt
+	}
+
+	// Confirm that all values' keys are columns in the table
+	for key := range values {
+		if _, ok := stmt.table.C[key]; !ok {
+			stmt.err = fmt.Errorf(
+				"aspect: no column %s exists in the table %s",
+				key,
+				stmt.table.Name,
+			)
+		}
+	}
+
+	stmt.values = values
+	return stmt
+}
+
 // Where adds a conditional statement to the UPDATE statement.
 func (stmt UpdateStmt) Where(cond Clause) UpdateStmt {
 	stmt.cond = cond
@@ -54,26 +78,15 @@ func (stmt UpdateStmt) Where(cond Clause) UpdateStmt {
 }
 
 // Update creates an UPDATE statement for the given table and values.
-func Update(table *TableElem, values Values) (stmt UpdateStmt) {
-	// TODO Or Update(TableElem, interface{}) for multiple or single structs
-	stmt.table = table
-	stmt.values = values
-
-	// There must be some columns to update!
-	if len(values) == 0 {
-		stmt.err = ErrNoColumns
+// TODO separate the Update() and Values() methods?
+// TODO Allow structs to be used if a primary key is specified in the schema
+func Update(table *TableElem) (stmt UpdateStmt) {
+	if table == nil {
+		stmt.err = fmt.Errorf(
+			"aspect: attempting to UPDATE a table that does not exist",
+		)
 		return
 	}
-
-	// Confirm that all values' keys are columns in the table
-	for key := range values {
-		if _, ok := table.C[key]; !ok {
-			stmt.err = fmt.Errorf(
-				`aspect: no column "%s" exists in the table "%s"`,
-				key,
-				table.Name,
-			)
-		}
-	}
-	return stmt
+	stmt.table = table
+	return
 }

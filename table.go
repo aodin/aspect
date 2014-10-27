@@ -96,10 +96,10 @@ func (table *TableElem) Insert() InsertStmt {
 	return Insert(columns[0])
 }
 
-// Update is an alias for Update(table, values). It will create an UPDATE
-// statement with the given values.
-func (table *TableElem) Update(values Values) UpdateStmt {
-	return Update(table, values)
+// Update is an alias for Update(table). It will create an UPDATE statement.
+// Specify the values to insert with the method Values().
+func (table *TableElem) Update() UpdateStmt {
+	return Update(table)
 }
 
 // Table is the constructor function for TableElem. It is provided a name and

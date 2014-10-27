@@ -75,7 +75,7 @@ import (
 )
 ```
 
-Statements that do not return selections can be run with the `Execute` method of database connections or transactions. There is also an interface `Connection` that both implement.
+Statements that do not return selections can be run with the `Execute` method of database connections `DB` or transactions `TX`. Both also implement the interface `Connection`.
 
 A successful `Connect` will return a database connection pool ready for use. Its `Execute` method returns an instance of `database/sql` package's `Result` and an error if one occurred:
 

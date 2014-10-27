@@ -209,7 +209,7 @@ func TestTableUpdate(t *testing.T) {
 
 	expect.SQL(
 		`UPDATE "users" SET "name" = $1`,
-		users.Update(Values{"name": "Jabroni"}),
+		users.Update().Values(Values{"name": "Jabroni"}),
 		"Jabroni",
 	)
 }

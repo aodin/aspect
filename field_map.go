@@ -51,6 +51,8 @@ func fieldMap(columns []ColumnElem, i interface{}) (map[string]string, error) {
 }
 
 // TODO better way to pass columns than byusing the whole statement?
+// TODO if this is better generalized then it can be used with UPDATE and
+// DELETE statements.
 func valuesMap(s InsertStmt, values Values) (map[string]string, error) {
 	alias := make(map[string]string)
 	for k, _ := range values {

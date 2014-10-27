@@ -84,7 +84,10 @@ func TestInsert(t *testing.T) {
 		"bob",
 	)
 
-	// Insert a struct without db tags
+	// Insert a struct without db tags.
+	// TODO As long as the number of exported fields matches columns
+	// the statement should be allowed. As of now, no unexported fields are
+	// allowed - this must be checked by using another test package
 	expect.SQL(
 		`INSERT INTO "users" ("name") VALUES ($1)`,
 		Insert(users.C["name"]).Values(username{Name: "Solo"}),
