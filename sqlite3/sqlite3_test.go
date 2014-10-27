@@ -1,60 +1,52 @@
 package sqlite3
 
 import (
-	. "github.com/aodin/aspect"
-	_ "github.com/mattn/go-sqlite3"
 	"testing"
+
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/aodin/aspect"
 )
 
-var users = Table("users",
-	Column("id", Integer{NotNull: true}),
-	Column("name", String{Length: 32, NotNull: true}),
-	Column("password", String{Length: 128}),
-	PrimaryKey("id"),
+var users = aspect.Table("users",
+	aspect.Column("id", aspect.Integer{NotNull: true}),
+	aspect.Column("name", aspect.String{Length: 32, NotNull: true}),
+	aspect.Column("password", aspect.String{Length: 128}),
+	aspect.PrimaryKey("id"),
 )
 
 type user struct {
-	Id       int64  `db:"id"`
+	ID       int64  `db:"id"`
 	Name     string `db:"name"`
 	Password string `db:"password"`
 }
 
 // Connect to an in-memory sqlite3 instance and execute some statements.
 func TestConnect(t *testing.T) {
-	db, err := Connect("sqlite3", ":memory:")
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert := assert.New(t)
+
+	db, err := aspect.Connect("sqlite3", ":memory:")
+	assert.Nil(err)
 	defer db.Close()
 
 	// Create the users table
 	_, err = db.Execute(users.Create())
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(err)
 
 	// Insert a user
-	// Structs can be inserted by value or reference
-	admin := user{Id: 1, Name: "admin", Password: "secret"}
-	_, err = db.Execute(users.Insert(admin))
-	if err != nil {
-		t.Fatal(err)
+	admin := user{
+		ID:       1,
+		Name:     "admin",
+		Password: "secret",
 	}
+	_, err = db.Execute(users.Insert().Values(admin))
+	assert.Nil(err)
 
-	// Select a user
-	// Query must be given a pointer
+	// Select a user - Query must be given a pointer
 	var u user
-	err = db.QueryOne(users.Select(), &u)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if u.Id != admin.Id {
-		t.Errorf("Unexpected user id: %d", u.Id)
-	}
-	if u.Name != admin.Name {
-		t.Errorf("Unexpected user name: %s", u.Name)
-	}
-	if u.Password != admin.Password {
-		t.Errorf("Unexpected user password: %s", u.Password)
-	}
+	assert.Nil(db.QueryOne(users.Select(), &u))
+	assert.Equal(admin.ID, u.ID)
+	assert.Equal(admin.Name, u.Name)
+	assert.Equal(admin.Password, u.Password)
 }

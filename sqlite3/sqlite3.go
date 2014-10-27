@@ -1,14 +1,15 @@
 package sqlite3
 
 import (
-	"github.com/aodin/aspect"
 	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/aodin/aspect"
 )
 
-// Implement the Dialect interface
-
+// Sqlite3 implements the Dialect interface for sqlite3 databases.
 type Sqlite3 struct{}
 
+// Parameterize returns the sqlite3 specific parameterization scheme.
 func (d *Sqlite3) Parameterize(i int) string {
 	return `?`
 }
