@@ -24,9 +24,16 @@ type mismatch struct {
 func TestInsert(t *testing.T) {
 	expect := NewTester(t, &defaultDialect{})
 
-	stmt := Insert(users.C["name"], users.C["password"])
-
 	// By default, an INSERT without values will assume a single entry
+	expect.SQL(
+		`INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3)`,
+		users.Insert(),
+		nil,
+		nil,
+		nil,
+	)
+
+	stmt := Insert(users.C["name"], users.C["password"])
 	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
 		stmt,

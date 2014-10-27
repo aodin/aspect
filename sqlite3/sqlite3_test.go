@@ -49,4 +49,8 @@ func TestConnect(t *testing.T) {
 	assert.Equal(admin.ID, u.ID)
 	assert.Equal(admin.Name, u.Name)
 	assert.Equal(admin.Password, u.Password)
+
+	// Drop the table
+	_, err = db.Execute(users.Drop())
+	assert.Nil(err)
 }
