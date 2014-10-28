@@ -18,6 +18,16 @@ type incompleteUser struct {
 	IsActive bool   `db:"is_active"`
 }
 
+// Select incomplete structs
+type testUser struct {
+	ID       int64  `db:"id"`
+	Name     string `db:"name"`
+	Password string `db:"password"`
+	IsActive bool   `db:"is_active"`
+	Contacts []string
+	manager  string
+}
+
 func TestSelect(t *testing.T) {
 	assert := assert.New(t)
 
@@ -70,4 +80,9 @@ func TestSelect(t *testing.T) {
 	)
 	require.Nil(t, tx.QueryOne(returningStmt.Values(client), &client.ID))
 	assert.NotEqual(0, client.ID) // The ID should be anything but zero
+
+	// Select into a struct that has extra columns
+	// TODO Skip unexported fields
+	var extraField testUser
+	require.Nil(t, tx.QueryOne(users.Select(), &extraField))
 }

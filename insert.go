@@ -157,7 +157,6 @@ func (stmt *InsertStmt) setColumns() {
 // match the statement's current columns, the columns will be updated.
 // Valid values include structs, Values maps, or slices of structs or Values.
 func (s InsertStmt) Values(arg interface{}) InsertStmt {
-	// TODO reset args everytime this method is called?
 	// For now, inserts can be performed on pointers or values
 	// NOTE: If auto-updating fields are required, they will need pointers
 	elem := reflect.Indirect(reflect.ValueOf(arg))

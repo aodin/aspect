@@ -1,6 +1,7 @@
 package aspect
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ type extra struct {
 
 type private struct {
 	ID   int64
-	A, a string
+	a, A string
 }
 
 type missing struct {
@@ -83,4 +84,20 @@ func TestFieldMap(t *testing.T) {
 	assert.Equal(2, len(fields))
 	assert.Equal(fields["ID"], "ID")
 	assert.Equal(fields["A"], "A")
+}
+
+func TestSelectAlias(t *testing.T) {
+	assert := assert.New(t)
+
+	// Determine indexes of destination struct fields
+	fields := selectAlias([]string{"ID", "A"}, reflect.TypeOf(&valid{}).Elem())
+	assert.Equal(2, len(fields))
+	assert.Equal(fields[0], 0)
+	assert.Equal(fields[1], 1)
+
+	// Determine indexes when using tags
+	fields = selectAlias([]string{"ID", "A"}, reflect.TypeOf(&tags{}).Elem())
+	assert.Equal(2, len(fields))
+	assert.Equal(fields[0], 0)
+	assert.Equal(fields[1], 1)
 }

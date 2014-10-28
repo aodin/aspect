@@ -1,13 +1,8 @@
 package aspect
 
 import (
-	"errors"
 	"fmt"
 	"strings"
-)
-
-var (
-	ErrNilSelect = errors.New("select received a non-existant table or column")
 )
 
 // Selectable is an interface that allows both tables and columns to be
@@ -16,9 +11,7 @@ type Selectable interface {
 	Selectable() []ColumnElem
 }
 
-// SelectStmt is an internal representation of a SELECT statement.
-// TODO Use clauses to build the parts of statement
-// TODO Should this struct be exported?
+// SelectStmt is the internal representation of an SQL SELECT statement.
 type SelectStmt struct {
 	tables  []*TableElem
 	columns []ColumnElem
@@ -59,8 +52,7 @@ func (stmt SelectStmt) CompileColumns(d Dialect, params *Parameters) []string {
 	return names
 }
 
-// String will return the string representation of the statement using a
-// default dialect.
+// String outputs the parameter-less SELECT statement in a neutral dialect.
 func (stmt SelectStmt) String() string {
 	compiled, _ := stmt.Compile(&defaultDialect{}, Params())
 	return compiled
@@ -208,7 +200,7 @@ func Select(selections ...Selectable) (stmt SelectStmt) {
 	// Iterate through the selections and get the columns in the selection
 	for _, selection := range selections {
 		if selection == nil {
-			stmt.err = ErrNilSelect
+			stmt.err = fmt.Errorf("aspect: select received a nil selectable - do the columns or tables you selected exist?")
 			return
 		}
 		// Each selection may return multiple columns (as with a table)
@@ -217,7 +209,7 @@ func Select(selections ...Selectable) (stmt SelectStmt) {
 			// Adding a bad column will pass a zero-initialized ColumnElem and
 			// since blank column names are invalid SQL we can reject them
 			if column.Name() == "" {
-				stmt.err = ErrNilSelect
+				stmt.err = fmt.Errorf("aspect: selected column does not exist")
 				return
 			}
 			stmt.columns = append(stmt.columns, column)

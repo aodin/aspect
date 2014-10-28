@@ -8,16 +8,29 @@ func TestSelect(t *testing.T) {
 	expect := NewTester(t, &defaultDialect{})
 
 	// All three of these select statements should produce the same output
-	s := Select(users.C["id"], users.C["name"])
+	selects := []Compiles{
+		users.Select(),
+		Select(users),
+		Select(users.C["id"], users.C["name"], users.C["password"]),
+	}
+	for _, s := range selects {
+		expect.SQL(
+			`SELECT "users"."id", "users"."name", "users"."password" FROM "users"`,
+			s,
+		)
+	}
+
+	// Only select a subset of the available columns
+	stmt := Select(users.C["id"], users.C["name"])
 	expect.SQL(
 		`SELECT "users"."id", "users"."name" FROM "users"`,
-		s,
+		stmt,
 	)
 
 	// Add an ORDER BY
 	expect.SQL(
 		`SELECT "users"."id", "users"."name" FROM "users" ORDER BY "users"."id" DESC`,
-		s.OrderBy(users.C["id"].Desc()),
+		stmt.OrderBy(users.C["id"].Desc()),
 	)
 
 	// Build a GROUP BY statement with sorting using an aggregate
@@ -44,4 +57,7 @@ func TestSelect(t *testing.T) {
 		`SELECT "users"."name" FROM "users" OFFSET 1`,
 		Select(users.C["name"]).Offset(1),
 	)
+
+	// Select a column that doesn't exist
+	expect.Error(Select(users.C["what"]))
 }
