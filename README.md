@@ -7,7 +7,8 @@ A relational database toolkit in Go that aims to:
 * Create reusable and cross-dialect SQL statements
 * Allow struct instances and slices to be directly populated by the database
 
-### Quickstart
+Quickstart
+----------
 
 ```go
 package main
@@ -94,7 +95,7 @@ Results are often ignored, as in the `Quickstart` example above.
 The following commands are usually used with the `Execute` method:
 
 
-### CREATE TABLE
+#### CREATE TABLE
 
 Once a schema has been specified with `Table`, such as:
 
@@ -124,7 +125,7 @@ CREATE TABLE "users" (
 );
 ```
 
-### DROP TABLE
+#### DROP TABLE
 
 Using the `Users` schema, a `DROP TABLE` statement can be created with:
 
@@ -138,7 +139,7 @@ And produces the SQL:
 DROP TABLE "users"
 ```
 
-### INSERT
+#### INSERT
 
 Insert statements can be created without specifying values. For instance, the method `Insert()` on a schema such as `Users` can be created with:
 
@@ -215,7 +216,7 @@ INSERT INTO "users" ("name") VALUES (?)
 Keys in `Values` maps must match column names or the statement will error.
 
 
-### UPDATE
+#### UPDATE
 
 Rows in a table can be updated using either of:
 
@@ -253,7 +254,7 @@ UPDATE "users" SET "password" = ? WHERE "users"."name" = ?
 ```
 
 
-### DELETE
+#### DELETE
 
 If you want to delete all the rows in a table:
 
@@ -296,7 +297,7 @@ DELETE FROM "users" WHERE "users"."id" IN (?, ?)
 ```
 
 
-### SELECT
+#### SELECT
 
 Results can be queried in a number of ways. Each of the following statements will produce the same SQL output:
 
