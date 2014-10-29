@@ -29,5 +29,5 @@ func (v Values) Compile(d Dialect, params *Parameters) (string, error) {
 			Sep:  " = ",
 		}
 	}
-	return AllOf(clauses...).Compile(d, params)
+	return ArrayClause{Clauses: clauses, Sep: ", "}.Compile(d, params)
 }

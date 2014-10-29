@@ -10,7 +10,7 @@ func TestUpdate(t *testing.T) {
 	// Values do not need to be attached to produce an UPDATE statement. It
 	// will default to all columns in the table with nil parameters.
 	expect.SQL(
-		`UPDATE "users" SET "id" = $1 AND "name" = $2 AND "password" = $3`,
+		`UPDATE "users" SET "id" = $1, "name" = $2, "password" = $3`,
 		users.Update(),
 		nil,
 		nil,
@@ -29,7 +29,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	expect.SQL(
-		`UPDATE "users" SET "name" = $1 AND "password" = $2 WHERE "users"."id" = $3`,
+		`UPDATE "users" SET "name" = $1, "password" = $2 WHERE "users"."id" = $3`,
 		Update(users).Values(values).Where(users.C["id"].Equals(1)),
 		"admin",
 		"blank",
