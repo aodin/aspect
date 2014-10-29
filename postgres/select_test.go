@@ -32,7 +32,8 @@ func TestSelect(t *testing.T) {
 	assert := assert.New(t)
 
 	// Connect to the database specified in the test db.json config
-	conf, err := aspect.ParseConfig("./db.json")
+	// Default to the Travis CI settings if no file is found
+	conf, err := aspect.ParseTestConfig("./db.json")
 	if err != nil {
 		t.Fatalf(
 			"postgres: failed to parse test configuration, test aborted: %s",

@@ -63,3 +63,20 @@ func parseConfig(f io.Reader) (c DatabaseConfig, err error) {
 	err = json.Unmarshal(b, &c)
 	return
 }
+
+// ParseTestConfig varies from the default ParseConfig by defaulting to the
+// Travis CI credentials if the given config returned nothing.
+func ParseTestConfig(filename string) (DatabaseConfig, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return DatabaseConfig{
+			Driver:  "postgres",
+			Host:    "localhost",
+			Port:    5432,
+			Name:    "travis_ci_test",
+			User:    "postgres",
+			SSLMode: "disable",
+		}, nil
+	}
+	return parseConfig(f)
+}
