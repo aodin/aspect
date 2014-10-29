@@ -228,7 +228,7 @@ sql.Update(Users)
 Both will produce the same output:
 
 ```sql
-UPDATE "users" SET "id" = ? AND "name" = ? AND "password" = ?
+UPDATE "users" SET "id" = ?, "name" = ?, "password" = ?
 ```
 
 Columns are set according to the values given. Values keys that do not match a column will error.
@@ -238,7 +238,7 @@ Users.Update().Values(sql.Values{"name": "Ronaldo", "password": "STRIKER"})
 ```
 
 ```sql
-UPDATE "users" SET "name" = ? AND "password" = ?
+UPDATE "users" SET "name" = ?, "password" = ?
 ```
 
 Conditionals can be specified with the `Where()` method:
