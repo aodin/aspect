@@ -82,11 +82,11 @@ func (db *DB) QueryAll(stmt Executable, i interface{}) error {
 // QueryOne will query the statement and populate the interface with one result
 func (db *DB) QueryOne(stmt Executable, i interface{}) error {
 	result, err := db.Query(stmt)
-	defer result.rows.Close()
 	if err != nil {
 		return err
 	}
 	// Close the result rows or sqlite3 will open another connection
+	defer result.rows.Close()
 	return result.One(i)
 }
 
