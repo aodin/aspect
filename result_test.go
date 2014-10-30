@@ -28,7 +28,7 @@ func (m *mockScanner) Err() error {
 
 func (m *mockScanner) Next() bool {
 	m.n--
-	return m.n < 0
+	return m.n >= 0
 }
 
 func (m *mockScanner) Scan(args ...interface{}) error {
@@ -40,14 +40,42 @@ func (m *mockScanner) Scan(args ...interface{}) error {
 			len(args),
 		)
 	}
+	// Set the args
+	for i, _ := range args {
+		args[i] = nil
+	}
+
 	return nil
 }
 
 func newMockResult(columns ...string) *Result {
+	return newMockResultN(2, columns...)
+}
+
+func newMockResultN(n int, columns ...string) *Result {
 	scanner := &mockScanner{
 		columns: columns,
-		n:       2,
+		n:       n,
 	}
+	return &Result{
+		rows: scanner,
+	}
+}
+
+// Return an error on scan
+type mockScanErrorResult struct {
+	*mockScanner
+}
+
+func (m *mockScanErrorResult) Scan(args ...interface{}) error {
+	return fmt.Errorf("aspect: mockScanErrorResult always errors")
+}
+
+func newMockScanErrorResult(columns ...string) *Result {
+	scanner := &mockScanErrorResult{&mockScanner{
+		columns: columns,
+		n:       2,
+	}}
 	return &Result{
 		rows: scanner,
 	}
@@ -56,6 +84,12 @@ func newMockResult(columns ...string) *Result {
 type simpleUser struct {
 	ID   int64
 	Name string
+}
+
+type tooManyFields struct {
+	ID    int64
+	Name  string
+	Extra string
 }
 
 type extraUser struct {
@@ -75,10 +109,19 @@ func TestResult(t *testing.T) {
 
 	// Test tagless unpacking
 	result := newMockResult("id", "name")
-	var user []simpleUser
-	assert.Nil(result.All(&user))
+	var simpleton simpleUser
+	assert.Nil(result.One(&simpleton))
+
+	result = newMockResult("id", "name")
+	var simpletons []simpleUser
+	assert.Nil(result.All(&simpletons))
+	assert.Equal(2, len(simpletons))
 
 	// Too many fields is fine if they're tagged
+	result = newMockResult("id", "name")
+	var extra extraUser
+	assert.Nil(result.One(&extra))
+
 	result = newMockResult("id", "name")
 	var extras []extraUser
 	assert.Nil(result.All(&extras))
@@ -94,6 +137,31 @@ func TestResult(t *testing.T) {
 	var ids int64
 	assert.NotNil(result.All(&ids))
 
-	// TODO No tags and unequal number of fields
+	// No tags and unequal number of fields
+	result = newMockResult("id", "name")
+	var tooManyOne tooManyFields
+	assert.NotNil(result.One(&tooManyOne))
 
+	result = newMockResult("id", "name")
+	var tooManyAll []tooManyFields
+	assert.NotNil(result.All(&tooManyAll))
+
+	// Return no results
+	result = newMockResultN(0, "id", "name")
+	var none []tooManyFields
+	assert.NotNil(result.One(&none))
+
+	// Handle scan errors
+	result = newMockScanErrorResult("id", "name")
+	var oneError simpleUser
+	assert.NotNil(result.One(&oneError))
+
+	result = newMockScanErrorResult("id", "name")
+	var allErrors []simpleUser
+	assert.NotNil(result.All(&allErrors))
+
+	// Attempt to scan into an array with One
+	result = newMockScanErrorResult("id", "name")
+	var simpletonErrors []simpleUser
+	assert.NotNil(result.One(&simpletonErrors))
 }

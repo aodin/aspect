@@ -40,6 +40,7 @@ type sqlTest struct {
 
 // Error tests that the given Compiles instances generates an error for the
 // current dialect.
+// TODO Allow a specific error
 func (t *sqlTest) Error(stmt Compiles) {
 	if _, err := stmt.Compile(t.dialect, Params()); err == nil {
 		t.t.Errorf("%s: expected error, received nil", callerInfo())

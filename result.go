@@ -87,16 +87,19 @@ func (r *Result) One(arg interface{}) error {
 		if err := r.rows.Scan(dest...); err != nil {
 			return err
 		}
+	case reflect.Slice:
+		return fmt.Errorf("aspect: cannot scan single results into slices")
 	case reflect.Map:
 		fallthrough
 	default:
+		if len(columns) != 1 {
+			return fmt.Errorf(
+				"aspect: unsupported destination for multi-column result: %s",
+				elem.Kind(),
+			)
+		}
 		// Attempt to scan directly into the elem
 		return r.rows.Scan(elem.Addr().Interface())
-
-		return fmt.Errorf(
-			"aspect: unsupported destination element for result.One: %s",
-			elem.Kind(),
-		)
 	}
 	return r.rows.Err()
 }
@@ -165,15 +168,22 @@ func (r *Result) All(arg interface{}) error {
 	case reflect.Map:
 		fallthrough
 	default:
-		return fmt.Errorf(
-			"aspect: unsupported destination element for result.All: %s",
-			elem.Kind(),
-		)
+		// Single column results can be scanned into native types
+		if len(columns) != 1 {
+			return fmt.Errorf(
+				"aspect: unsupported destination for multi-column result: %s",
+				elem.Kind(),
+			)
+		}
+		for r.rows.Next() {
+			newElem := reflect.New(elem).Elem()
+			if err := r.rows.Scan(newElem.Addr().Interface()); err != nil {
+				return err
+			}
+			argElem.Set(reflect.Append(argElem, newElem))
+		}
 	}
 
-	// // Is the slice element a struct?
-	// if elem.Kind() == reflect.Struct {
-	// 	// Iterate through the struct fields to build the receiver
 	// } else if elem.Kind() == reflect.Map {
 	// 	names, _ := r.rows.Columns()
 	// 	result := make([]interface{}, len(names))
@@ -201,19 +211,6 @@ func (r *Result) All(arg interface{}) error {
 	// 		}
 	// 		argElem.Set(reflect.Append(argElem, newElem))
 	// 	}
-	// 	return nil
-	// } else {
-	// 	// Create a single interface for receiving
-	// 	for r.rows.Next() {
-	// 		// Create a new slice element
-	// 		newElem := reflect.New(elem).Elem()
-	// 		if err := r.rows.Scan(newElem.Addr().Interface()); err != nil {
-	// 			return err
-	// 		}
-	// 		argElem.Set(reflect.Append(argElem, newElem))
-	// 	}
-
-	// }
 
 	return r.rows.Err()
 }
