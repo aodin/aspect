@@ -46,6 +46,15 @@ func (db DatabaseConfig) Credentials() string {
 	return strings.Join(values, " ")
 }
 
+var travisCI = DatabaseConfig{
+	Driver:  "postgres",
+	Host:    "localhost",
+	Port:    5432,
+	Name:    "travis_ci_test",
+	User:    "postgres",
+	SSLMode: "disable",
+}
+
 // Parse will create a DatabaseConfig using the file at the given path.
 func ParseConfig(filename string) (DatabaseConfig, error) {
 	f, err := os.Open(filename)
