@@ -9,9 +9,18 @@ func TestClauses(t *testing.T) {
 	expect := NewTester(t, &defaultDialect{})
 
 	id := users.C["id"]
+	name := users.C["name"]
 
 	// Column clause
-	expect.SQL(`"users"."id"`, ColumnClause{table: users, name: id.Name()})
+	column := ColumnClause{table: users, name: name.Name()}
+	expect.SQL(`"users"."name"`, column)
+
+	// String and Int clause TODO remove these as the skip parameterization
+	expect.SQL(`'name'`, StringClause{Name: "name"})
+	expect.SQL(`3`, IntClause{D: 3})
+
+	// Func clause
+	expect.SQL(`LOWER("users"."name")`, FuncClause{Inner: column, F: "LOWER"})
 
 	// Binary clause
 	expect.SQL(`"users"."id" = $1`, id.Equals(2), 2)

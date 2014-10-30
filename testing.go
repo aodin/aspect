@@ -63,6 +63,10 @@ func (t *sqlTest) SQL(expect string, stmt Compiles, ps ...interface{}) {
 		return
 	}
 
+	// Also test that the string output does not panic
+	// TODO do we care about output?
+	stmt.String()
+
 	if expect != actual {
 		t.t.Errorf(
 			"%s: unexpected SQL: expect %s, got %s",
