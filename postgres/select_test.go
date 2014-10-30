@@ -72,10 +72,11 @@ func TestSelect(t *testing.T) {
 	assert.Equal(true, u.IsActive)
 
 	// Select using a returning clause
-	client := user{Name: "client", Password: "1234"}
+	client := user{Name: "client", Password: "1234", IsActive: false}
 	returningStmt := Insert(
 		users.C["name"],
 		users.C["password"],
+		users.C["is_active"],
 	).Returning(
 		users.C["id"],
 	)
@@ -85,5 +86,53 @@ func TestSelect(t *testing.T) {
 	// Select into a struct that has extra columns
 	// TODO Skip unexported fields
 	var extraField testUser
-	require.Nil(t, tx.QueryOne(users.Select(), &extraField))
+	require.Nil(t, tx.QueryOne(users.Select().Where(users.C["name"].Equals("client")), &extraField))
+	assert.Equal("client", extraField.Name)
+	assert.Equal(false, extraField.IsActive)
+
+	// Query multiple users
+	var extraFields []testUser
+	assert.Nil(tx.QueryAll(users.Select(), &extraFields))
+	assert.Equal(3, len(extraFields))
+
+	// Query ids directly
+	var ids []int64
+	orderBy := aspect.Select(users.C["id"]).OrderBy(users.C["id"].Desc())
+	assert.Nil(tx.QueryAll(orderBy, &ids))
+	assert.Equal(3, len(ids))
+	var prev int64
+	for _, id := range ids {
+		if prev != 0 {
+			if prev < id {
+				t.Errorf("id results returned out of order")
+			}
+		}
+	}
+
+	// TODO destination types that don't match the result
+
+	// Update
+	// ------
+
+	updateStmt := users.Update().Values(
+		aspect.Values{"name": "HELLO", "password": "BYE"},
+	).Where(
+		users.C["id"].Equals(client.ID),
+	)
+	result, err := tx.Execute(updateStmt)
+	require.Nil(t, err)
+
+	rowsAffected, err := result.RowsAffected()
+	assert.Nil(err)
+	assert.Equal(1, rowsAffected)
+
+	// Delete
+	// ------
+
+	result, err = tx.Execute(users.Delete())
+	require.Nil(t, err)
+
+	rowsAffected, err = result.RowsAffected()
+	assert.Nil(err)
+	assert.Equal(3, rowsAffected)
 }
