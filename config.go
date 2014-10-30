@@ -69,14 +69,7 @@ func parseConfig(f io.Reader) (c DatabaseConfig, err error) {
 func ParseTestConfig(filename string) (DatabaseConfig, error) {
 	f, err := os.Open(filename)
 	if err != nil {
-		return DatabaseConfig{
-			Driver:  "postgres",
-			Host:    "localhost",
-			Port:    5432,
-			Name:    "travis_ci_test",
-			User:    "postgres",
-			SSLMode: "disable",
-		}, nil
+		return travisCI, nil
 	}
 	return parseConfig(f)
 }
