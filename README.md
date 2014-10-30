@@ -1,6 +1,8 @@
 Aspect
 ======
 
+[![Build Status](https://travis-ci.org/aodin/aspect.svg?branch=master)](https://travis-ci.org/aodin/aspect)
+
 A relational database toolkit in Go that aims to:
 
 * Build complete database schemas
