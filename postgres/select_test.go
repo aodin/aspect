@@ -109,6 +109,30 @@ func TestSelect(t *testing.T) {
 		}
 	}
 
+	// Scan into a Values map - all fields should be returned
+	selectByName := users.Select().OrderBy(users.C["name"])
+	values := aspect.Values{}
+	assert.Nil(tx.QueryOne(selectByName, values))
+	assert.Equal(4, len(values))
+	assert.Equal(1, values["id"])
+	assert.Equal([]byte("admin"), values["name"]) // Yup, strings are []byte
+	assert.Equal(true, values["is_active"])
+	assert.Equal([]byte{}, values["password"])
+
+	// Scan into a slice of Values maps
+	var allValues []aspect.Values
+	assert.Nil(tx.QueryAll(selectByName, &allValues))
+	assert.Equal(3, len(allValues))
+
+	values = allValues[2]
+	assert.Equal(4, len(values))
+	assert.Equal(3, values["id"])
+	assert.Equal([]byte("client"), values["name"]) // Yup, strings are []byte
+	assert.Equal(false, values["is_active"])
+	assert.Equal([]byte("1234"), values["password"])
+
+	// TODO Test duplicate names in a table join
+
 	// TODO destination types that don't match the result
 
 	// Update

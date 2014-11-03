@@ -43,18 +43,40 @@ func (r *Result) One(arg interface{}) error {
 		return ErrNoResult
 	}
 
-	value := reflect.ValueOf(arg)
-	if value.Kind() != reflect.Ptr {
-		return fmt.Errorf(
-			"aspect: received a non-pointer destination for result.One",
-		)
-	}
-
 	columns, err := r.rows.Columns()
 	if err != nil {
 		return fmt.Errorf(
 			"aspect: error returning columns from result: %s",
 			err,
+		)
+	}
+
+	value := reflect.ValueOf(arg)
+	if value.Kind() == reflect.Map {
+		values, ok := arg.(Values)
+		if !ok {
+			return fmt.Errorf("aspect: maps as destinations are only allowed if they are of type aspect.Values")
+		}
+
+		// TODO scan directly into values?
+		addr := make([]interface{}, len(columns))
+		dest := make([]interface{}, len(columns))
+		for i, _ := range addr {
+			dest[i] = &addr[i]
+		}
+
+		if err := r.rows.Scan(dest...); err != nil {
+			return fmt.Errorf("aspect: error while scanning map: %s", err)
+		}
+
+		for i, name := range columns {
+			values[name] = addr[i]
+		}
+		return r.rows.Err()
+
+	} else if value.Kind() != reflect.Ptr {
+		return fmt.Errorf(
+			"aspect: received a non-pointer destination for result.One",
 		)
 	}
 
@@ -85,12 +107,12 @@ func (r *Result) One(arg interface{}) error {
 		}
 
 		if err := r.rows.Scan(dest...); err != nil {
-			return err
+			return fmt.Errorf("aspect: error while scanning struct: %s", err)
 		}
+
 	case reflect.Slice:
 		return fmt.Errorf("aspect: cannot scan single results into slices")
-	case reflect.Map:
-		fallthrough
+
 	default:
 		if len(columns) != 1 {
 			return fmt.Errorf(
@@ -166,7 +188,32 @@ func (r *Result) All(arg interface{}) error {
 		}
 
 	case reflect.Map:
-		fallthrough
+		_, ok := arg.(*[]Values)
+		if !ok {
+			return fmt.Errorf("aspect: slices of maps are only allowed if they are of type aspect.Values")
+		}
+
+		for r.rows.Next() {
+			values := Values{}
+
+			// TODO scan directly into values?
+			addr := make([]interface{}, len(columns))
+			dest := make([]interface{}, len(columns))
+			for i, _ := range addr {
+				dest[i] = &addr[i]
+			}
+
+			if err := r.rows.Scan(dest...); err != nil {
+				return fmt.Errorf("aspect: error while scanning map: %s", err)
+			}
+
+			for i, name := range columns {
+				values[name] = addr[i]
+			}
+
+			argElem.Set(reflect.Append(argElem, reflect.ValueOf(values)))
+		}
+
 	default:
 		// Single column results can be scanned into native types
 		if len(columns) != 1 {
