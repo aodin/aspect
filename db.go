@@ -20,30 +20,37 @@ var _ Connection = &TX{}
 // TODO The db should be able to determine if a stmt should be used with
 // either Exec() or Query()
 
-// TODO How to distiguish between full statements and fragments?
+// Executable statements implement the Compiles interface
 type Executable interface {
 	Compiles
 }
 
-// DB includes the current sql.DB connection and the associated Dialect
+// DB wraps the current sql.DB connection pool and includes the Dialect
+// associated with the connection.
 type DB struct {
 	conn    *sql.DB
 	dialect Dialect
 }
 
+// Begin starts a new transaction using the current database connection pool.
 func (db *DB) Begin() (*TX, error) {
 	tx, err := db.conn.Begin()
 	return &TX{Tx: tx, dialect: db.dialect}, err
 }
 
+// Close closes the current database connection pool.
 func (db *DB) Close() error {
 	return db.conn.Close()
 }
 
+// Dialect returns the dialect associated with the current database connection
+// pool.
 func (db *DB) Dialect() Dialect {
 	return db.dialect
 }
 
+// Query executes an Executable statement with the optional arguments. It
+// returns a Result object, that can scan rows in various data types.
 func (db *DB) Query(stmt Executable, args ...interface{}) (*Result, error) {
 	// Initialize a list of empty parameters
 	params := Params()
@@ -69,8 +76,8 @@ func (db *DB) Query(stmt Executable, args ...interface{}) (*Result, error) {
 	return &Result{rows: rows, stmt: s}, nil
 }
 
-// QueryAll will query the statement and populate the interface with all
-// results
+// QueryAll will query the statement and populate the given interface with all
+// results.
 func (db *DB) QueryAll(stmt Executable, i interface{}) error {
 	result, err := db.Query(stmt)
 	if err != nil {
@@ -79,7 +86,8 @@ func (db *DB) QueryAll(stmt Executable, i interface{}) error {
 	return result.All(i)
 }
 
-// QueryOne will query the statement and populate the interface with one result
+// QueryOne will query the statement and populate the given interface with a
+// single result.
 func (db *DB) QueryOne(stmt Executable, i interface{}) error {
 	result, err := db.Query(stmt)
 	if err != nil {
@@ -90,9 +98,9 @@ func (db *DB) QueryOne(stmt Executable, i interface{}) error {
 	return result.One(i)
 }
 
-// Execute the statement
-// Execute should be used when no results are expected
-// TODO What should the return type be?
+// Execute executes the Executable statement with optional arguments. It
+// returns the database/sql package's Result object, which may contain
+// information on rows affected and last ID inserted depending on the driver.
 func (db *DB) Execute(stmt Executable, args ...interface{}) (sql.Result, error) {
 	// Initialize a list of empty parameters
 	params := Params()
@@ -119,8 +127,9 @@ func (db *DB) String(stmt Executable) string {
 	return compiled
 }
 
+// Connect connects to the database using the given driver and credentials.
+// It returns a database connection pool and an error if one occurred.
 func Connect(driver, credentials string) (*DB, error) {
-	// Connect to the database using the given credentials
 	db, err := sql.Open(driver, credentials)
 	if err != nil {
 		return nil, err
@@ -134,12 +143,16 @@ func Connect(driver, credentials string) (*DB, error) {
 	return &DB{conn: db, dialect: dialect}, nil
 }
 
-// TODO behavior should be inherited from the DB field instance
+// TX wraps the current sql.Tx transaction and the Dialect associated with
+// the transaction.
 type TX struct {
 	*sql.Tx
 	dialect Dialect
 }
 
+// Query executes an Executable statement with the optional arguments
+// using the current transaction. It returns a Result object, that can scan
+// rows in various data types.
 func (tx *TX) Query(stmt Executable, args ...interface{}) (*Result, error) {
 	// Initialize a list of empty parameters
 	params := Params()
@@ -165,8 +178,8 @@ func (tx *TX) Query(stmt Executable, args ...interface{}) (*Result, error) {
 	return &Result{rows: rows, stmt: s}, nil
 }
 
-// QueryAll will query the statement and populate the interface with all
-// results
+// QueryAll will query the statement using the current transaction and
+// populate the given interface with all results.
 func (tx *TX) QueryAll(stmt Executable, i interface{}) error {
 	result, err := tx.Query(stmt)
 	if err != nil {
@@ -175,7 +188,8 @@ func (tx *TX) QueryAll(stmt Executable, i interface{}) error {
 	return result.All(i)
 }
 
-// QueryOne will query the statement and populate the interface with one result
+// QueryOne will query the statement using the current transaction and
+// populate the given interface with a single result.
 func (tx *TX) QueryOne(stmt Executable, i interface{}) error {
 	result, err := tx.Query(stmt)
 	if err != nil {
@@ -186,9 +200,10 @@ func (tx *TX) QueryOne(stmt Executable, i interface{}) error {
 	return result.One(i)
 }
 
-// Execute the statement
-// Execute should be used when no results are expected
-// TODO What should the return type be?
+// Execute executes the Executable statement with optional arguments using
+// the current transaction. It returns the database/sql package's Result
+// object, which may contain information on rows affected and last ID inserted
+// depending on the driver.
 func (tx *TX) Execute(stmt Executable, args ...interface{}) (sql.Result, error) {
 	// Initialize a list of empty parameters
 	params := Params()

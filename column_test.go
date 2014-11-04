@@ -41,8 +41,23 @@ func TestColumnConditionals(t *testing.T) {
 	expect.SQL(`"users"."id" > $1`, users.C["id"].GreaterThan(1), 1)
 	expect.SQL(`"users"."id" <= $1`, users.C["id"].LTE(1), 1)
 	expect.SQL(`"users"."id" >= $1`, users.C["id"].GTE(1), 1)
-	expect.SQL(`"users"."name" like $1`, users.C["name"].Like(1), 1)
-	expect.SQL(`"users"."name" ilike $1`, users.C["name"].ILike(1), 1)
+	expect.SQL(`"users"."name" LIKE $1`, users.C["name"].Like(`_b`), "_b")
+	expect.SQL(
+		`"users"."name" NOT LIKE $1`,
+		users.C["name"].NotLike(`_b`),
+		"_b",
+	)
+	expect.SQL(`"users"."name" ILIKE $1`, users.C["name"].ILike(`_b`), "_b")
+	expect.SQL(
+		`"users"."name" SIMILAR TO $1`,
+		users.C["name"].SimilarTo(`_b`),
+		"_b",
+	)
+	expect.SQL(
+		`"users"."name" NOT SIMILAR TO $1`,
+		users.C["name"].NotSimilarTo(`_b`),
+		"_b",
+	)
 	expect.SQL(`"users"."id" IS NULL`, users.C["id"].IsNull())
 	expect.SQL(`"users"."id" IS NOT NULL`, users.C["id"].IsNotNull())
 }

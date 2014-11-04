@@ -17,8 +17,8 @@ Implements the `TableModifier` interface.
 // ColumnSet maintains a map of ColumnElem instances by column name
 type ColumnSet map[string]ColumnElem
 
-// Returns an error if a ColumnElem by this name already exists
-// TODO Make this a private method?
+// Add adds a ColumnElem to the ColumnSet, returning an error if the name
+// already exists.
 func (set ColumnSet) Add(c ColumnElem) error {
 	if _, exists := set[c.name]; exists {
 		return fmt.Errorf(
@@ -39,15 +39,22 @@ type ColumnElem struct {
 	typ   dbType
 }
 
+// String outputs a parameter-less SQL representation of the column using
+// a neutral dialect. If an error occurred during compilation,
+// then an empty string will be returned.
 func (c ColumnElem) String() string {
 	compiled, _ := c.Compile(&defaultDialect{}, Params())
 	return compiled
 }
 
+// Inner returns the inner Clause of the ColumnElem. This operation is used
+// for setting external casts and functions on the ColumnElem.
 func (c ColumnElem) Inner() Clause {
 	return c.inner
 }
 
+// SetInner sets the inner Clause of the ColumnElem. This operation is used
+// for setting external casts and functions on the ColumnElem.
 func (c ColumnElem) SetInner(clause Clause) ColumnElem {
 	c.inner = clause
 	return c
@@ -83,24 +90,29 @@ func (c ColumnElem) Selectable() []ColumnElem {
 // Ordering
 // --------
 
-// Implement the sql.Orderable interface in order.go
+// Orerable implements the Orderable interface that allows the column itself
+// to be used in an OrderBy clause.
 func (c ColumnElem) Orderable() OrderedColumn {
 	return OrderedColumn{inner: c}
 }
 
-// All other functions should return an OrderedColumn
+// Asc returns an OrderedColumn. It is the same as passing the column itself
+// to an OrderBy clause.
 func (c ColumnElem) Asc() OrderedColumn {
 	return OrderedColumn{inner: c}
 }
 
+// Desc returns an OrderedColumn that will sort in descending order.
 func (c ColumnElem) Desc() OrderedColumn {
 	return OrderedColumn{inner: c, desc: true}
 }
 
+// NullsFirst returns an OrderedColumn that will sort NULLs first.
 func (c ColumnElem) NullsFirst() OrderedColumn {
 	return OrderedColumn{inner: c, nullsFirst: true}
 }
 
+// NullsLast returns an OrderedColumn that will sort NULLs last.
 func (c ColumnElem) NullsLast() OrderedColumn {
 	return OrderedColumn{inner: c, nullsLast: true}
 }
@@ -108,6 +120,8 @@ func (c ColumnElem) NullsLast() OrderedColumn {
 // Conditionals
 // ------------
 
+// Equals creates an equals clause that can be used in conditional clauses.
+//  table.Select().Where(table.C["id"].Equals(3))
 func (c ColumnElem) Equals(i interface{}) BinaryClause {
 	return BinaryClause{
 		Pre:  c,
@@ -116,6 +130,9 @@ func (c ColumnElem) Equals(i interface{}) BinaryClause {
 	}
 }
 
+// DoesNotEqual creates a does not equal clause that can be used in
+// conditional clauses.
+//  table.Select().Where(table.C["id"].DoesNotEqual(3))
 func (c ColumnElem) DoesNotEqual(i interface{}) BinaryClause {
 	return BinaryClause{
 		Pre:  c,
@@ -124,6 +141,8 @@ func (c ColumnElem) DoesNotEqual(i interface{}) BinaryClause {
 	}
 }
 
+// LessThan creates a less than clause that can be used in conditional clauses.
+//  table.Select().Where(table.C["id"].LessThan(3))
 func (c ColumnElem) LessThan(i interface{}) BinaryClause {
 	return BinaryClause{
 		Pre:  c,
@@ -132,6 +151,9 @@ func (c ColumnElem) LessThan(i interface{}) BinaryClause {
 	}
 }
 
+// GreaterThan creates a greater than clause that can be used in conditional
+// clauses.
+//  table.Select().Where(table.C["id"].GreaterThan(3))
 func (c ColumnElem) GreaterThan(i interface{}) BinaryClause {
 	return BinaryClause{
 		Pre:  c,
@@ -140,6 +162,9 @@ func (c ColumnElem) GreaterThan(i interface{}) BinaryClause {
 	}
 }
 
+// LTE creates a less than or equal to clause that can be used in conditional
+// clauses.
+//  table.Select().Where(table.C["id"].LTE(3))
 func (c ColumnElem) LTE(i interface{}) BinaryClause {
 	return BinaryClause{
 		Pre:  c,
@@ -148,6 +173,9 @@ func (c ColumnElem) LTE(i interface{}) BinaryClause {
 	}
 }
 
+// GTE creates a greater than or equal to clause that can be used in
+// conditional clauses.
+//  table.Select().Where(table.C["id"].GTE(3))
 func (c ColumnElem) GTE(i interface{}) BinaryClause {
 	return BinaryClause{
 		Pre:  c,
@@ -156,22 +184,64 @@ func (c ColumnElem) GTE(i interface{}) BinaryClause {
 	}
 }
 
-func (c ColumnElem) Like(i interface{}) BinaryClause {
+// Like creates a pattern matching clause that can be used in conditional
+// clauses.
+//  table.Select().Where(table.C["name"].Like(`_b%`))
+func (c ColumnElem) Like(i string) BinaryClause {
 	return BinaryClause{
 		Pre:  c,
 		Post: &Parameter{i},
-		Sep:  " like ",
+		Sep:  " LIKE ",
 	}
 }
 
-func (c ColumnElem) ILike(i interface{}) BinaryClause {
+// NotLike creates a pattern matching clause that can be used in conditional
+// clauses.
+//  table.Select().Where(table.C["name"].NotLike(`_b%`))
+func (c ColumnElem) NotLike(i string) BinaryClause {
 	return BinaryClause{
 		Pre:  c,
 		Post: &Parameter{i},
-		Sep:  " ilike ",
+		Sep:  " NOT LIKE ",
 	}
 }
 
+// Like creates a case insensitive pattern matching clause that can be used in
+// conditional clauses.
+//  table.Select().Where(table.C["name"].ILike(`_b%`))
+func (c ColumnElem) ILike(i string) BinaryClause {
+	return BinaryClause{
+		Pre:  c,
+		Post: &Parameter{i},
+		Sep:  " ILIKE ",
+	}
+}
+
+// SimilarTo creates a SQL regular expression matching clause that can be used
+// in conditional clauses.
+//  table.Select().Where(table.C["name"].SimilarTo(`_b%`))
+func (c ColumnElem) SimilarTo(i string) BinaryClause {
+	return BinaryClause{
+		Pre:  c,
+		Post: &Parameter{i},
+		Sep:  " SIMILAR TO ",
+	}
+}
+
+// NotSimilarTo creates a SQL regular expression matching clause that can be
+// used in conditional clauses.
+//  table.Select().Where(table.C["name"].NotSimilarTo(`_b%`))
+func (c ColumnElem) NotSimilarTo(i string) BinaryClause {
+	return BinaryClause{
+		Pre:  c,
+		Post: &Parameter{i},
+		Sep:  " NOT SIMILAR TO ",
+	}
+}
+
+// IsNull creates a comparison clause that can be used for checking existence
+// of NULLs in conditional clauses.
+//  table.Select().Where(table.C["name"].IsNull())
 func (c ColumnElem) IsNull() UnaryClause {
 	return UnaryClause{
 		Pre: c,
@@ -179,6 +249,9 @@ func (c ColumnElem) IsNull() UnaryClause {
 	}
 }
 
+// IsNotNull creates a comparison clause that can be used for checking absence
+// of NULLs in conditional clauses.
+//  table.Select().Where(table.C["name"].IsNotNull())
 func (c ColumnElem) IsNotNull() UnaryClause {
 	return UnaryClause{
 		Pre: c,
@@ -186,8 +259,10 @@ func (c ColumnElem) IsNotNull() UnaryClause {
 	}
 }
 
-// An interface is used because the args may be of any type: ints, strings...
-// TODO an error if something other than a slice is added?
+// In creates a comparison clause with an IN operator that can be used in
+// conditional clauses. An interface is used because the args may be of any
+// type: ints, strings...
+//  table.Select().Where(table.C["id"].In([]int64{1, 2, 3}))
 func (c ColumnElem) In(args interface{}) BinaryClause {
 	// Create the inner array clause and parameters
 	a := ArrayClause{Clauses: make([]Clause, 0), Sep: ", "}
@@ -218,6 +293,8 @@ func (c ColumnElem) NotBetween(a, b interface{}) ArrayClause {
 // Schema
 // ------
 
+// Create implements the dbType interface that outputs a column of a
+// CREATE TABLE statement.
 func (c ColumnElem) Create(d Dialect) (string, error) {
 	ct, err := c.typ.Create(d)
 	if err != nil {
@@ -270,8 +347,6 @@ func (c ColumnElem) Modify(t *TableElem) error {
 }
 
 // Column constructs a ColumnElem with the given name and dbType.
-// TODO The constructor function does not need to return a ColumnElem,
-// it can return a struct that modifies the table and adds a column.
 func Column(name string, t dbType) ColumnElem {
 	// Set the inner clause of the column to the incomplete ColumnClause.
 	// This will be overwritten by the table modify function.

@@ -402,6 +402,8 @@ CREATE TABLE "posts" (
 Development
 -----------
 
+To perform tests, copy the `db.example.json` file into each driver package requiring credentials as `db.json` (currently `postgres`) as set it for your local configruation.
+
 All compilable statments implement a `String` method for dialect-neutral logging and the `Compile` method for building dialect-specific and parameterized output:
 
 ```go
@@ -414,7 +416,7 @@ type Compiles interface {
 Testing of statements and clauses can performed by creating a new dialect-specific tester, for example with the `postgres` package:
 
 ```go
-expect := NewTester(t, &postgres{})
+expect := NewTester(t, &PostGres{})
 ```
 
 The instance's `SQL` method will test expected output and parameterization:

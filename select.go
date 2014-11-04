@@ -34,7 +34,6 @@ func (stmt SelectStmt) TableExists(name string) bool {
 	return false
 }
 
-// TODO These need errors now
 func (stmt SelectStmt) CompileTables(d Dialect, params *Parameters) []string {
 	names := make([]string, len(stmt.tables))
 	for i, table := range stmt.tables {
@@ -43,7 +42,6 @@ func (stmt SelectStmt) CompileTables(d Dialect, params *Parameters) []string {
 	return names
 }
 
-// TODO These need errors now
 func (stmt SelectStmt) CompileColumns(d Dialect, params *Parameters) []string {
 	names := make([]string, len(stmt.columns))
 	for i, c := range stmt.columns {
@@ -58,7 +56,9 @@ func (stmt SelectStmt) String() string {
 	return compiled
 }
 
-// Compile will compile the SELECT statement according to the given dialect.
+// Compile outputs the SELECT statement using the given dialect and parameters.
+// An error may be returned because of a pre-existing error or because
+// an error occurred during compilation.
 func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	if stmt.err != nil {
 		return "", stmt.err
