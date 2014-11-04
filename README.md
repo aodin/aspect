@@ -402,9 +402,9 @@ CREATE TABLE "posts" (
 Development
 -----------
 
-To perform tests, copy the `db.example.json` file into each driver package requiring credentials as `db.json` (currently `postgres`) as set it for your local configruation.
+To perform tests, copy the `db.example.json` file into each driver package requiring credentials as `db.json` (currently required only by the `postgres` package) as set it for your local configuration.
 
-All compilable statments implement a `String` method for dialect-neutral logging and the `Compile` method for building dialect-specific and parameterized output:
+All compilable statements implement a `String` method for dialect-neutral logging and the `Compile` method for building dialect-specific and parameterized output:
 
 ```go
 type Compiles interface {
