@@ -5,15 +5,21 @@ import (
 	"strings"
 )
 
+// CreateStmt is the internal representation of an CREATE TABLE statement.
 type CreateStmt struct {
 	table *TableElem
 }
 
+// String outputs the parameter-less CREATE TABLE statement in a neutral
+// dialect.
 func (stmt CreateStmt) String() string {
 	c, _ := stmt.Compile(&defaultDialect{}, Params())
 	return c
 }
 
+// Compile outputs the CREATE TABLE statement using the given dialect and
+// parameters. An error may be returned because of a pre-existing error or
+// because an error occurred during compilation.
 func (stmt CreateStmt) Compile(d Dialect, p *Parameters) (string, error) {
 	// Compiled elements
 	compiled := make([]string, len(stmt.table.creates))

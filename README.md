@@ -68,7 +68,7 @@ func main() {
 Statements
 ----------
 
-Don't forget to import aspect and at least one driver you'll be using. I often alias the aspect package to `sql` as below:
+Don't forget to import aspect and at least one driver. I alias the aspect package to `sql`:
 
 ```go
 import (
@@ -135,8 +135,6 @@ Using the `Users` schema, a `DROP TABLE` statement can be created with:
 Users.Drop()
 ```
 
-And produces the SQL:
-
 ```sql
 DROP TABLE "users"
 ```
@@ -169,8 +167,6 @@ type user struct {
 ```go
 Users.Insert().Values(user{Name: "Totti", Password: "GOAL"})
 ```
-
-Will produce:
 
 ```sql
 INSERT INTO "users" ("name", "password") VALUES (?, ?)
@@ -317,12 +313,24 @@ Results can be returned directly into structs:
 
 ```go
 var users []User
-err := db.QueryAll(Users.Select(), &users)
+db.QueryAll(Users.Select(), &users)
 fmt.Println(users)
 // [1: admin 2: client 3: daemon]
 ```
 
-Simple queries can be returned into more concise types:
+It's okay to have a destination struct larger than the expected results (vice-versa!), as long as the struct has `db` tags:
+
+```go
+type username struct {
+    Name    string `db:"name"`
+    manager *manager
+}
+
+var usernames []username
+db.QueryAll(sql.Select(Users.C["name"]), &usernames)
+```
+
+Single column queries can be returned into slice types:
 
 ```go
 s := aspect.Select(Users.C["id"]).OrderBy(Users.C["id"].Desc())
@@ -334,12 +342,100 @@ SELECT "users"."id" FROM "users" ORDER BY "users"."id" DESC
 
 ```go
 var ids []int64
-if err := db.QueryAll(s, &ids); err != nil {
-    log.Fatal(err)
-}
+db.QueryAll(s, &ids)
 fmt.Println(ids)
 // [3, 2, 1]
 ```
+
+Single results can also be queried into instantiated instances of `Values`, which is included with the package:
+
+```go
+result := sql.Values{}
+db.QueryOne(Users.Select(), result)
+```
+
+Or multiple results with a pointer to a slice of `Values`:
+
+```go
+var results []sql.Values
+db.QueryAll(Users.Select(), &results)
+```
+
+A warning, however: string results are added to the map as `[]byte` types. Since this is done internally by the `database/sql` standard library package, this is unlikely to change in the future.
+
+    map[id:1 name:[84 111 116 116 105] password:[71 79 65 76]]
+
+To get string output, simply cast the value to a `string` after asserting that it is a `[]byte`:
+
+```go
+fmt.Println(string(result["name"].([]byte)))
+// Totti
+```
+
+
+Schema
+------
+
+More advanced schemas can be created with foreign keys, unique constraints, and composite primary keys:
+
+```go
+var Posts = sql.Table("users",
+    sql.ForeignKey("uid", Users.C["id"], sql.BigInt{}).OnDelete(sql.Cascade),
+    sql.Column("name", sql.String{Length: 32, NotNull: true}),
+    sql.Column("is_published", sql.Boolean{Default: sql.True}),
+    sql.Unique("name"),
+    sql.PrimaryKey("uid", "name"),
+)
+```
+
+```sql
+CREATE TABLE "users" (
+  "uid" BIGINT REFERENCES users("id") ON DELETE CASCADE,
+  "name" VARCHAR(32) NOT NULL,
+  "is_published" BOOL DEFAULT TRUE,
+  UNIQUE ("name"),
+  PRIMARY KEY ("uid", "name")
+);
+```
+
+
+Development
+-----------
+
+All compilable statments implement a `String` method for dialect-neutral logging and the `Compile` method for building dialect-specific and parameterized output:
+
+```go
+type Compiles interface {
+    String() string
+    Compile(Dialect, *Parameters) (string, error)
+}
+```
+
+Testing of statements and clauses can performed by creating a new dialect-specific tester, for example with the `postgres` package:
+
+```go
+expect := NewTester(t, &postgres{})
+```
+
+The instance's `SQL` method will test expected output and parameterization:
+
+```go
+expect.SQL(`DELETE FROM "users"`, users.Delete())
+
+expect.SQL(
+    `INSERT INTO "users" ("name") VALUES ($1), ($2)`,
+    users.Insert().Values(vs),
+    "Totti",
+    "De Rossi",
+)
+```
+
+And the `Error` method will test that an error occurred:
+
+```go
+expect.Error(Select(users.C["does-not-exist"]))
+```
+
 
 Happy Hacking!
 
