@@ -413,10 +413,10 @@ type Compiles interface {
 }
 ```
 
-Testing of statements and clauses can performed by creating a new dialect-specific tester, for example with the `postgres` package:
+Statements and clauses can be tested by creating a new dialect-specific tester; for example using the `postgres` package:
 
 ```go
-expect := NewTester(t, &PostGres{})
+expect := NewTester(t, &postgres.PostGres{})
 ```
 
 The instance's `SQL` method will test expected output and parameterization:
@@ -426,7 +426,7 @@ expect.SQL(`DELETE FROM "users"`, users.Delete())
 
 expect.SQL(
     `INSERT INTO "users" ("name") VALUES ($1), ($2)`,
-    users.Insert().Values([]Values{{"name": "Totti"}, {"name": "De Rossi"}}),
+    users.Insert().Values([]sql.Values{{"name": "Totti"}, {"name": "De Rossi"}}),
     "Totti",
     "De Rossi",
 )
@@ -435,7 +435,7 @@ expect.SQL(
 And the `Error` method will test that an error occurred:
 
 ```go
-expect.Error(Select(users.C["does-not-exist"]))
+expect.Error(sql.Select(users.C["does-not-exist"]))
 ```
 
 
