@@ -83,6 +83,32 @@ func (s Integer) Create(d Dialect) (string, error) {
 	return compiled, nil
 }
 
+// BigInt represents BIGINT column types.
+type BigInt struct {
+	NotNull    bool
+	Unique     bool
+	PrimaryKey bool
+}
+
+// Create returns the syntax need to create this column in CREATE statements.
+func (s BigInt) Create(d Dialect) (string, error) {
+	compiled := "BIGINT"
+	attrs := make([]string, 0)
+	if s.PrimaryKey {
+		attrs = append(attrs, "PRIMARY KEY")
+	}
+	if s.NotNull {
+		attrs = append(attrs, "NOT NULL")
+	}
+	if s.Unique {
+		attrs = append(attrs, "UNIQUE")
+	}
+	if len(attrs) > 0 {
+		compiled += fmt.Sprintf(" %s", strings.Join(attrs, " "))
+	}
+	return compiled, nil
+}
+
 // Timestamp represents TIMESTAMP column types.
 // TODO take a time.Location for timezone options
 type Timestamp struct {

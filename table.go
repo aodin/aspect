@@ -20,6 +20,7 @@ type TableElem struct {
 	order   []string
 	pk      PrimaryKeyArray
 	uniques []UniqueConstraint
+	creates []dbType
 }
 
 // String returns the table name.

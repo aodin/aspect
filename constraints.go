@@ -24,7 +24,6 @@ func (pk PrimaryKeyArray) Create(d Dialect) (string, error) {
 func (pk PrimaryKeyArray) Modify(table *TableElem) error {
 	// Confirm that all columns in the primary key exists
 	for _, name := range pk {
-		// TODO Aggregate errors
 		_, exists := table.C[name]
 		if !exists {
 			return fmt.Errorf("No column with the name '%s' exists in the table '%s'. Is it declared after the PrimaryKey declaration?", name, table.Name)
@@ -33,6 +32,10 @@ func (pk PrimaryKeyArray) Modify(table *TableElem) error {
 	}
 	// If all columns exist, set the primary key
 	table.pk = pk
+
+	// Add the pk to the create array
+	table.creates = append(table.creates, pk)
+
 	return nil
 }
 
@@ -71,7 +74,6 @@ func (uc UniqueConstraint) Create(d Dialect) (string, error) {
 func (uc UniqueConstraint) Modify(table *TableElem) error {
 	// Confirm that all columns in the primary key exists
 	for _, name := range uc {
-		// TODO Aggregate errors
 		_, exists := table.C[name]
 		if !exists {
 			return fmt.Errorf("No column with the name '%s' exists in the table '%s'. Is it declared after the PrimaryKey declaration?", name, table.Name)
@@ -81,6 +83,10 @@ func (uc UniqueConstraint) Modify(table *TableElem) error {
 
 	// Add the unique clause to the table
 	table.uniques = append(table.uniques, uc)
+
+	// Add the constraint to the table
+	table.creates = append(table.creates, uc)
+
 	return nil
 }
 

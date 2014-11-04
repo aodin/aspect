@@ -218,8 +218,16 @@ func (c ColumnElem) NotBetween(a, b interface{}) ArrayClause {
 // Schema
 // ------
 
-// To implement the TableModifier interface the ColumnElem must
-// have method Modify(). It does not need to modify its parent table.
+func (c ColumnElem) Create(d Dialect) (string, error) {
+	ct, err := c.typ.Create(d)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf(`"%s" %s`, c.Name(), ct), nil
+}
+
+// Modify implements the TableModifier interface. It creates a column and
+// adds the same column to the create array.
 func (c ColumnElem) Modify(t *TableElem) error {
 	// No modifing nil table elements
 	if t == nil {
@@ -254,6 +262,10 @@ func (c ColumnElem) Modify(t *TableElem) error {
 
 	// Add the name to the table order
 	t.order = append(t.order, c.name)
+
+	// Add the column to the create array
+	t.creates = append(t.creates, c)
+
 	return nil
 }
 

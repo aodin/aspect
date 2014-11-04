@@ -16,37 +16,18 @@ func (stmt CreateStmt) String() string {
 
 func (stmt CreateStmt) Compile(d Dialect, p *Parameters) (string, error) {
 	// Compiled elements
-	cs := make([]string, 0)
+	compiled := make([]string, len(stmt.table.creates))
 
-	for _, column := range stmt.table.Columns() {
-		// Get the create syntax for each type
-		ct, err := column.typ.Create(d)
-		if err != nil {
+	var err error
+	for i, create := range stmt.table.creates {
+		if compiled[i], err = create.Create(d); err != nil {
 			return "", err
 		}
-		cs = append(cs, fmt.Sprintf(`"%s" %s`, column.Name(), ct))
 	}
 
-	if stmt.table.pk != nil {
-		pkc, err := stmt.table.pk.Create(d)
-		if err != nil {
-			return "", nil
-		}
-		cs = append(cs, pkc)
-	}
-
-	for _, constraint := range stmt.table.uniques {
-		compiledConstraint, err := constraint.Create(d)
-		if err != nil {
-			return "", nil
-		}
-		cs = append(cs, compiledConstraint)
-	}
-
-	t := fmt.Sprintf(
+	return fmt.Sprintf(
 		"CREATE TABLE \"%s\" (\n  %s\n);",
 		stmt.table.Name,
-		strings.Join(cs, ",\n  "),
-	)
-	return t, nil
+		strings.Join(compiled, ",\n  "),
+	), nil
 }
