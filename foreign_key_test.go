@@ -51,4 +51,17 @@ func TestForeignKey_Create(t *testing.T) {
   "p_id" INTEGER REFERENCES parents("id") ON DELETE CASCADE ON UPDATE CASCADE
 );`
 	expect.SQL(expected, childrenCascade.Create())
+
+	// Test too many overrides
+	func() {
+		defer func() {
+			if panicked := recover(); panicked == nil {
+				t.Errorf("table failed to panic when multiple overriding types were added to a foreign key")
+			}
+		}()
+		Table("bad",
+			ForeignKey("no", parents.C["id"], String{}, Integer{}),
+		)
+	}()
+
 }
