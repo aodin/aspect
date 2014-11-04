@@ -33,7 +33,7 @@ type DB struct {
 
 func (db *DB) Begin() (*TX, error) {
 	tx, err := db.conn.Begin()
-	return &TX{tx, db}, err
+	return &TX{Tx: tx, dialect: db.dialect}, err
 }
 
 func (db *DB) Close() error {
@@ -137,7 +137,7 @@ func Connect(driver, credentials string) (*DB, error) {
 // TODO behavior should be inherited from the DB field instance
 type TX struct {
 	*sql.Tx
-	db *DB
+	dialect Dialect
 }
 
 func (tx *TX) Query(stmt Executable, args ...interface{}) (*Result, error) {
@@ -145,7 +145,7 @@ func (tx *TX) Query(stmt Executable, args ...interface{}) (*Result, error) {
 	params := Params()
 
 	// TODO Columns are needed for name return types, tag matching, etc...
-	s, err := stmt.Compile(tx.db.dialect, params)
+	s, err := stmt.Compile(tx.dialect, params)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (tx *TX) Execute(stmt Executable, args ...interface{}) (sql.Result, error) 
 	params := Params()
 
 	// TODO Columns are needed for name return types, tag matching, etc...
-	s, err := stmt.Compile(tx.db.dialect, params)
+	s, err := stmt.Compile(tx.dialect, params)
 	if err != nil {
 		return nil, err
 	}
@@ -211,6 +211,12 @@ func (tx *TX) Execute(stmt Executable, args ...interface{}) (sql.Result, error) 
 // String returns parameter-less SQL. If an error occurred during compilation,
 // then an empty string will be returned.
 func (tx *TX) String(stmt Executable) string {
-	compiled, _ := stmt.Compile(tx.db.dialect, Params())
+	compiled, _ := stmt.Compile(tx.dialect, Params())
 	return compiled
+}
+
+// WrapTx allows aspect to take control of an existing database/sql
+// transaction and execute queries using the given dialect.
+func WrapTx(tx *sql.Tx, dialect Dialect) *TX {
+	return &TX{Tx: tx, dialect: dialect}
 }
