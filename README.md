@@ -379,7 +379,7 @@ Schema
 More advanced schemas can be created with foreign keys, unique constraints, and composite primary keys:
 
 ```go
-var Posts = sql.Table("users",
+var Posts = sql.Table("posts",
     sql.ForeignKey("uid", Users.C["id"], sql.BigInt{}).OnDelete(sql.Cascade),
     sql.Column("name", sql.String{Length: 32, NotNull: true}),
     sql.Column("is_published", sql.Boolean{Default: sql.True}),
@@ -389,7 +389,7 @@ var Posts = sql.Table("users",
 ```
 
 ```sql
-CREATE TABLE "users" (
+CREATE TABLE "posts" (
   "uid" BIGINT REFERENCES users("id") ON DELETE CASCADE,
   "name" VARCHAR(32) NOT NULL,
   "is_published" BOOL DEFAULT TRUE,
@@ -424,7 +424,7 @@ expect.SQL(`DELETE FROM "users"`, users.Delete())
 
 expect.SQL(
     `INSERT INTO "users" ("name") VALUES ($1), ($2)`,
-    users.Insert().Values(vs),
+    users.Insert().Values([]Values{{"name": "Totti"}, {"name": "De Rossi"}}),
     "Totti",
     "De Rossi",
 )
