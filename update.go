@@ -12,6 +12,10 @@ type UpdateStmt struct {
 	cond   Clause
 }
 
+func (stmt UpdateStmt) Error() error {
+	return stmt.err
+}
+
 // String outputs the parameter-less UPDATE statement in a neutral dialect.
 func (stmt UpdateStmt) String() string {
 	compiled, _ := stmt.Compile(&defaultDialect{}, Params())
