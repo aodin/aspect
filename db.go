@@ -6,10 +6,13 @@ import (
 
 // Connection is a common interface for database connections or transactions
 type Connection interface {
+	Begin() (*TX, error)
+	Commit() error
 	Execute(stmt Executable, args ...interface{}) (sql.Result, error)
 	Query(stmt Executable, args ...interface{}) (*Result, error)
 	QueryAll(stmt Executable, i interface{}) error
 	QueryOne(stmt Executable, i interface{}) error
+	Rollback() error
 	String(stmt Executable) string // Parameter-less output for logging
 }
 
@@ -38,6 +41,12 @@ func (db *DB) Begin() (*TX, error) {
 	return &TX{Tx: tx, dialect: db.dialect}, err
 }
 
+// Commit does nothing for a DB connection pool. It only exists for parity
+// with transactions to implement the Connection interface.
+func (db *DB) Commit() (err error) {
+	return
+}
+
 // Close closes the current database connection pool.
 func (db *DB) Close() error {
 	return db.conn.Close()
@@ -47,6 +56,28 @@ func (db *DB) Close() error {
 // pool.
 func (db *DB) Dialect() Dialect {
 	return db.dialect
+}
+
+// Execute executes the Executable statement with optional arguments. It
+// returns the database/sql package's Result object, which may contain
+// information on rows affected and last ID inserted depending on the driver.
+func (db *DB) Execute(stmt Executable, args ...interface{}) (sql.Result, error) {
+	// Initialize a list of empty parameters
+	params := Params()
+
+	// TODO Columns are needed for name return types, tag matching, etc...
+	s, err := stmt.Compile(db.dialect, params)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO When to use the given arguments?
+	// TODO If args are structs, maps, or slices, unpack them
+	// Use any arguments given to Query() over compiled arguments
+	if len(args) == 0 {
+		args = params.args
+	}
+	return db.conn.Exec(s, args...)
 }
 
 // Query executes an Executable statement with the optional arguments. It
@@ -98,26 +129,10 @@ func (db *DB) QueryOne(stmt Executable, i interface{}) error {
 	return result.One(i)
 }
 
-// Execute executes the Executable statement with optional arguments. It
-// returns the database/sql package's Result object, which may contain
-// information on rows affected and last ID inserted depending on the driver.
-func (db *DB) Execute(stmt Executable, args ...interface{}) (sql.Result, error) {
-	// Initialize a list of empty parameters
-	params := Params()
-
-	// TODO Columns are needed for name return types, tag matching, etc...
-	s, err := stmt.Compile(db.dialect, params)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO When to use the given arguments?
-	// TODO If args are structs, maps, or slices, unpack them
-	// Use any arguments given to Query() over compiled arguments
-	if len(args) == 0 {
-		args = params.args
-	}
-	return db.conn.Exec(s, args...)
+// Rollback does nothing for a DB connection pool. It only exists for parity
+// with transactions to implement the Connection interface.
+func (db *DB) Rollback() (err error) {
+	return
 }
 
 // String returns parameter-less SQL. If an error occurred during compilation,
@@ -148,6 +163,17 @@ func Connect(driver, credentials string) (*DB, error) {
 type TX struct {
 	*sql.Tx
 	dialect Dialect
+}
+
+// Begin returns the existing transaction. TODO Are nested transactions
+// possible? And on what dialects?
+func (tx *TX) Begin() (*TX, error) {
+	return tx, nil
+}
+
+// Commit calls the wrapped transactions Commit method.
+func (tx *TX) Commit() error {
+	return tx.Tx.Commit()
 }
 
 // Query executes an Executable statement with the optional arguments
@@ -221,6 +247,11 @@ func (tx *TX) Execute(stmt Executable, args ...interface{}) (sql.Result, error) 
 		args = params.args
 	}
 	return tx.Exec(s, args...)
+}
+
+// Rollback calls the wrapped transactions Rollback method.
+func (tx *TX) Rollback() error {
+	return tx.Tx.Rollback()
 }
 
 // String returns parameter-less SQL. If an error occurred during compilation,
