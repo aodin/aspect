@@ -5,6 +5,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // callerInfo returns a string containing the file and line number of the
@@ -87,7 +89,18 @@ func (t *sqlTest) SQL(expect string, stmt Compiles, ps ...interface{}) {
 		return
 	}
 
-	// TODO Examine individual parameters for equality
+	// Examine individual parameters for equality
+	for i, param := range params.Args() {
+		if !assert.ObjectsAreEqual(ps[i], param) {
+			t.t.Errorf(
+				"%s: unequal parameters at index %d: expect %#v, got %#v",
+				caller,
+				i,
+				ps[i],
+				param,
+			)
+		}
+	}
 }
 
 func NewTester(t *testing.T, d Dialect) *sqlTest {

@@ -89,7 +89,7 @@ func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
 		g = 1
 		stmt.args = make([]interface{}, c)
 		for i, _ := range stmt.args {
-			stmt.args[i] = struct{}{}
+			stmt.args[i] = nil
 		}
 	}
 	parameters := make([]string, g)
