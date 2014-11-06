@@ -5,15 +5,6 @@ import (
 	"reflect"
 )
 
-/*
-
-Column
-------
-Represents a single Column within a Table in the SQL spec.
-Implements the `TableModifier` interface.
-
-*/
-
 // ColumnSet maintains a map of ColumnElem instances by column name
 type ColumnSet map[string]ColumnElem
 
@@ -31,13 +22,17 @@ func (set ColumnSet) Add(c ColumnElem) error {
 }
 
 // ColumnElem represents a table column. It implements the Compiles,
-// Selectable, and Orderable interfaces.
+// Selectable, and Orderable interfaces for use in statements as well
+// as the TableModifier and Creatable interfaces.
 type ColumnElem struct {
 	inner Clause
 	name  string
 	table *TableElem
-	typ   dbType
+	typ   Type
 }
+
+var _ TableModifier = ColumnElem{}
+var _ Createable = ColumnElem{}
 
 // String outputs a parameter-less SQL representation of the column using
 // a neutral dialect. If an error occurred during compilation,
@@ -79,6 +74,11 @@ func (c ColumnElem) Name() string {
 // Table returns the column's table
 func (c ColumnElem) Table() *TableElem {
 	return c.table
+}
+
+// Type returns the column's SQL type
+func (c ColumnElem) Type() Type {
+	return c.typ
 }
 
 // Selectable implements the sql.Selectable interface for building SELECT
@@ -293,7 +293,7 @@ func (c ColumnElem) NotBetween(a, b interface{}) ArrayClause {
 // Schema
 // ------
 
-// Create implements the dbType interface that outputs a column of a
+// Create implements the Createable interface that outputs a column of a
 // CREATE TABLE statement.
 func (c ColumnElem) Create(d Dialect) (string, error) {
 	ct, err := c.typ.Create(d)
@@ -346,8 +346,8 @@ func (c ColumnElem) Modify(t *TableElem) error {
 	return nil
 }
 
-// Column constructs a ColumnElem with the given name and dbType.
-func Column(name string, t dbType) ColumnElem {
+// Column constructs a ColumnElem with the given name and Type.
+func Column(name string, t Type) ColumnElem {
 	// Set the inner clause of the column to the incomplete ColumnClause.
 	// This will be overwritten by the table modify function.
 	return ColumnElem{

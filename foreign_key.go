@@ -4,17 +4,22 @@ import (
 	"fmt"
 )
 
-// fkType is an internal type representation
+// fkType is an internal type representation. It implements the Creatable
+// interface so it can be used in CREATE TABLE statements.
 type fkType struct {
 	name     string
 	col      ColumnElem
-	typ      dbType
+	typ      Type
 	onDelete *fkAction
 	onUpdate *fkAction
 }
 
+var _ Createable = fkType{}
+
 type fkAction string
 
+// The following constants represent possible foreign key actions that can
+// be used in ON DELETE and ON UPDATE clauses.
 const (
 	NoAction   fkAction = "NO ACTION"
 	Restrict   fkAction = "RESTRICT"
@@ -23,11 +28,13 @@ const (
 	SetDefault fkAction = "SET DEFAULT"
 )
 
+// OnDelete adds an ON DELETE clause to the foreign key
 func (fk fkType) OnDelete(b fkAction) fkType {
 	fk.onDelete = &b
 	return fk
 }
 
+// OnUpdate add an ON UPDATE clause to the foreign key
 func (fk fkType) OnUpdate(b fkAction) fkType {
 	fk.onUpdate = &b
 	return fk
@@ -75,7 +82,7 @@ func (fk fkType) Modify(t *TableElem) error {
 		inner: ColumnClause{name: fk.name, table: t},
 		name:  fk.name,
 		table: t,
-		typ:   fk,
+		typ:   fk.typ,
 	}
 
 	// Add the column to the unique set of columns for this table
@@ -96,7 +103,7 @@ func (fk fkType) Modify(t *TableElem) error {
 // The given column must already have an assigned table. The new ColumnElem
 // will inherit its type from the given column's type.
 // TODO Add the ability for self-referential foreign keys.
-func ForeignKey(name string, fk ColumnElem, ts ...dbType) fkType {
+func ForeignKey(name string, fk ColumnElem, ts ...Type) fkType {
 	if len(ts) > 1 {
 		panic("aspect: foreign keys may only have one overriding type")
 	}

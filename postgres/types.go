@@ -2,14 +2,17 @@ package postgres
 
 import (
 	"fmt"
-	"github.com/aodin/aspect"
 	"strings"
+
+	"github.com/aodin/aspect"
 )
 
 type Serial struct {
 	PrimaryKey bool
 	NotNull    bool
 }
+
+var _ aspect.Type = Serial{}
 
 func (s Serial) Create(d aspect.Dialect) (string, error) {
 	compiled := "SERIAL"
@@ -26,11 +29,40 @@ func (s Serial) Create(d aspect.Dialect) (string, error) {
 	return compiled, nil
 }
 
+func (s Serial) IsPrimaryKey() bool {
+	return s.PrimaryKey
+}
+
+func (s Serial) IsUnique() bool {
+	return true
+}
+
+func (s Serial) Validate(i interface{}) (interface{}, error) {
+	switch t := i.(type) {
+	case float64:
+		v := int64(t)
+		if t != float64(v) {
+			return i, fmt.Errorf(
+				"value is numeric, but not a whole number: %f",
+				t,
+			)
+		}
+		i = v
+	case int:
+	case int64:
+	default:
+		return i, fmt.Errorf("value is non-numeric type %T", t)
+	}
+	return i, nil
+}
+
 type Inet struct {
 	NotNull    bool
 	Unique     bool
 	PrimaryKey bool
 }
+
+var _ aspect.Type = Inet{}
 
 // Create returns the syntax need to create this column in CREATE statements.
 func (s Inet) Create(d aspect.Dialect) (string, error) {
@@ -49,4 +81,17 @@ func (s Inet) Create(d aspect.Dialect) (string, error) {
 		compiled += fmt.Sprintf(" %s", strings.Join(attrs, " "))
 	}
 	return compiled, nil
+}
+
+func (s Inet) IsPrimaryKey() bool {
+	return s.PrimaryKey
+}
+
+func (s Inet) IsUnique() bool {
+	return s.PrimaryKey || s.Unique
+}
+
+func (s Inet) Validate(i interface{}) (interface{}, error) {
+	// TODO validation of Inet?
+	return i, nil
 }

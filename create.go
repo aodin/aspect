@@ -5,6 +5,12 @@ import (
 	"strings"
 )
 
+// Createable is the interface that clauses used in CREATE TABLE statements
+// must implement.
+type Createable interface {
+	Create(d Dialect) (string, error)
+}
+
 // CreateStmt is the internal representation of an CREATE TABLE statement.
 type CreateStmt struct {
 	table *TableElem

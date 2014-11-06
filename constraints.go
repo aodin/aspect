@@ -6,9 +6,11 @@ import (
 )
 
 // PrimaryKeyArray is a list of columns representing the table's primary key
-// array. It implements the TableModifier interface.
-// TODO Should this type not be exported?
+// array. It implements the TableModifier and Createable interfaces.
 type PrimaryKeyArray []string
+
+var _ Createable = PrimaryKeyArray{}
+var _ TableModifier = PrimaryKeyArray{}
 
 // Create returns the proper syntax for CREATE TABLE commands.
 func (pk PrimaryKeyArray) Create(d Dialect) (string, error) {
@@ -56,9 +58,11 @@ func PrimaryKey(names ...string) PrimaryKeyArray {
 }
 
 // UniqueConstraint is the internal representation of a UNIQUE constraint. It
-// implements the TableModifier interface.
-// TODO Should this type not be exported?
+// implements the TableModifier and Createable interfaces.
 type UniqueConstraint []string
+
+var _ Createable = UniqueConstraint{}
+var _ TableModifier = UniqueConstraint{}
 
 // Create returns the proper syntax for CREATE TABLE commands.
 func (uc UniqueConstraint) Create(d Dialect) (string, error) {
