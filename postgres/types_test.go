@@ -2,36 +2,23 @@ package postgres
 
 import (
 	"testing"
+
+	"github.com/aodin/aspect"
 )
 
 func TestSerial(t *testing.T) {
-	s := Serial{}
-	output, err := s.Create(&PostGres{})
-	if err != nil {
-		t.Fatalf("Unexpected error during SERIAL create: %s", err)
-	}
-	expected := "SERIAL"
-	if output != expected {
-		t.Fatalf("Unexpected SERIAL creation output: %s", output)
-	}
+	expect := aspect.NewTester(t, &PostGres{})
 
-	s = Serial{PrimaryKey: true}
-	output, err = s.Create(&PostGres{})
-	if err != nil {
-		t.Fatalf("Unexpected error during SERIAL PRIMARY KEY create: %s", err)
-	}
-	expected = "SERIAL PRIMARY KEY"
-	if output != expected {
-		t.Fatalf("Unexpected SERIAL PRIMARY KEY creation output: %s", output)
-	}
+	expect.Create("SERIAL", Serial{})
+	expect.Create("SERIAL PRIMARY KEY", Serial{PrimaryKey: true})
+	expect.Create(
+		"SERIAL PRIMARY KEY NOT NULL",
+		Serial{PrimaryKey: true, NotNull: true},
+	)
+}
 
-	s = Serial{PrimaryKey: true, NotNull: true}
-	output, err = s.Create(&PostGres{})
-	if err != nil {
-		t.Fatalf("Unexpected error during SERIAL PRIMARY KEY NOT NULL create: %s", err)
-	}
-	expected = "SERIAL PRIMARY KEY NOT NULL"
-	if output != expected {
-		t.Fatalf("Unexpected SERIAL PRIMARY KEY creation output: %s", output)
-	}
+func TestInet(t *testing.T) {
+	expect := aspect.NewTester(t, &PostGres{})
+
+	expect.Create("INET", Inet{})
 }

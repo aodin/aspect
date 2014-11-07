@@ -2,18 +2,21 @@ package aspect
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestText(t *testing.T) {
 	expect := NewTester(t, &defaultDialect{})
+
 	expect.Create("TEXT", Text{})
 }
 
 func TestString(t *testing.T) {
 	assert := assert.New(t)
 	expect := NewTester(t, &defaultDialect{})
+
 	expect.Create("VARCHAR", String{})
 	expect.Create(
 		"VARCHAR(128) PRIMARY KEY NOT NULL UNIQUE",
@@ -21,123 +24,141 @@ func TestString(t *testing.T) {
 	)
 
 	// Test Type methods
-	s := String{}
-	var hey interface{} = "HEY"
-	value, err := s.Validate(hey)
+	value, err := String{}.Validate("HEY")
 	assert.Nil(err)
-	assert.Equal(hey, value)
+	assert.Equal("HEY", value)
 
-	s = String{}
-	var number interface{} = 123
-	_, err = s.Validate(number)
+	_, err = String{}.Validate(123)
 	assert.NotNil(err)
 
-	s = String{Length: 3}
-	var hello interface{} = "HELLO"
-	_, err = s.Validate(hello)
+	_, err = String{Length: 3}.Validate("HELLO")
 	assert.NotNil(err)
 }
 
 func TestInteger(t *testing.T) {
+	assert := assert.New(t)
 	expect := NewTester(t, &defaultDialect{})
+
 	expect.Create("INTEGER", Integer{})
 	expect.Create(
 		"INTEGER PRIMARY KEY NOT NULL UNIQUE",
 		Integer{PrimaryKey: true, NotNull: true, Unique: true},
 	)
+
+	assert.Equal(false, Integer{}.IsPrimaryKey())
+	assert.Equal(false, Integer{}.IsUnique())
+
+	assert.Equal(true, Integer{PrimaryKey: true}.IsPrimaryKey())
+	assert.Equal(true, Integer{Unique: true}.IsUnique())
+
+	value, err := Integer{}.Validate(123)
+	assert.Nil(err)
+	assert.Equal(123, value)
+
+	value, err = Integer{}.Validate(123.000)
+	assert.Nil(err)
+	assert.Equal(123, value)
+
+	_, err = Integer{}.Validate(123.456)
+	assert.NotNil(err)
+
+	_, err = Integer{}.Validate("HEY")
+	assert.NotNil(err)
 }
 
 func TestTimestamp(t *testing.T) {
-	s := Timestamp{Default: "now() at time zone 'utc'"}
-	output, err := s.Create(&defaultDialect{})
-	expected := "TIMESTAMP DEFAULT (now() at time zone 'utc')"
-	if err != nil {
-		t.Fatalf("unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("expected %s, got %s", expected, output)
-	}
+	assert := assert.New(t)
+	expect := NewTester(t, &defaultDialect{})
 
-	s = Timestamp{
-		WithTimezone: true,
-		NotNull:      true,
-		Default:      "now() at time zone 'utc'",
-	}
-	output, err = s.Create(&defaultDialect{})
-	expected = "TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() at time zone 'utc')"
-	if err != nil {
-		t.Fatalf("unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("expected %s, got %s", expected, output)
-	}
+	expect.Create(
+		"TIMESTAMP DEFAULT (now() at time zone 'utc')",
+		Timestamp{Default: "now() at time zone 'utc'"},
+	)
+	expect.Create(
+		"TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() at time zone 'utc')",
+		Timestamp{
+			WithTimezone: true,
+			NotNull:      true,
+			Default:      "now() at time zone 'utc'",
+		},
+	)
+
+	d := time.Date(2014, 1, 1, 12, 0, 0, 0, time.UTC)
+	value, err := Timestamp{}.Validate(d)
+	assert.Nil(err)
+	assert.Equal(d, value)
+
+	_, err = Timestamp{}.Validate(123)
+	assert.NotNil(err)
 }
 
 func TestDate(t *testing.T) {
-	s := Date{PrimaryKey: true, NotNull: true, Unique: true}
-	output, err := s.Create(&defaultDialect{})
-	expected := "DATE PRIMARY KEY NOT NULL UNIQUE"
-	if err != nil {
-		t.Fatalf("unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("expected %s, got %s", expected, output)
-	}
+	expect := NewTester(t, &defaultDialect{})
+
+	expect.Create(
+		"DATE PRIMARY KEY NOT NULL UNIQUE",
+		Date{PrimaryKey: true, NotNull: true, Unique: true},
+	)
 }
 
 func TestBoolean(t *testing.T) {
-	s := Boolean{}
+	assert := assert.New(t)
+	expect := NewTester(t, &defaultDialect{})
 
-	output, err := s.Create(&defaultDialect{})
-	expected := "BOOL"
-	if err != nil {
-		t.Fatalf("Unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("Unexpected %s creation output: %s", expected, output)
-	}
+	expect.Create("BOOL", Boolean{})
+	expect.Create("BOOL NOT NULL", Boolean{NotNull: true})
+	expect.Create(
+		"BOOL NOT NULL DEFAULT FALSE",
+		Boolean{NotNull: true, Default: False},
+	)
 
-	s = Boolean{NotNull: true}
-	output, err = s.Create(&defaultDialect{})
-	expected = "BOOL NOT NULL"
-	if err != nil {
-		t.Fatalf("Unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("Unexpected %s creation output: %s", expected, output)
-	}
+	value, err := Boolean{}.Validate(true)
+	assert.Nil(err)
+	assert.Equal(true, value)
 
-	s = Boolean{NotNull: true, Default: False}
-	output, err = s.Create(&defaultDialect{})
-	expected = "BOOL NOT NULL DEFAULT FALSE"
-	if err != nil {
-		t.Fatalf("Unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("Unexpected %s creation output: %s", expected, output)
-	}
+	_, err = Boolean{}.Validate(123)
+	assert.NotNil(err)
 }
 
 func TestDouble(t *testing.T) {
-	s := Double{PrimaryKey: true, NotNull: true, Unique: true}
-	output, err := s.Create(&defaultDialect{})
-	expected := "DOUBLE PRECISION PRIMARY KEY NOT NULL UNIQUE"
-	if err != nil {
-		t.Fatalf("unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("expected %s, got %s", expected, output)
-	}
+	assert := assert.New(t)
+	expect := NewTester(t, &defaultDialect{})
+
+	expect.Create("DOUBLE PRECISION", Double{})
+	expect.Create(
+		"DOUBLE PRECISION PRIMARY KEY NOT NULL UNIQUE",
+		Double{PrimaryKey: true, NotNull: true, Unique: true},
+	)
+
+	value, err := Double{}.Validate(123.456)
+	assert.Nil(err)
+	assert.Equal(123.456, value)
+
+	value, err = Double{}.Validate(123)
+	assert.Nil(err)
+	assert.Equal(float64(123), value)
+
+	_, err = Double{}.Validate("HEY")
+	assert.NotNil(err)
 }
 
 func TestReal(t *testing.T) {
-	s := Real{PrimaryKey: true, NotNull: true, Unique: true}
-	output, err := s.Create(&defaultDialect{})
-	expected := "REAL PRIMARY KEY NOT NULL UNIQUE"
-	if err != nil {
-		t.Fatalf("unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("expected %s, got %s", expected, output)
-	}
+	assert := assert.New(t)
+	expect := NewTester(t, &defaultDialect{})
+
+	expect.Create(
+		"REAL PRIMARY KEY NOT NULL UNIQUE",
+		Real{PrimaryKey: true, NotNull: true, Unique: true},
+	)
+
+	value, err := Real{}.Validate(123.456)
+	assert.Nil(err)
+	assert.Equal(123.456, value)
+
+	value, err = Real{}.Validate(123)
+	assert.Nil(err)
+	assert.Equal(float64(123), value)
+
+	_, err = Real{}.Validate("HEY")
+	assert.NotNil(err)
 }

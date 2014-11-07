@@ -5,7 +5,6 @@ import (
 )
 
 // JoinStmt is an internal representation of a JOIN.
-// TODO Should this struct be exported?
 type JoinStmt struct {
 	method    string
 	table     *TableElem
