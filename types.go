@@ -6,6 +6,13 @@ import (
 	"time"
 )
 
+type Type interface {
+	Creatable
+	IsPrimaryKey() bool
+	IsUnique() bool
+	Validate(interface{}) (interface{}, error)
+}
+
 // Provide a nullable boolean for Boolean type default values
 var (
 	internalTrue  bool = true
@@ -13,13 +20,6 @@ var (
 	True               = &internalTrue
 	False              = &internalFalse
 )
-
-type Type interface {
-	Create(Dialect) (string, error)
-	IsPrimaryKey() bool
-	IsUnique() bool
-	Validate(interface{}) (interface{}, error)
-}
 
 // Text represents TEXT column types.
 type Text struct{}
@@ -89,8 +89,16 @@ func (s String) IsUnique() bool {
 }
 
 func (s String) Validate(i interface{}) (interface{}, error) {
-	if _, ok := i.(string); !ok {
+	value, ok := i.(string)
+	if !ok {
 		return i, fmt.Errorf("value is of non string type %T", i)
+	}
+	if s.Length != 0 && len(value) > s.Length {
+		return i, fmt.Errorf(
+			"value is %d characters long, max length is %d",
+			len(value),
+			s.Length,
+		)
 	}
 	return i, nil
 }

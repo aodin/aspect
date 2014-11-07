@@ -2,66 +2,49 @@ package aspect
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-// TODO Generalize testing - see testify's assert
-
 func TestText(t *testing.T) {
-	s := Text{}
-	output, err := s.Create(&defaultDialect{})
-	expected := "TEXT"
-	if err != nil {
-		t.Fatalf("unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("expected %s, got %s", expected, output)
-	}
+	expect := NewTester(t, &defaultDialect{})
+	expect.Create("TEXT", Text{})
 }
 
 func TestString(t *testing.T) {
-	s := String{}
-	output, err := s.Create(&defaultDialect{})
-	expected := "VARCHAR"
-	if err != nil {
-		t.Fatalf("unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("expected %s, got %s", expected, output)
-	}
+	assert := assert.New(t)
+	expect := NewTester(t, &defaultDialect{})
+	expect.Create("VARCHAR", String{})
+	expect.Create(
+		"VARCHAR(128) PRIMARY KEY NOT NULL UNIQUE",
+		String{Length: 128, PrimaryKey: true, NotNull: true, Unique: true},
+	)
 
-	// Add attrs
-	s = String{Length: 128, PrimaryKey: true, NotNull: true, Unique: true}
-	output, err = s.Create(&defaultDialect{})
-	expected = "VARCHAR(128) PRIMARY KEY NOT NULL UNIQUE"
-	if err != nil {
-		t.Fatalf("unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("expected %s, got %s", expected, output)
-	}
+	// Test Type methods
+	s := String{}
+	var hey interface{} = "HEY"
+	value, err := s.Validate(hey)
+	assert.Nil(err)
+	assert.Equal(hey, value)
+
+	s = String{}
+	var number interface{} = 123
+	_, err = s.Validate(number)
+	assert.NotNil(err)
+
+	s = String{Length: 3}
+	var hello interface{} = "HELLO"
+	_, err = s.Validate(hello)
+	assert.NotNil(err)
 }
 
 func TestInteger(t *testing.T) {
-	s := Integer{}
-	output, err := s.Create(&defaultDialect{})
-	expected := "INTEGER"
-	if err != nil {
-		t.Fatalf("unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("expected %s, got %s", expected, output)
-	}
-
-	// Add attrs
-	s = Integer{PrimaryKey: true, NotNull: true, Unique: true}
-	output, err = s.Create(&defaultDialect{})
-	expected = "INTEGER PRIMARY KEY NOT NULL UNIQUE"
-	if err != nil {
-		t.Fatalf("unexpected error during %s create: %s", expected, err)
-	}
-	if output != expected {
-		t.Fatalf("expected %s, got %s", expected, output)
-	}
+	expect := NewTester(t, &defaultDialect{})
+	expect.Create("INTEGER", Integer{})
+	expect.Create(
+		"INTEGER PRIMARY KEY NOT NULL UNIQUE",
+		Integer{PrimaryKey: true, NotNull: true, Unique: true},
+	)
 }
 
 func TestTimestamp(t *testing.T) {

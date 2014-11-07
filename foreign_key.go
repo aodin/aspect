@@ -14,7 +14,7 @@ type fkType struct {
 	onUpdate *fkAction
 }
 
-var _ Createable = fkType{}
+var _ Creatable = fkType{}
 
 type fkAction string
 

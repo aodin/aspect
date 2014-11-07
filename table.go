@@ -20,7 +20,7 @@ type TableElem struct {
 	order   []string
 	pk      PrimaryKeyArray
 	uniques []UniqueConstraint
-	creates []Createable
+	creates []Creatable
 }
 
 // String returns the table name.

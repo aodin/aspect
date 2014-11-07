@@ -40,10 +40,29 @@ type sqlTest struct {
 	dialect Dialect
 }
 
+// Create tests the compilation of a Creatable clause using the tester's
+// dialect.
+func (t *sqlTest) Create(expect string, clause Creatable) {
+	caller := callerInfo()
+	actual, err := clause.Create(t.dialect)
+	if err != nil {
+		t.t.Errorf("%s: unexpected error from Create(): %s", caller, err)
+		return
+	}
+	if expect != actual {
+		t.t.Errorf(
+			"%s: unexpected SQL from Create(): expect %s, got %s",
+			caller,
+			expect,
+			actual,
+		)
+	}
+}
+
 // Error tests that the given Compiles instances generates an error for the
 // current dialect.
-// TODO Allow a specific error
 func (t *sqlTest) Error(stmt Compiles) {
+	// TODO Allow a specific error
 	if _, err := stmt.Compile(t.dialect, Params()); err == nil {
 		t.t.Errorf("%s: expected error, received nil", callerInfo())
 	}
@@ -61,7 +80,7 @@ func (t *sqlTest) SQL(expect string, stmt Compiles, ps ...interface{}) {
 	// Compile the given stmt with the tester's dialect
 	actual, err := stmt.Compile(t.dialect, params)
 	if err != nil {
-		t.t.Errorf("%s: unexpected error from compile: %s", caller, err)
+		t.t.Errorf("%s: unexpected error from Compile(): %s", caller, err)
 		return
 	}
 
@@ -71,7 +90,7 @@ func (t *sqlTest) SQL(expect string, stmt Compiles, ps ...interface{}) {
 
 	if expect != actual {
 		t.t.Errorf(
-			"%s: unexpected SQL: expect %s, got %s",
+			"%s: unexpected SQL from Compile(): expect %s, got %s",
 			caller,
 			expect,
 			actual,

@@ -32,7 +32,7 @@ type ColumnElem struct {
 }
 
 var _ TableModifier = ColumnElem{}
-var _ Createable = ColumnElem{}
+var _ Creatable = ColumnElem{}
 
 // String outputs a parameter-less SQL representation of the column using
 // a neutral dialect. If an error occurred during compilation,
@@ -293,7 +293,7 @@ func (c ColumnElem) NotBetween(a, b interface{}) ArrayClause {
 // Schema
 // ------
 
-// Create implements the Createable interface that outputs a column of a
+// Create implements the Creatable interface that outputs a column of a
 // CREATE TABLE statement.
 func (c ColumnElem) Create(d Dialect) (string, error) {
 	ct, err := c.typ.Create(d)

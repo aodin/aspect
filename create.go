@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-// Createable is the interface that clauses used in CREATE TABLE statements
+// Creatable is the interface that clauses used in CREATE TABLE statements
 // must implement.
-type Createable interface {
+type Creatable interface {
 	Create(d Dialect) (string, error)
 }
 
