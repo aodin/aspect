@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/aodin/aspect"
@@ -39,6 +40,12 @@ func (s Serial) IsUnique() bool {
 
 func (s Serial) Validate(i interface{}) (interface{}, error) {
 	switch t := i.(type) {
+	case string:
+		v, err := strconv.ParseInt(t, 10, 64)
+		if err != nil {
+			return i, err
+		}
+		i = v
 	case float64:
 		v := int64(t)
 		if t != float64(v) {

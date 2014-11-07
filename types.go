@@ -2,6 +2,7 @@ package aspect
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -64,7 +65,6 @@ func (s String) Create(d Dialect) (string, error) {
 	if s.Length != 0 {
 		compiled += fmt.Sprintf("(%d)", s.Length)
 	}
-	// TODO Primary key implies unique
 	if s.PrimaryKey {
 		attrs = append(attrs, "PRIMARY KEY")
 	}
@@ -141,6 +141,12 @@ func (s Integer) IsUnique() bool {
 
 func (s Integer) Validate(i interface{}) (interface{}, error) {
 	switch t := i.(type) {
+	case string:
+		v, err := strconv.ParseInt(t, 10, 64)
+		if err != nil {
+			return i, err
+		}
+		i = v
 	case float64:
 		v := int64(t)
 		if t != float64(v) {
@@ -196,6 +202,12 @@ func (s BigInt) IsUnique() bool {
 
 func (s BigInt) Validate(i interface{}) (interface{}, error) {
 	switch t := i.(type) {
+	case string:
+		v, err := strconv.ParseInt(t, 10, 64)
+		if err != nil {
+			return i, err
+		}
+		i = v
 	case float64:
 		v := int64(t)
 		if t != float64(v) {
@@ -327,6 +339,7 @@ func (s Boolean) IsUnique() bool {
 }
 
 func (s Boolean) Validate(i interface{}) (interface{}, error) {
+	// TODO parse boolean strings
 	if _, ok := i.(bool); !ok {
 		return i, fmt.Errorf("value is of non-bool type %T", i)
 	}
@@ -371,6 +384,12 @@ func (s Double) IsUnique() bool {
 
 func (s Double) Validate(i interface{}) (interface{}, error) {
 	switch t := i.(type) {
+	case string:
+		v, err := strconv.ParseFloat(t, 64)
+		if err != nil {
+			return i, err
+		}
+		i = v
 	case float32:
 	case float64:
 	case int:
@@ -421,6 +440,12 @@ func (s Real) IsUnique() bool {
 
 func (s Real) Validate(i interface{}) (interface{}, error) {
 	switch t := i.(type) {
+	case string:
+		v, err := strconv.ParseFloat(t, 64)
+		if err != nil {
+			return i, err
+		}
+		i = v
 	case float32:
 	case float64:
 	case int:

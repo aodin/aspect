@@ -59,6 +59,10 @@ func TestInteger(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(123, value)
 
+	value, err = Integer{}.Validate("123")
+	assert.Nil(err)
+	assert.Equal(123, value)
+
 	_, err = Integer{}.Validate(123.456)
 	assert.NotNil(err)
 
@@ -138,6 +142,10 @@ func TestDouble(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(float64(123), value)
 
+	value, err = Double{}.Validate("123.456")
+	assert.Nil(err)
+	assert.Equal(123.456, value)
+
 	_, err = Double{}.Validate("HEY")
 	assert.NotNil(err)
 }
@@ -158,6 +166,10 @@ func TestReal(t *testing.T) {
 	value, err = Real{}.Validate(123)
 	assert.Nil(err)
 	assert.Equal(float64(123), value)
+
+	value, err = Real{}.Validate("123.456")
+	assert.Nil(err)
+	assert.Equal(123.456, value)
 
 	_, err = Real{}.Validate("HEY")
 	assert.NotNil(err)
