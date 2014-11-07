@@ -82,24 +82,20 @@ func (table *TableElem) Selectable() []ColumnElem {
 }
 
 // Delete is an alias for Delete(table). It will generate a DELETE statement
-// for this table. Conditionals can be added with the Where() method or
+// for the entire table. Conditionals can be added with the Where() method or
 // by specifying structs or slices of structs with Values()
 func (table *TableElem) Delete() DeleteStmt {
 	return Delete(table)
 }
 
-// Insert will create an INSERT statement for the entire table with the given
-// value arguments.
+// Insert is an alias for Insert(table). It will create an INSERT statement
+// for the entire table. Specify the insert values with the method Values().
 func (table *TableElem) Insert() InsertStmt {
-	columns := table.Columns()
-	if len(columns) > 1 {
-		return Insert(columns[0], columns[1:]...)
-	}
-	return Insert(columns[0])
+	return Insert(table)
 }
 
-// Update is an alias for Update(table). It will create an UPDATE statement.
-// Specify the values to insert with the method Values().
+// Update is an alias for Update(table). It will create an UPDATE statement
+// for the entire table. Specify the update values with the method Values().
 func (table *TableElem) Update() UpdateStmt {
 	return Update(table)
 }

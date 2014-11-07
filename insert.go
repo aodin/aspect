@@ -275,16 +275,35 @@ func (s InsertStmt) Values(arg interface{}) InsertStmt {
 
 // Insert creates an INSERT statement for the given columns. There must be at
 // least one column and all columns must belong to the same table.
-func Insert(column ColumnElem, columns ...ColumnElem) (stmt InsertStmt) {
+func Insert(selection Selectable, selections ...Selectable) (stmt InsertStmt) {
+	columns := make([]ColumnElem, 0)
+	for _, s := range append([]Selectable{selection}, selections...) {
+		if s == nil {
+			stmt.err = fmt.Errorf("aspect: insert received a nil selectable - do the columns or tables you selected exist?")
+			return
+		}
+		columns = append(columns, s.Selectable()...)
+	}
+
+	if len(columns) < 1 {
+		stmt.err = fmt.Errorf(
+			"aspect: no columns were selected for INSERT",
+		)
+		return
+	}
+
 	// The table is set from the first column
+	column := columns[0]
 	if column.table == nil {
-		stmt.err = fmt.Errorf("aspect: attempting to INSERT to a column unattached to a table")
+		stmt.err = fmt.Errorf(
+			"aspect: attempting to INSERT to a column unattached to a table",
+		)
 		return
 	}
 	stmt.table = column.table
 
 	// Prepend the first column
-	for _, c := range append([]ColumnElem{column}, columns...) {
+	for _, c := range columns {
 		// Columns must have a name or they wouldn't exist (and probably
 		// don't if the name is missing - the most common error case will
 		// be a mistyped name in table.C)

@@ -74,8 +74,8 @@ func (stmt RetInsertStmt) Values(args interface{}) RetInsertStmt {
 // Insert creates an INSERT ... RETURNING statement for the given columns.
 // There must be at least one column and all columns must belong to the
 // same table.
-func Insert(c aspect.ColumnElem, cs ...aspect.ColumnElem) RetInsertStmt {
+func Insert(s aspect.Selectable, ss ...aspect.Selectable) RetInsertStmt {
 	return RetInsertStmt{
-		InsertStmt: aspect.Insert(c, cs...),
+		InsertStmt: aspect.Insert(s, ss...),
 	}
 }
