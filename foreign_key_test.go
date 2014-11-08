@@ -24,10 +24,20 @@ var childrenCascade = Table("children",
 	ForeignKey("p_id", parents.C["id"]).OnDelete(Cascade).OnUpdate(Cascade),
 )
 
-func TestForeignKey(t *testing.T) {
+func TestForeignKeyElement(t *testing.T) {
+	assert := assert.New(t)
+
 	// Test that the fk columns were added to the C mapping
 	_, ok := children.C["parent_id"]
-	assert.Equal(t, true, ok)
+	assert.Equal(true, ok)
+
+	// There should also be a foreign key element attached to the table
+	fks := children.ForeignKeys()
+	assert.Equal(1, len(fks))
+
+	fk := fks[0]
+	assert.Equal(children, fk.Table())
+	assert.Equal(parents, fk.ReferencesTable())
 }
 
 func TestForeignKey_Create(t *testing.T) {

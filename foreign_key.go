@@ -53,6 +53,10 @@ func (fk ForeignKeyElem) Create(d Dialect) (string, error) {
 	return compiled, nil
 }
 
+func (fk ForeignKeyElem) ForeignName() string {
+	return fk.col.name
+}
+
 // Modify implements the TableModifier interface. It creates a column and
 // adds the same column to the create array.
 func (fk ForeignKeyElem) Modify(t *TableElem) error {
@@ -65,6 +69,7 @@ func (fk ForeignKeyElem) Modify(t *TableElem) error {
 			"aspect: foreign keys cannot be assigned to multiple tables",
 		)
 	}
+	fk.table = t
 
 	// Column names must validate
 	if err := validateColumnName(fk.name); err != nil {
@@ -94,6 +99,10 @@ func (fk ForeignKeyElem) Modify(t *TableElem) error {
 	t.fks = append(t.fks, fk)
 
 	return nil
+}
+
+func (fk ForeignKeyElem) Name() string {
+	return fk.name
 }
 
 // OnDelete adds an ON DELETE clause to the foreign key
