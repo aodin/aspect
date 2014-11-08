@@ -4,18 +4,6 @@ import (
 	"fmt"
 )
 
-// fkType is an internal type representation. It implements the Creatable
-// interface so it can be used in CREATE TABLE statements.
-type fkType struct {
-	name     string
-	col      ColumnElem
-	typ      Type
-	onDelete *fkAction
-	onUpdate *fkAction
-}
-
-var _ Creatable = fkType{}
-
 type fkAction string
 
 // The following constants represent possible foreign key actions that can
@@ -28,20 +16,22 @@ const (
 	SetDefault fkAction = "SET DEFAULT"
 )
 
-// OnDelete adds an ON DELETE clause to the foreign key
-func (fk fkType) OnDelete(b fkAction) fkType {
-	fk.onDelete = &b
-	return fk
+// ForeignKeyElem is an internal type representation. It implements the
+// Creatable interface so it can be used in CREATE TABLE statements.
+type ForeignKeyElem struct {
+	name     string
+	col      ColumnElem
+	typ      Type
+	table    *TableElem // the parent table of the key
+	refTable *TableElem // the table the key references
+	onDelete *fkAction
+	onUpdate *fkAction
 }
 
-// OnUpdate add an ON UPDATE clause to the foreign key
-func (fk fkType) OnUpdate(b fkAction) fkType {
-	fk.onUpdate = &b
-	return fk
-}
+var _ Creatable = ForeignKeyElem{}
 
 // Create returns the element's syntax for a CREATE TABLE statement.
-func (fk fkType) Create(d Dialect) (string, error) {
+func (fk ForeignKeyElem) Create(d Dialect) (string, error) {
 	// Compile the type
 	ct, err := fk.typ.Create(d)
 	if err != nil {
@@ -65,16 +55,20 @@ func (fk fkType) Create(d Dialect) (string, error) {
 
 // Modify implements the TableModifier interface. It creates a column and
 // adds the same column to the create array.
-func (fk fkType) Modify(t *TableElem) error {
-	// No modifing nil table elements
+func (fk ForeignKeyElem) Modify(t *TableElem) error {
 	if t == nil {
 		return fmt.Errorf("aspect: columns cannot modify a nil table")
 	}
 
-	// Column names cannot be blank
-	// TODO Add more rules for column names
-	if fk.name == "" {
-		return fmt.Errorf("aspect: columns must have a name")
+	if fk.table != nil {
+		return fmt.Errorf(
+			"aspect: foreign keys cannot be assigned to multiple tables",
+		)
+	}
+
+	// Column names must validate
+	if err := validateColumnName(fk.name); err != nil {
+		return err
 	}
 
 	// Create the column for this table
@@ -96,27 +90,61 @@ func (fk fkType) Modify(t *TableElem) error {
 	// Add the fk to the create array
 	t.creates = append(t.creates, fk)
 
+	// Add it to the list of foreign keys
+	t.fks = append(t.fks, fk)
+
 	return nil
 }
 
-// ForeignKey creates a fkElem from the given name and column.
+// OnDelete adds an ON DELETE clause to the foreign key
+func (fk ForeignKeyElem) OnDelete(b fkAction) ForeignKeyElem {
+	fk.onDelete = &b
+	return fk
+}
+
+// OnUpdate add an ON UPDATE clause to the foreign key
+func (fk ForeignKeyElem) OnUpdate(b fkAction) ForeignKeyElem {
+	fk.onUpdate = &b
+	return fk
+}
+
+// ReferencesTable returns the table that this foreign key references.
+func (fk ForeignKeyElem) ReferencesTable() *TableElem {
+	return fk.refTable
+}
+
+// Table returns the parent table of this foreign key.
+func (fk ForeignKeyElem) Table() *TableElem {
+	return fk.table
+}
+
+// Type returns the Type of this foreign key.
+func (fk ForeignKeyElem) Type() Type {
+	return fk.typ
+}
+
+// ForeignKey creates a ForeignKeyElem from the given name and column.
 // The given column must already have an assigned table. The new ColumnElem
-// will inherit its type from the given column's type.
-// TODO Add the ability for self-referential foreign keys.
-func ForeignKey(name string, fk ColumnElem, ts ...Type) fkType {
+// will inherit its type from the given column's type, but a different
+// type can be overridden by a single optional type.
+func ForeignKey(name string, fk ColumnElem, ts ...Type) ForeignKeyElem {
+	// TODO self-referential FKs will need a work around
+	if fk.table == nil {
+		panic("aspect: foreign keys must reference a column with a table already assigned")
+	}
+
+	// Set the default type of the foreign key to the referencing column, but
+	// allow the type to be overridden by a single optional type
+	t := fk.typ
 	if len(ts) > 1 {
 		panic("aspect: foreign keys may only have one overriding type")
-	}
-
-	t := fk.typ
-
-	// Allow the type to be overridden
-	if len(ts) == 1 {
+	} else if len(ts) == 1 {
 		t = ts[0]
 	}
-	return fkType{
-		name: name,
-		col:  fk,
-		typ:  t,
+	return ForeignKeyElem{
+		name:     name,
+		col:      fk,
+		typ:      t,
+		refTable: fk.table,
 	}
 }

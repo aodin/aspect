@@ -11,6 +11,15 @@ type TableModifier interface {
 	Modify(*TableElem) error
 }
 
+// Table names must validate
+func validateTableName(name string) error {
+	// TODO more rules
+	if name == "" {
+		return fmt.Errorf("aspect: table names cannot be blank")
+	}
+	return nil
+}
+
 // TableElem is underlying struct that holds an SQL TABLE schema. It is
 // returned from the Table constructor function.
 // TODO make this an internal struct?
@@ -19,6 +28,7 @@ type TableElem struct {
 	C       ColumnSet
 	order   []string
 	pk      PrimaryKeyArray
+	fks     []ForeignKeyElem
 	uniques []UniqueConstraint
 	creates []Creatable
 }
@@ -31,6 +41,16 @@ func (table *TableElem) String() string {
 // PrimaryKey returns the table's primary key array.
 func (table *TableElem) PrimaryKey() PrimaryKeyArray {
 	return table.pk
+}
+
+// UniqueConstraints returns the table's unique constraints.
+func (table *TableElem) UniqueConstraints() []UniqueConstraint {
+	return table.uniques
+}
+
+// ForeignKeys returns the table's foreign keys.
+func (table *TableElem) ForeignKeys() []ForeignKeyElem {
+	return table.fks
 }
 
 // Compile implements the Compiles interface allowing its use in statements.
@@ -104,11 +124,15 @@ func (table *TableElem) Update() UpdateStmt {
 // any number of columns and constraints that implement the TableModifier
 // interface.
 func Table(name string, elements ...TableModifier) *TableElem {
-	// TODO Confirm that the given name is a valid SQL table name.
+	if err := validateTableName(name); err != nil {
+		panic(err)
+	}
+
 	table := &TableElem{
 		Name: name,
 		C:    ColumnSet{},
 	}
+
 	// Pass the table to each element for potential modification
 	for _, element := range elements {
 		// Panic on error since little can be done with a bad schema

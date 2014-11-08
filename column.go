@@ -21,6 +21,15 @@ func (set ColumnSet) Add(c ColumnElem) error {
 	return nil
 }
 
+// Column names must validate
+func validateColumnName(name string) error {
+	// TODO more rules
+	if name == "" {
+		return fmt.Errorf("aspect: column names cannot be blank")
+	}
+	return nil
+}
+
 // ColumnElem represents a table column. It implements the Compiles,
 // Selectable, and Orderable interfaces for use in statements as well
 // as the TableModifier and Creatable interfaces.
@@ -311,10 +320,8 @@ func (c ColumnElem) Modify(t *TableElem) error {
 		return fmt.Errorf("aspect: columns cannot modify a nil table")
 	}
 
-	// Column names cannot be blank
-	// TODO Add more rules for column names
-	if c.name == "" {
-		return fmt.Errorf("aspect: columns must have a name")
+	if err := validateColumnName(c.name); err != nil {
+		return err
 	}
 
 	// No re-using columns across tables
