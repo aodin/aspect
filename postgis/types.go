@@ -28,6 +28,10 @@ func (g Geometry) IsPrimaryKey() bool {
 	return false
 }
 
+func (g Geometry) IsRequired() bool {
+	return false
+}
+
 func (g Geometry) IsUnique() bool {
 	return false
 }

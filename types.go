@@ -10,6 +10,7 @@ import (
 type Type interface {
 	Creatable
 	IsPrimaryKey() bool
+	IsRequired() bool
 	IsUnique() bool
 	Validate(interface{}) (interface{}, error)
 }
@@ -34,6 +35,10 @@ func (s Text) Create(d Dialect) (string, error) {
 }
 
 func (s Text) IsPrimaryKey() bool {
+	return false
+}
+
+func (s Text) IsRequired() bool {
 	return false
 }
 
@@ -82,6 +87,10 @@ func (s String) Create(d Dialect) (string, error) {
 
 func (s String) IsPrimaryKey() bool {
 	return s.PrimaryKey
+}
+
+func (s String) IsRequired() bool {
+	return s.NotNull
 }
 
 func (s String) IsUnique() bool {
@@ -133,6 +142,10 @@ func (s Integer) Create(d Dialect) (string, error) {
 
 func (s Integer) IsPrimaryKey() bool {
 	return s.PrimaryKey
+}
+
+func (s Integer) IsRequired() bool {
+	return s.NotNull
 }
 
 func (s Integer) IsUnique() bool {
@@ -196,6 +209,10 @@ func (s BigInt) IsPrimaryKey() bool {
 	return s.PrimaryKey
 }
 
+func (s BigInt) IsRequired() bool {
+	return s.NotNull
+}
+
 func (s BigInt) IsUnique() bool {
 	return s.PrimaryKey || s.Unique
 }
@@ -255,6 +272,10 @@ func (s Timestamp) IsPrimaryKey() bool {
 	return s.PrimaryKey
 }
 
+func (s Timestamp) IsRequired() bool {
+	return s.NotNull
+}
+
 func (s Timestamp) IsUnique() bool {
 	return s.PrimaryKey
 }
@@ -298,6 +319,10 @@ func (s Date) IsPrimaryKey() bool {
 	return s.PrimaryKey
 }
 
+func (s Date) IsRequired() bool {
+	return s.NotNull
+}
+
 func (s Date) IsUnique() bool {
 	return s.PrimaryKey
 }
@@ -332,6 +357,10 @@ func (s Boolean) Create(d Dialect) (string, error) {
 
 func (s Boolean) IsPrimaryKey() bool {
 	return false
+}
+
+func (s Boolean) IsRequired() bool {
+	return s.NotNull
 }
 
 func (s Boolean) IsUnique() bool {
@@ -376,6 +405,10 @@ func (s Double) Create(d Dialect) (string, error) {
 
 func (s Double) IsPrimaryKey() bool {
 	return s.PrimaryKey
+}
+
+func (s Double) IsRequired() bool {
+	return s.NotNull
 }
 
 func (s Double) IsUnique() bool {
@@ -432,6 +465,10 @@ func (s Real) Create(d Dialect) (string, error) {
 
 func (s Real) IsPrimaryKey() bool {
 	return s.PrimaryKey
+}
+
+func (s Real) IsRequired() bool {
+	return s.NotNull
 }
 
 func (s Real) IsUnique() bool {

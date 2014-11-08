@@ -34,6 +34,10 @@ func (s Serial) IsPrimaryKey() bool {
 	return s.PrimaryKey
 }
 
+func (s Serial) IsRequired() bool {
+	return s.NotNull
+}
+
 func (s Serial) IsUnique() bool {
 	return true
 }
@@ -92,6 +96,10 @@ func (s Inet) Create(d aspect.Dialect) (string, error) {
 
 func (s Inet) IsPrimaryKey() bool {
 	return s.PrimaryKey
+}
+
+func (s Inet) IsRequired() bool {
+	return s.NotNull
 }
 
 func (s Inet) IsUnique() bool {
