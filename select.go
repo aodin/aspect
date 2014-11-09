@@ -196,14 +196,19 @@ func (stmt SelectStmt) Offset(offset int) SelectStmt {
 }
 
 // Select generates a new SELECT statement from the given columns and tables.
-func Select(selection Selectable, ss ...Selectable) (stmt SelectStmt) {
+func Select(selections ...Selectable) (stmt SelectStmt) {
 	columns := make([]ColumnElem, 0)
-	for _, s := range append([]Selectable{selection}, ss...) {
-		if s == nil {
+	for _, selection := range selections {
+		if selection == nil {
 			stmt.err = fmt.Errorf("aspect: insert received a nil selectable - do the columns or tables you selected exist?")
 			return
 		}
-		columns = append(columns, s.Selectable()...)
+		columns = append(columns, selection.Selectable()...)
+	}
+
+	if len(columns) < 1 {
+		stmt.err = fmt.Errorf("aspect: must select at least one column")
+		return
 	}
 
 	for _, column := range columns {
