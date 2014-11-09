@@ -273,7 +273,7 @@ func (s Timestamp) IsPrimaryKey() bool {
 }
 
 func (s Timestamp) IsRequired() bool {
-	return s.NotNull
+	return s.NotNull && s.Default == ""
 }
 
 func (s Timestamp) IsUnique() bool {
@@ -360,7 +360,7 @@ func (s Boolean) IsPrimaryKey() bool {
 }
 
 func (s Boolean) IsRequired() bool {
-	return s.NotNull
+	return s.NotNull && s.Default == nil
 }
 
 func (s Boolean) IsUnique() bool {
