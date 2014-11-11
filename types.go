@@ -170,6 +170,7 @@ func (s Integer) Validate(i interface{}) (interface{}, error) {
 		}
 		i = v
 	case int:
+		i = int64(i.(int))
 	case int64:
 	default:
 		return i, fmt.Errorf("value is non-numeric type %T", t)
@@ -235,6 +236,7 @@ func (s BigInt) Validate(i interface{}) (interface{}, error) {
 		}
 		i = v
 	case int:
+		i = int64(i.(int))
 	case int64:
 	default:
 		return i, fmt.Errorf("value is non-numeric type %T", t)
