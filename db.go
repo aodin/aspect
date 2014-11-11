@@ -266,3 +266,23 @@ func (tx *TX) String(stmt Executable) string {
 func WrapTx(tx *sql.Tx, dialect Dialect) *TX {
 	return &TX{Tx: tx, dialect: dialect}
 }
+
+type fakeTX struct {
+	*TX
+}
+
+var _ Connection = &fakeTX{}
+
+func (tx *fakeTX) Commit() error {
+	return nil
+}
+
+func (tx *fakeTX) Rollback() error {
+	return nil
+}
+
+// FakeTx allows testing of transactional blocks of code. Commit and Rollback
+// do nothing.
+func FakeTx(tx *TX) *fakeTX {
+	return &fakeTX{TX: tx}
+}
