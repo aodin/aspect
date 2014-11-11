@@ -284,7 +284,7 @@ func (tx *fakeTX) Query(stmt Executable, args ...interface{}) (*Result, error) {
 }
 
 func (tx *fakeTX) QueryAll(stmt Executable, i interface{}) error {
-	return tx.tx.QueryOne(stmt, i)
+	return tx.tx.QueryAll(stmt, i)
 }
 
 func (tx *fakeTX) QueryOne(stmt Executable, i interface{}) error {
