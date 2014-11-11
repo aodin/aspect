@@ -6,19 +6,27 @@ import (
 
 // Connection is a common interface for database connections or transactions
 type Connection interface {
-	Begin() (*TX, error)
-	Commit() error
+	Begin() (Transaction, error)
 	Execute(stmt Executable, args ...interface{}) (sql.Result, error)
 	Query(stmt Executable, args ...interface{}) (*Result, error)
 	QueryAll(stmt Executable, i interface{}) error
 	QueryOne(stmt Executable, i interface{}) error
-	Rollback() error
 	String(stmt Executable) string // Parameter-less output for logging
 }
 
 // Both DB and TX should implement the Connection interface
 var _ Connection = &DB{}
 var _ Connection = &TX{}
+
+type Transaction interface {
+	Connection
+	Commit() error
+	Rollback() error
+}
+
+// Both TX and fakeTX should implement the Connection interface
+var _ Transaction = &TX{}
+var _ Transaction = &fakeTX{}
 
 // TODO The db should be able to determine if a stmt should be used with
 // either Exec() or Query()
@@ -36,15 +44,9 @@ type DB struct {
 }
 
 // Begin starts a new transaction using the current database connection pool.
-func (db *DB) Begin() (*TX, error) {
+func (db *DB) Begin() (Transaction, error) {
 	tx, err := db.conn.Begin()
 	return &TX{Tx: tx, dialect: db.dialect}, err
-}
-
-// Commit does nothing for a DB connection pool. It only exists for parity
-// with transactions to implement the Connection interface.
-func (db *DB) Commit() (err error) {
-	return
 }
 
 // Close closes the current database connection pool.
@@ -129,12 +131,6 @@ func (db *DB) QueryOne(stmt Executable, i interface{}) error {
 	return result.One(i)
 }
 
-// Rollback does nothing for a DB connection pool. It only exists for parity
-// with transactions to implement the Connection interface.
-func (db *DB) Rollback() (err error) {
-	return
-}
-
 // String returns parameter-less SQL. If an error occurred during compilation,
 // then an empty string will be returned.
 func (db *DB) String(stmt Executable) string {
@@ -167,7 +163,7 @@ type TX struct {
 
 // Begin returns the existing transaction. TODO Are nested transactions
 // possible? And on what dialects?
-func (tx *TX) Begin() (*TX, error) {
+func (tx *TX) Begin() (Transaction, error) {
 	return tx, nil
 }
 
@@ -268,21 +264,43 @@ func WrapTx(tx *sql.Tx, dialect Dialect) *TX {
 }
 
 type fakeTX struct {
-	*TX
+	tx Transaction
 }
 
-var _ Connection = &fakeTX{}
+func (tx *fakeTX) Begin() (Transaction, error) {
+	return tx, nil
+}
 
 func (tx *fakeTX) Commit() error {
 	return nil
+}
+
+func (tx *fakeTX) Execute(stmt Executable, args ...interface{}) (sql.Result, error) {
+	return tx.tx.Execute(stmt, args...)
+}
+
+func (tx *fakeTX) Query(stmt Executable, args ...interface{}) (*Result, error) {
+	return tx.tx.Query(stmt, args...)
+}
+
+func (tx *fakeTX) QueryAll(stmt Executable, i interface{}) error {
+	return tx.tx.QueryOne(stmt, i)
+}
+
+func (tx *fakeTX) QueryOne(stmt Executable, i interface{}) error {
+	return tx.tx.QueryOne(stmt, i)
 }
 
 func (tx *fakeTX) Rollback() error {
 	return nil
 }
 
+func (tx *fakeTX) String(stmt Executable) string {
+	return tx.String(stmt)
+}
+
 // FakeTx allows testing of transactional blocks of code. Commit and Rollback
 // do nothing.
-func FakeTx(tx *TX) *fakeTX {
-	return &fakeTX{TX: tx}
+func FakeTx(tx Transaction) *fakeTX {
+	return &fakeTX{tx: tx}
 }
