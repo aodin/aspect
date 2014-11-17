@@ -109,10 +109,10 @@ func TestBoolean(t *testing.T) {
 	assert := assert.New(t)
 	expect := NewTester(t, &defaultDialect{})
 
-	expect.Create("BOOL", Boolean{})
-	expect.Create("BOOL NOT NULL", Boolean{NotNull: true})
+	expect.Create("BOOLEAN", Boolean{})
+	expect.Create("BOOLEAN NOT NULL", Boolean{NotNull: true})
 	expect.Create(
-		"BOOL NOT NULL DEFAULT FALSE",
+		"BOOLEAN NOT NULL DEFAULT FALSE",
 		Boolean{NotNull: true, Default: False},
 	)
 

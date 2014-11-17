@@ -352,7 +352,7 @@ var _ Type = Boolean{}
 
 // Create returns the syntax need to create this column in CREATE statements.
 func (s Boolean) Create(d Dialect) (string, error) {
-	compiled := "BOOL"
+	compiled := "BOOLEAN"
 	if s.NotNull {
 		compiled += " NOT NULL"
 	}
