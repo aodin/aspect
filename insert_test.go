@@ -1,7 +1,10 @@
 package aspect
 
 import (
+	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // Removing the tag will prevent the database from attempting to insert it
@@ -19,6 +22,12 @@ type username struct {
 type mismatch struct {
 	ID   int64  `db:"idx"`
 	Name string `db:"namex"`
+}
+
+type omitID struct {
+	ID       int64  `db:"id,omitempty"`
+	Name     string `db:"name"`
+	Password string `db:"password"`
 }
 
 func TestInsert(t *testing.T) {
@@ -57,6 +66,22 @@ func TestInsert(t *testing.T) {
 		"admin",
 		"secret",
 		"client",
+		"1234",
+	)
+
+	// Insert with a omitted field - empty and non-empty
+	expect.SQL(
+		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
+		users.Insert().Values(omitID{Name: "admin", Password: "1234"}),
+		"admin",
+		"1234",
+	)
+
+	expect.SQL(
+		`INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3)`,
+		users.Insert().Values(omitID{ID: 1, Name: "admin", Password: "1234"}),
+		1,
+		"admin",
 		"1234",
 	)
 
@@ -133,4 +158,35 @@ func TestInsert(t *testing.T) {
 
 	// Insert instances other than structs, values, or slices of either
 	expect.Error(users.Insert().Values([]int64{1, 2, 3}))
+}
+
+func TestIsEmptyValue(t *testing.T) {
+	assert := assert.New(t)
+	// Expected empty values
+
+	assert.True(isEmptyValue(reflect.ValueOf(0)))
+	assert.True(isEmptyValue(reflect.ValueOf("")))
+	assert.True(isEmptyValue(reflect.ValueOf(false)))
+	assert.True(isEmptyValue(reflect.ValueOf(0.0)))
+
+	assert.False(isEmptyValue(reflect.ValueOf(1)))
+	assert.False(isEmptyValue(reflect.ValueOf("h")))
+	assert.False(isEmptyValue(reflect.ValueOf(true)))
+	assert.False(isEmptyValue(reflect.ValueOf(0.1)))
+}
+
+func TestRemoveColumn(t *testing.T) {
+	assert := assert.New(t)
+	assert.Equal(
+		[]ColumnElem{users.C["name"], users.C["password"]},
+		removeColumn(users.Columns(), "id"),
+	)
+	assert.Equal(
+		[]ColumnElem{users.C["id"], users.C["password"]},
+		removeColumn(users.Columns(), "name"),
+	)
+	assert.Equal(
+		[]ColumnElem{users.C["id"], users.C["name"]},
+		removeColumn(users.Columns(), "password"),
+	)
 }

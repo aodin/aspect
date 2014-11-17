@@ -5,10 +5,15 @@ import (
 	"reflect"
 )
 
+type Field struct {
+	Name      string
+	OmitEmpty bool
+}
+
 // fieldMap matches the given column names to the field names or `db` tags
 // of the given struct. If not all columns were matched, the map is returned
 // incomplete.
-func fieldMap(columns []ColumnElem, i interface{}) (map[string]string, error) {
+func fieldMap(columns []ColumnElem, i interface{}) (map[string]Field, error) {
 	// Get the type of the interface pointer
 	t := reflect.TypeOf(i)
 	if t.Kind() != reflect.Ptr {
@@ -16,7 +21,7 @@ func fieldMap(columns []ColumnElem, i interface{}) (map[string]string, error) {
 	}
 
 	// Map column name as key to field name as value
-	alias := make(map[string]string)
+	alias := make(map[string]Field)
 
 	// There must be an underlying struct
 	elem := t.Elem()
@@ -40,7 +45,7 @@ func fieldMap(columns []ColumnElem, i interface{}) (map[string]string, error) {
 		// For each field, try the tag name, then the field name
 		for i := 0; i < elem.NumField(); i += 1 {
 			f := elem.Field(i)
-			tag := f.Tag.Get("db")
+			tag, options := parseTag(f.Tag.Get("db"))
 
 			// Skip the field
 			if tag == "-" {
@@ -48,7 +53,10 @@ func fieldMap(columns []ColumnElem, i interface{}) (map[string]string, error) {
 			}
 
 			if tag == name || f.Name == name {
-				alias[name] = f.Name
+				alias[name] = Field{
+					Name:      f.Name,
+					OmitEmpty: options.Has("omitempty"),
+				}
 				break
 			}
 		}
@@ -83,8 +91,8 @@ func selectIndex(names []string, elem reflect.Type) (fields []int) {
 // TODO better way to pass columns than byusing the whole statement?
 // TODO if this is better generalized then it can be used with UPDATE and
 // DELETE statements.
-func valuesMap(s InsertStmt, values Values) (map[string]string, error) {
-	alias := make(map[string]string)
+func valuesMap(s InsertStmt, values Values) (map[string]Field, error) {
+	alias := make(map[string]Field)
 	for k, _ := range values {
 		if !s.HasColumn(k) {
 			return alias, fmt.Errorf(
@@ -92,7 +100,7 @@ func valuesMap(s InsertStmt, values Values) (map[string]string, error) {
 				k,
 			)
 		}
-		alias[k] = k
+		alias[k] = Field{Name: k}
 	}
 	return alias, nil
 }

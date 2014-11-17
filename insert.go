@@ -16,10 +16,10 @@ var (
 // InsertStmt is the internal representation of an INSERT statement.
 type InsertStmt struct {
 	table   *TableElem
-	columns []ColumnElem
+	columns []ColumnElem // TODO custom type for setter / getter operations
 	args    []interface{}
 	err     error
-	alias   map[string]string
+	alias   map[string]Field
 }
 
 // String outputs the parameter-less INSERT statement in a neutral dialect.
@@ -116,10 +116,54 @@ func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	), nil
 }
 
+// isEmptyValue is from Go's encoding/json package: encode.go
+// Copyright 2010 The Go Authors. All rights reserved.
+func isEmptyValue(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return v.Int() == 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return v.Uint() == 0
+	case reflect.String:
+		return v.String() == ""
+	case reflect.Bool:
+		return !v.Bool()
+	case reflect.Float32, reflect.Float64:
+		return v.Float() == 0
+	case reflect.Interface, reflect.Ptr:
+		return v.IsNil()
+	}
+	return false
+}
+
+// TODO error if there was no match?
+func removeColumn(columns []ColumnElem, name string) []ColumnElem {
+	for i, column := range columns {
+		if column.name == name {
+			return append(columns[:i], columns[i+1:]...)
+		}
+	}
+	return columns
+}
+
+// A field marked omitempty can cause the removal of a column, only
+// to have another value not have an empty value for that field
+func (stmt *InsertStmt) removeEmptyColumns(elem reflect.Value) {
+	// TODO this function could be skipped if it was known that the given
+	// struct has no omitempty fields
+	for name, field := range stmt.alias {
+		if field.OmitEmpty && isEmptyValue(elem.FieldByName(field.Name)) {
+			// Remove the column
+			stmt.columns = removeColumn(stmt.columns, name)
+			continue
+		}
+	}
+}
+
+// Since alias is a map, columns must be read in order and then aliased
 func (stmt *InsertStmt) argsByAlias(elem reflect.Value) {
-	// Since alias is a map, columns must be read in order and then aliased
 	for _, column := range stmt.columns {
-		alias := stmt.alias[column.Name()]
+		alias := stmt.alias[column.Name()].Name
 		stmt.args = append(stmt.args, elem.FieldByName(alias).Interface())
 	}
 }
@@ -134,7 +178,7 @@ func (stmt *InsertStmt) argsByIndex(elem reflect.Value) {
 func (stmt *InsertStmt) argsByValues(values Values) {
 	// Since alias is a map, columns must be read in order and then aliased
 	for _, column := range stmt.columns {
-		stmt.args = append(stmt.args, values[stmt.alias[column.Name()]])
+		stmt.args = append(stmt.args, values[stmt.alias[column.Name()].Name])
 	}
 }
 
@@ -180,7 +224,11 @@ func (s InsertStmt) Values(arg interface{}) InsertStmt {
 		// Remove unmatched columns
 		s.setColumns()
 
+		// Remove empty values
+		s.removeEmptyColumns(elem)
+
 		// Add the args using the created field map
+		// Drop args with empty values if they have the option "omitempty"
 		s.argsByAlias(elem)
 
 	case reflect.Slice:

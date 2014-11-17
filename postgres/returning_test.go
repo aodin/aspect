@@ -6,6 +6,12 @@ import (
 	"github.com/aodin/aspect"
 )
 
+type omitID struct {
+	ID       int64  `db:"id,omitempty"`
+	Name     string `db:"name"`
+	Password string `db:"password"`
+}
+
 func TestInsert(t *testing.T) {
 	expect := aspect.NewTester(t, &PostGres{})
 
@@ -39,5 +45,21 @@ func TestInsert(t *testing.T) {
 		Insert(users.C["name"], users.C["password"]),
 		nil,
 		nil,
+	)
+
+	// Insert with a omitted field - empty and non-empty
+	expect.SQL(
+		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
+		Insert(users).Values(omitID{Name: "admin", Password: "1234"}),
+		"admin",
+		"1234",
+	)
+
+	expect.SQL(
+		`INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3)`,
+		Insert(users).Values(omitID{ID: 1, Name: "admin", Password: "1234"}),
+		1,
+		"admin",
+		"1234",
 	)
 }

@@ -29,7 +29,12 @@ type malformeds struct {
 
 type ignore struct {
 	ID int64  `db:"-"`
-	A  string `db:"a"`
+	A  string `db:"A"`
+}
+
+type omit struct {
+	ID int64  `db:"ID,omitempty"`
+	A  string `db:"A"`
 }
 
 type extra struct {
@@ -55,30 +60,30 @@ func TestFieldMap(t *testing.T) {
 
 	var v valid
 	var err error
-	var fields map[string]string
+	var fields map[string]Field
 
 	fields, err = fieldMap(columns, v)
 	// fields should map column name as key to struct field as value
 	assert.Nil(err)
 	assert.Equal(2, len(fields))
-	assert.Equal("ID", fields["ID"])
-	assert.Equal("A", fields["A"])
+	assert.Equal("ID", fields["ID"].Name)
+	assert.Equal("A", fields["A"].Name)
 
 	// Should work for pointers
 	fields, err = fieldMap(columns, &v)
 	// fields should map column name as key to struct field as value
 	assert.Nil(err)
 	assert.Equal(2, len(fields))
-	assert.Equal("ID", fields["ID"])
-	assert.Equal("A", fields["A"])
+	assert.Equal("ID", fields["ID"].Name)
+	assert.Equal("A", fields["A"].Name)
 
 	// Or tags
 	var tg tags
 	fields, err = fieldMap(columns, tg)
 	assert.Nil(err)
 	assert.Equal(2, len(fields))
-	assert.Equal("IDX", fields["ID"])
-	assert.Equal("A", fields["A"])
+	assert.Equal("IDX", fields["ID"].Name)
+	assert.Equal("A", fields["A"].Name)
 
 	// But fail for non-struct types
 	var slice []int64
@@ -90,15 +95,24 @@ func TestFieldMap(t *testing.T) {
 	fields, err = fieldMap(columns, p)
 	assert.Nil(err)
 	assert.Equal(2, len(fields))
-	assert.Equal("ID", fields["ID"])
-	assert.Equal("A", fields["A"])
+	assert.Equal("ID", fields["ID"].Name)
+	assert.Equal("A", fields["A"].Name)
 
 	// Ignore fields with "-"
 	var ig ignore
 	fields, err = fieldMap(columns, ig)
 	assert.Nil(err)
 	assert.Equal(1, len(fields))
-	assert.Equal("A", fields["A"])
+	assert.Equal("A", fields["A"].Name)
+
+	// Omit empty fields when omitempty option is present in db struct tag
+	var om omit
+	fields, err = fieldMap(columns, om)
+	assert.Nil(err)
+	assert.Equal(2, len(fields))
+	assert.Equal("ID", fields["ID"].Name)
+	assert.True(fields["ID"].OmitEmpty)
+	assert.Equal("A", fields["A"].Name)
 }
 
 func TestSelectAlias(t *testing.T) {

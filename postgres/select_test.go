@@ -160,3 +160,48 @@ func TestSelect(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(3, rowsAffected)
 }
+
+type u1 struct {
+	ID   int64  `db:"id,omitempty"`
+	Name string `db:"name"`
+}
+
+var u1s = aspect.Table("u1s",
+	aspect.Column("id", Serial{PrimaryKey: true, NotNull: true}),
+	aspect.Column("name", aspect.String{NotNull: true}),
+)
+
+func TestSelect_Omitempty(t *testing.T) {
+	assert := assert.New(t)
+
+	// Connect to the database specified in the test db.json config
+	// Default to the Travis CI settings if no file is found
+	conf, err := aspect.ParseTestConfig("./db.json")
+	if err != nil {
+		t.Fatalf(
+			"postgres: failed to parse test configuration, test aborted: %s",
+			err,
+		)
+	}
+
+	db, err := aspect.Connect(conf.Driver, conf.Credentials())
+	require.Nil(t, err)
+	defer db.Close()
+
+	// Perform all tests in a transaction and always rollback
+	tx, err := db.Begin()
+	require.Nil(t, err)
+	defer tx.Rollback()
+
+	_, err = tx.Execute(u1s.Create())
+	require.Nil(t, err)
+
+	u := u1{Name: "admin"}
+	stmt := Insert(u1s).Values(u).Returning(u1s.C["id"])
+	err = tx.QueryOne(stmt, &u.ID)
+	require.Nil(t, err)
+	assert.Equal("admin", u.Name)
+
+	// ID should be auto-assigned
+	assert.True(u.ID > 0)
+}
