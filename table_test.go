@@ -2,6 +2,8 @@ package aspect
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // TODO Should this be an illegal schema?
@@ -14,7 +16,7 @@ var singleColumn = Table("single",
 // Declare schemas that can be used package-wide
 var users = Table("users",
 	Column("id", Integer{NotNull: true}),
-	Column("name", String{Length: 32, NotNull: true}),
+	Column("name", String{Length: 32, Unique: true, NotNull: true}),
 	Column("password", String{Length: 128}),
 	PrimaryKey("id"),
 )
@@ -52,30 +54,28 @@ var attrs = Table("attrs",
 )
 
 func TestTableSchema(t *testing.T) {
+	assert := assert.New(t)
+
 	// Test table properties
-	if users.Name != "users" {
-		t.Errorf("unexpected Table name: '%s' != 'users'", users.Name)
-	}
-	if users.String() != "users" {
-		t.Errorf("unexpected Table String output: %s != users", users.String())
-	}
+	assert.Equal("users", users.Name)
+	assert.Equal("users", users.String())
 
 	// Test the accessor methods
-	userId := users.C["id"]
-	if userId.name != "id" {
-		t.Errorf("Name of returned column was not 'id': '%s'", userId.name)
-	}
-
-	// A pointer to the column's table should have been added
-	if userId.table != users {
-		t.Errorf("Unexpected Table: %+v", userId.table)
-	}
+	userID := users.C["id"]
+	assert.Equal("id", userID.name)
+	assert.Equal(users, userID.table)
 
 	// And primary key(s) should exist
-	pk := users.PrimaryKey()
-	if len(pk) != 1 && pk[0] != "id" {
-		t.Errorf("unexpected primary key")
-	}
+	assert.Equal(PrimaryKeyArray{"id"}, users.pk)
+
+	// Unique constraints should be declared
+	assert.Equal([]UniqueConstraint{{"a", "b"}}, attrs.uniques)
+
+	// Primary keys can also be specified through types
+	assert.Equal(PrimaryKeyArray{"id"}, attrs.pk)
+
+	// As well as uniques
+	assert.Equal([]UniqueConstraint{{"name"}}, users.uniques)
 
 	// Test improper schemas
 	func() {
@@ -128,6 +128,19 @@ func TestTableSchema(t *testing.T) {
 		Table("bad",
 			Column("okay", String{}),
 			Unique("not"),
+		)
+	}()
+
+	// Can't have multiple primary keys (must use a composite primary key!)
+	func() {
+		defer func() {
+			if panicked := recover(); panicked == nil {
+				t.Errorf("table failed to panic when multiple columns were marked as primary keys outside of a composite primary key")
+			}
+		}()
+		Table("bad",
+			Column("id", Integer{PrimaryKey: true}),
+			Column("id2", Integer{PrimaryKey: true}),
 		)
 	}()
 }

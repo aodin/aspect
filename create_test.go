@@ -9,7 +9,7 @@ func TestCreateStmt(t *testing.T) {
 
 	expected := `CREATE TABLE "users" (
   "id" INTEGER NOT NULL,
-  "name" VARCHAR(32) NOT NULL,
+  "name" VARCHAR(32) NOT NULL UNIQUE,
   "password" VARCHAR(128),
   PRIMARY KEY ("id")
 );`

@@ -327,7 +327,7 @@ func (c ColumnElem) Modify(t *TableElem) error {
 	// No re-using columns across tables
 	if c.table != nil {
 		return fmt.Errorf(
-			"aspect: column %s already belongs to table %s",
+			"aspect: column '%s' already belongs to table '%s'",
 			c.name,
 			t.Name,
 		)
@@ -350,6 +350,22 @@ func (c ColumnElem) Modify(t *TableElem) error {
 	// Add the column to the create array
 	t.creates = append(t.creates, c)
 
+	// If the type is a primary key, set the table primary key
+	// However, if another pk is already set, panic
+	if c.typ.IsPrimaryKey() {
+		if t.pk != nil {
+			panic(fmt.Sprintf(
+				"aspect: cannot set column '%s' as PRIMARY KEY - there is already a primary key set: '%v' - try using a composite primary key with PrimaryKey()",
+				c.name,
+				t.pk,
+			))
+		}
+		t.pk = PrimaryKeyArray{c.name}
+	} else if c.typ.IsUnique() {
+		// If the column type is unique, add it to the table's unique
+		// constraints TODO Should primary keys beå added to uniques?
+		t.uniques = append(t.uniques, UniqueConstraint{c.name})
+	}
 	return nil
 }
 
