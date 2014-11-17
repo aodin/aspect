@@ -27,6 +27,11 @@ type malformeds struct {
 	AX  string `db:"A`
 }
 
+type ignore struct {
+	ID int64  `db:"-"`
+	A  string `db:"a"`
+}
+
 type extra struct {
 	ID   int64
 	A, B string
@@ -49,28 +54,31 @@ func TestFieldMap(t *testing.T) {
 	columns := target.Columns()
 
 	var v valid
-	fields, err := fieldMap(columns, v)
+	var err error
+	var fields map[string]string
+
+	fields, err = fieldMap(columns, v)
 	// fields should map column name as key to struct field as value
 	assert.Nil(err)
 	assert.Equal(2, len(fields))
-	assert.Equal(fields["ID"], "ID")
-	assert.Equal(fields["A"], "A")
+	assert.Equal("ID", fields["ID"])
+	assert.Equal("A", fields["A"])
 
 	// Should work for pointers
 	fields, err = fieldMap(columns, &v)
 	// fields should map column name as key to struct field as value
 	assert.Nil(err)
 	assert.Equal(2, len(fields))
-	assert.Equal(fields["ID"], "ID")
-	assert.Equal(fields["A"], "A")
+	assert.Equal("ID", fields["ID"])
+	assert.Equal("A", fields["A"])
 
 	// Or tags
 	var tg tags
 	fields, err = fieldMap(columns, tg)
 	assert.Nil(err)
 	assert.Equal(2, len(fields))
-	assert.Equal(fields["ID"], "IDX")
-	assert.Equal(fields["A"], "A")
+	assert.Equal("IDX", fields["ID"])
+	assert.Equal("A", fields["A"])
 
 	// But fail for non-struct types
 	var slice []int64
@@ -82,8 +90,15 @@ func TestFieldMap(t *testing.T) {
 	fields, err = fieldMap(columns, p)
 	assert.Nil(err)
 	assert.Equal(2, len(fields))
-	assert.Equal(fields["ID"], "ID")
-	assert.Equal(fields["A"], "A")
+	assert.Equal("ID", fields["ID"])
+	assert.Equal("A", fields["A"])
+
+	// Ignore fields with "-"
+	var ig ignore
+	fields, err = fieldMap(columns, ig)
+	assert.Nil(err)
+	assert.Equal(1, len(fields))
+	assert.Equal("A", fields["A"])
 }
 
 func TestSelectAlias(t *testing.T) {
@@ -92,12 +107,12 @@ func TestSelectAlias(t *testing.T) {
 	// Determine indexes of destination struct fields
 	fields := selectAlias([]string{"ID", "A"}, reflect.TypeOf(&valid{}).Elem())
 	assert.Equal(2, len(fields))
-	assert.Equal(fields[0], 0)
-	assert.Equal(fields[1], 1)
+	assert.Equal(0, fields[0])
+	assert.Equal(1, fields[1])
 
 	// Determine indexes when using tags
 	fields = selectAlias([]string{"ID", "A"}, reflect.TypeOf(&tags{}).Elem())
 	assert.Equal(2, len(fields))
-	assert.Equal(fields[0], 0)
-	assert.Equal(fields[1], 1)
+	assert.Equal(0, fields[0])
+	assert.Equal(1, fields[1])
 }
