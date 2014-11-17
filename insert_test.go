@@ -3,6 +3,7 @@ package aspect
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -168,11 +169,13 @@ func TestIsEmptyValue(t *testing.T) {
 	assert.True(isEmptyValue(reflect.ValueOf("")))
 	assert.True(isEmptyValue(reflect.ValueOf(false)))
 	assert.True(isEmptyValue(reflect.ValueOf(0.0)))
+	assert.True(isEmptyValue(reflect.ValueOf(time.Time{})))
 
 	assert.False(isEmptyValue(reflect.ValueOf(1)))
 	assert.False(isEmptyValue(reflect.ValueOf("h")))
 	assert.False(isEmptyValue(reflect.ValueOf(true)))
 	assert.False(isEmptyValue(reflect.ValueOf(0.1)))
+	assert.False(isEmptyValue(reflect.ValueOf(time.Now())))
 }
 
 func TestRemoveColumn(t *testing.T) {

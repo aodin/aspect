@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
 var (
@@ -118,6 +119,7 @@ func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
 
 // isEmptyValue is from Go's encoding/json package: encode.go
 // Copyright 2010 The Go Authors. All rights reserved.
+// TODO what about pointer fields?
 func isEmptyValue(v reflect.Value) bool {
 	switch v.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -132,6 +134,11 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.Float() == 0
 	case reflect.Interface, reflect.Ptr:
 		return v.IsNil()
+	case reflect.Struct:
+		t, ok := v.Interface().(time.Time)
+		if ok {
+			return t.IsZero()
+		}
 	}
 	return false
 }
