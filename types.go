@@ -24,13 +24,18 @@ var (
 )
 
 // Text represents TEXT column types.
-type Text struct{}
+type Text struct {
+	NotNull bool
+}
 
 var _ Type = Text{}
 
 // Create returns the syntax need to create this column in CREATE statements.
 func (s Text) Create(d Dialect) (string, error) {
 	compiled := "TEXT"
+	if s.NotNull {
+		compiled += " NOT NULL"
+	}
 	return compiled, nil
 }
 
@@ -39,7 +44,7 @@ func (s Text) IsPrimaryKey() bool {
 }
 
 func (s Text) IsRequired() bool {
-	return false
+	return s.NotNull
 }
 
 func (s Text) IsUnique() bool {
