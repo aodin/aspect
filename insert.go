@@ -267,6 +267,9 @@ func (s InsertStmt) Values(arg interface{}) InsertStmt {
 			// Remove unmatched columns
 			s.setColumns()
 
+			// Remove empty values using the first elem
+			s.removeEmptyColumns(elem0)
+
 			// Add the args using the created field map
 			for i := 0; i < elem.Len(); i++ {
 				s.argsByAlias(elem.Index(i))

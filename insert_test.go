@@ -86,6 +86,28 @@ func TestInsert(t *testing.T) {
 		"1234",
 	)
 
+	// Omit should also work for multiple struct inserts
+	omits := []omitID{
+		omitID{Name: "admin", Password: "1234"},
+		omitID{Name: "client", Password: "1234"},
+	}
+	expect.SQL(
+		`INSERT INTO "users" ("name", "password") VALUES ($1, $2), ($3, $4)`,
+		users.Insert().Values(omits),
+		"admin",
+		"1234",
+		"client",
+		"1234",
+	)
+
+	expect.SQL(
+		`INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3)`,
+		users.Insert().Values([]omitID{{ID: 1, Name: "admin", Password: "1"}}),
+		1,
+		"admin",
+		"1",
+	)
+
 	// Complete table inserts will build dynamically from the given values
 	// If a struct does not have fields that match the given columns,
 	// those columns will not be included in the compiled statement
