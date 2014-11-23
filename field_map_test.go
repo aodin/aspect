@@ -120,13 +120,15 @@ func TestSelectAlias(t *testing.T) {
 
 	// Determine indexes of destination struct fields
 	fields := selectAlias([]string{"ID", "A"}, reflect.TypeOf(&valid{}).Elem())
-	assert.Equal(2, len(fields))
-	assert.Equal(0, fields[0])
-	assert.Equal(1, fields[1])
+	assert.Equal([]int{0, 1}, fields)
 
 	// Determine indexes when using tags
 	fields = selectAlias([]string{"ID", "A"}, reflect.TypeOf(&tags{}).Elem())
-	assert.Equal(2, len(fields))
-	assert.Equal(0, fields[0])
-	assert.Equal(1, fields[1])
+	assert.Equal([]int{0, 1}, fields)
+
+	fields = selectAlias([]string{"ID", "A"}, reflect.TypeOf(&omit{}).Elem())
+	assert.Equal([]int{0, 1}, fields)
+
+	fields = selectAlias([]string{"ID", "A"}, reflect.TypeOf(&ignore{}).Elem())
+	assert.Equal([]int{1}, fields)
 }

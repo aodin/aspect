@@ -70,7 +70,13 @@ func selectAlias(names []string, elem reflect.Type) (fields []int) {
 	for _, name := range names {
 		for i := 0; i < elem.NumField(); i += 1 {
 			f := elem.Field(i)
-			tag := f.Tag.Get("db")
+
+			tag, _ := parseTag(f.Tag.Get("db"))
+
+			// Skip the field
+			if tag == "-" {
+				continue
+			}
 			if tag == name || f.Name == name {
 				fields = append(fields, i)
 				break
