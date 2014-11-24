@@ -28,6 +28,8 @@ var _ Connection = &TX{}
 type Transaction interface {
 	Connection
 	Commit() error
+	CommitIf(*bool) error
+	MustCommitIf(*bool) bool
 	Rollback() error
 }
 
@@ -276,6 +278,27 @@ func (tx *TX) Commit() error {
 	return tx.Tx.Commit()
 }
 
+func (tx *TX) CommitIf(commit *bool) error {
+	if *commit {
+		return tx.Tx.Commit()
+	} else {
+		return tx.Tx.Rollback()
+	}
+}
+
+func (tx *TX) MustCommitIf(commit *bool) bool {
+	if *commit {
+		if err := tx.Tx.Commit(); err != nil {
+			panic(fmt.Sprintf("aspect: error during commit: %s", err))
+		}
+	} else {
+		if err := tx.Tx.Rollback(); err != nil {
+			panic(fmt.Sprintf("aspect: error during rollback: %s", err))
+		}
+	}
+	return *commit
+}
+
 // Execute executes the Executable statement with optional arguments using
 // the current transaction. It returns the database/sql package's Result
 // object, which may contain information on rows affected and last ID inserted
@@ -456,6 +479,14 @@ func (tx *fakeTX) Begin() (Transaction, error) {
 
 func (tx *fakeTX) Commit() error {
 	return nil
+}
+
+func (tx *fakeTX) CommitIf(commit *bool) error {
+	return nil
+}
+
+func (tx *fakeTX) MustCommitIf(commit *bool) bool {
+	return false
 }
 
 func (tx *fakeTX) Execute(stmt Executable, args ...interface{}) (sql.Result, error) {
