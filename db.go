@@ -2,7 +2,7 @@ package aspect
 
 import (
 	"database/sql"
-	"fmt"
+	"log"
 )
 
 // Connection is a common interface for database connections or transactions
@@ -15,6 +15,7 @@ type Connection interface {
 	String(stmt Executable) string // Parameter-less output for logging
 
 	// Must operations will panic on error
+	MustBegin() Transaction
 	MustExecute(stmt Executable, args ...interface{}) sql.Result
 	MustQuery(stmt Executable, args ...interface{}) *Result
 	MustQueryAll(stmt Executable, i interface{})
@@ -147,27 +148,40 @@ func (db *DB) String(stmt Executable) string {
 	return compiled
 }
 
+// MustBegin starts a new transaction using the current database connection
+// pool. It will panic on error.
+func (db *DB) MustBegin() Transaction {
+	tx, err := db.conn.Begin()
+	if err != nil {
+		log.Panicf(
+			"aspect: failed to begin transaction: %s",
+			err,
+		)
+	}
+	return &TX{Tx: tx, dialect: db.dialect}
+}
+
 // MustExecute will panic on error.
 func (db *DB) MustExecute(stmt Executable, args ...interface{}) sql.Result {
 	s, params, err := db.compile(stmt)
 	if err != nil {
-		panic(fmt.Sprintf(
+		log.Panicf(
 			"aspect: failed to compile (%s): %s",
 			stmt,
 			err,
-		))
+		)
 	}
 	if len(args) == 0 {
 		args = params.args
 	}
 	result, err := db.conn.Exec(s, args...)
 	if err != nil {
-		panic(fmt.Sprintf(
+		log.Panicf(
 			"aspect: failed to exec (%s) with parameters (%v): %s",
 			s,
 			args,
 			err,
-		))
+		)
 	}
 	return result
 }
@@ -176,11 +190,11 @@ func (db *DB) MustExecute(stmt Executable, args ...interface{}) sql.Result {
 func (db *DB) MustQuery(stmt Executable, args ...interface{}) *Result {
 	s, params, err := db.compile(stmt)
 	if err != nil {
-		panic(fmt.Sprintf(
+		log.Panicf(
 			"aspect: failed to compile (%s): %s",
 			stmt,
 			err,
-		))
+		)
 	}
 
 	// Use any arguments given to Query() over compiled arguments
@@ -190,12 +204,12 @@ func (db *DB) MustQuery(stmt Executable, args ...interface{}) *Result {
 
 	rows, err := db.conn.Query(s, args...)
 	if err != nil {
-		panic(fmt.Sprintf(
+		log.Panicf(
 			"aspect: failed to query (%s) with parameters (%v): %s",
 			s,
 			args,
 			err,
-		))
+		)
 	}
 	// Wrap the sql rows in a result
 	return &Result{rows: rows, stmt: s}
@@ -206,11 +220,11 @@ func (db *DB) MustQueryAll(stmt Executable, i interface{}) {
 	result := db.MustQuery(stmt)
 	if err := result.All(i); err != nil {
 		// TODO get parameters from result?
-		panic(fmt.Sprintf(
+		log.Panicf(
 			"aspect: failed to query all (%s): %s",
 			result.stmt,
 			err,
-		))
+		)
 	}
 }
 
@@ -226,11 +240,11 @@ func (db *DB) MustQueryOne(stmt Executable, i interface{}) bool {
 		return false
 	} else if err != nil {
 		// TODO get parameters from result?
-		panic(fmt.Sprintf(
+		log.Panicf(
 			"aspect: failed to query one (%s): %s",
 			result.stmt,
 			err,
-		))
+		)
 	}
 	return true
 }
@@ -289,11 +303,11 @@ func (tx *TX) CommitIf(commit *bool) error {
 func (tx *TX) MustCommitIf(commit *bool) bool {
 	if *commit {
 		if err := tx.Tx.Commit(); err != nil {
-			panic(fmt.Sprintf("aspect: error during commit: %s", err))
+			log.Panicf("aspect: error during commit: %s", err)
 		}
 	} else {
 		if err := tx.Tx.Rollback(); err != nil {
-			panic(fmt.Sprintf("aspect: error during rollback: %s", err))
+			log.Panicf("aspect: error during rollback: %s", err)
 		}
 	}
 	return *commit
@@ -360,27 +374,32 @@ func (tx *TX) QueryOne(stmt Executable, i interface{}) error {
 	return result.One(i)
 }
 
+// Begin returns the existing transaction.
+func (tx *TX) MustBegin() Transaction {
+	return tx
+}
+
 // MustExecute will panic on error.
 func (tx *TX) MustExecute(stmt Executable, args ...interface{}) sql.Result {
 	s, params, err := tx.compile(stmt)
 	if err != nil {
-		panic(fmt.Sprintf(
+		log.Panicf(
 			"aspect: failed to compile (%s): %s",
 			stmt,
 			err,
-		))
+		)
 	}
 	if len(args) == 0 {
 		args = params.args
 	}
 	result, err := tx.Exec(s, args...)
 	if err != nil {
-		panic(fmt.Sprintf(
+		log.Panicf(
 			"aspect: failed to exec (%s) with parameters (%v): %s",
 			s,
 			args,
 			err,
-		))
+		)
 	}
 	return result
 }
@@ -389,11 +408,11 @@ func (tx *TX) MustExecute(stmt Executable, args ...interface{}) sql.Result {
 func (tx *TX) MustQuery(stmt Executable, args ...interface{}) *Result {
 	s, params, err := tx.compile(stmt)
 	if err != nil {
-		panic(fmt.Sprintf(
+		log.Panicf(
 			"aspect: failed to compile (%s): %s",
 			stmt,
 			err,
-		))
+		)
 	}
 
 	// Use any arguments given to Query() over compiled arguments
@@ -403,12 +422,12 @@ func (tx *TX) MustQuery(stmt Executable, args ...interface{}) *Result {
 
 	rows, err := tx.Tx.Query(s, args...)
 	if err != nil {
-		panic(fmt.Sprintf(
+		log.Panicf(
 			"aspect: failed to query (%s) with parameters (%v): %s",
 			s,
 			args,
 			err,
-		))
+		)
 	}
 	// Wrap the sql rows in a result
 	return &Result{rows: rows, stmt: s}
@@ -419,11 +438,11 @@ func (tx *TX) MustQueryAll(stmt Executable, i interface{}) {
 	result := tx.MustQuery(stmt)
 	if err := result.All(i); err != nil {
 		// TODO get parameters from result?
-		panic(fmt.Sprintf(
+		log.Panicf(
 			"aspect: failed to query all (%s): %s",
 			result.stmt,
 			err,
-		))
+		)
 	}
 }
 
@@ -439,11 +458,11 @@ func (tx *TX) MustQueryOne(stmt Executable, i interface{}) bool {
 		return false
 	} else if err != nil {
 		// TODO get parameters from result?
-		panic(fmt.Sprintf(
+		log.Panicf(
 			"aspect: failed to query one (%s): %s",
 			result.stmt,
 			err,
-		))
+		)
 	}
 	return true
 }
@@ -471,6 +490,10 @@ func WrapTx(tx *sql.Tx, dialect Dialect) *TX {
 
 type fakeTX struct {
 	tx Transaction
+}
+
+func (tx *fakeTX) MustBegin() Transaction {
+	return tx
 }
 
 func (tx *fakeTX) Begin() (Transaction, error) {

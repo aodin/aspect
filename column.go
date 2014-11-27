@@ -2,6 +2,7 @@ package aspect
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 )
 
@@ -284,6 +285,8 @@ func (c ColumnElem) In(args interface{}) BinaryClause {
 			a.Clauses = append(a.Clauses, &Parameter{s.Index(i).Interface()})
 		}
 	}
+	// TODO What if something other than a slice is given?
+	// TODO This statement should be able to take clauses / subqueries
 	return BinaryClause{
 		Pre:  c,
 		Post: FuncClause{Inner: a},
@@ -354,11 +357,11 @@ func (c ColumnElem) Modify(t *TableElem) error {
 	// However, if another pk is already set, panic
 	if c.typ.IsPrimaryKey() {
 		if t.pk != nil {
-			panic(fmt.Sprintf(
+			log.Panicf(
 				"aspect: cannot set column '%s' as PRIMARY KEY - there is already a primary key set: '%v' - try using a composite primary key with PrimaryKey()",
 				c.name,
 				t.pk,
-			))
+			)
 		}
 		t.pk = PrimaryKeyArray{c.name}
 	} else if c.typ.IsUnique() {
