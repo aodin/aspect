@@ -147,8 +147,13 @@ func (stmt SelectStmt) Join(pre, post ColumnElem) SelectStmt {
 // Where adds a conditional clause to the SELECT statement. Only one WHERE
 // is allowed per statement. Additional calls to Where will overwrite the
 // existing WHERE clause.
-func (stmt SelectStmt) Where(cond Clause) SelectStmt {
-	stmt.cond = cond
+func (stmt SelectStmt) Where(conds ...Clause) SelectStmt {
+	if len(conds) > 1 {
+		// By default, multiple where clauses will be joined will AllOf
+		stmt.cond = AllOf(conds...)
+	} else if len(conds) == 1 {
+		stmt.cond = conds[0]
+	}
 	return stmt
 }
 
