@@ -20,6 +20,16 @@ func TestDelete(t *testing.T) {
 		1,
 	)
 
+	expect.SQL(
+		`DELETE FROM "users" WHERE "users"."id" = $1 AND "users"."name" = $2`,
+		users.Delete().Where(
+			users.C["id"].Equals(1),
+			users.C["name"].Equals("admin"),
+		),
+		1,
+		"admin",
+	)
+
 	// Delete by a schema's declared primary key
 	admin := user{ID: 1, Name: "admin", Password: "secret"}
 	client := user{ID: 2, Name: "client", Password: "secret"}

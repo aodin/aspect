@@ -28,12 +28,24 @@ func TestUpdate(t *testing.T) {
 		"password": "blank",
 	}
 
+	// With Where
 	expect.SQL(
 		`UPDATE "users" SET "name" = $1, "password" = $2 WHERE "users"."id" = $3`,
 		Update(users).Values(values).Where(users.C["id"].Equals(1)),
 		"admin",
 		"blank",
 		1,
+	)
+
+	expect.SQL(
+		`UPDATE "users" SET "name" = $1 WHERE "users"."id" = $2 AND "users"."name" = $3`,
+		Update(users).Values(Values{"name": "client"}).Where(
+			users.C["id"].Equals(1),
+			users.C["name"].Equals("admin"),
+		),
+		"client",
+		1,
+		"admin",
 	)
 
 	// The statement should have an error if the values map is empty

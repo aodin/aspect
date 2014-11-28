@@ -2,7 +2,6 @@ package aspect
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 )
 
@@ -357,11 +356,11 @@ func (c ColumnElem) Modify(t *TableElem) error {
 	// However, if another pk is already set, panic
 	if c.typ.IsPrimaryKey() {
 		if t.pk != nil {
-			log.Panicf(
+			panic(fmt.Sprintf(
 				"aspect: cannot set column '%s' as PRIMARY KEY - there is already a primary key set: '%v' - try using a composite primary key with PrimaryKey()",
 				c.name,
 				t.pk,
-			)
+			))
 		}
 		t.pk = PrimaryKeyArray{c.name}
 	} else if c.typ.IsUnique() {

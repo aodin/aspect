@@ -105,8 +105,13 @@ func (stmt DeleteStmt) Values(arg interface{}) DeleteStmt {
 }
 
 // Where adds a conditional WHERE clause to the DELETE statement.
-func (stmt DeleteStmt) Where(cond Clause) DeleteStmt {
-	stmt.cond = cond
+func (stmt DeleteStmt) Where(conds ...Clause) DeleteStmt {
+	if len(conds) > 1 {
+		// By default, multiple where clauses will be joined will AllOf
+		stmt.cond = AllOf(conds...)
+	} else if len(conds) == 1 {
+		stmt.cond = conds[0]
+	}
 	return stmt
 }
 

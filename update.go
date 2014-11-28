@@ -89,8 +89,13 @@ func (stmt UpdateStmt) Values(values Values) UpdateStmt {
 }
 
 // Where adds a conditional WHERE clause to the UPDATE statement.
-func (stmt UpdateStmt) Where(cond Clause) UpdateStmt {
-	stmt.cond = cond
+func (stmt UpdateStmt) Where(conds ...Clause) UpdateStmt {
+	if len(conds) > 1 {
+		// By default, multiple where clauses will be joined will AllOf
+		stmt.cond = AllOf(conds...)
+	} else if len(conds) == 1 {
+		stmt.cond = conds[0]
+	}
 	return stmt
 }
 
