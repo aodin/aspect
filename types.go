@@ -252,10 +252,11 @@ func (s BigInt) Validate(i interface{}) (interface{}, error) {
 // Timestamp represents TIMESTAMP column types.
 // TODO take a time.Location for timezone options
 type Timestamp struct {
-	NotNull      bool
-	PrimaryKey   bool
-	WithTimezone bool
-	Default      string // TODO Should this be a clause that compiles?
+	NotNull         bool
+	PrimaryKey      bool
+	WithTimezone    bool
+	WithoutTimezone bool
+	Default         string // TODO Should this be a clause that compiles?
 }
 
 var _ Type = Timestamp{}
@@ -265,6 +266,8 @@ func (s Timestamp) Create(d Dialect) (string, error) {
 	compiled := "TIMESTAMP"
 	if s.WithTimezone {
 		compiled += " WITH TIME ZONE"
+	} else if s.WithoutTimezone { // Only one timezone modifier is allowed
+		compiled += " WITHOUT TIME ZONE"
 	}
 	if s.NotNull {
 		compiled += " NOT NULL"
