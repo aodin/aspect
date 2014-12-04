@@ -23,6 +23,8 @@ func TestString(t *testing.T) {
 		String{Length: 128, PrimaryKey: true, NotNull: true, Unique: true},
 	)
 
+	expect.Create("VARCHAR DEFAULT ''", String{Default: Blank})
+
 	// Test Type methods
 	value, err := String{}.Validate("HEY")
 	assert.Nil(err)

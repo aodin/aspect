@@ -23,6 +23,12 @@ var (
 	False              = &internalFalse
 )
 
+// Provide a blank string for default values
+var (
+	internalBlank string = ""
+	Blank                = &internalBlank
+)
+
 // Text represents TEXT column types.
 type Text struct {
 	NotNull bool
@@ -64,6 +70,7 @@ type String struct {
 	NotNull    bool
 	Unique     bool
 	PrimaryKey bool
+	Default    *string
 }
 
 var _ Type = String{}
@@ -83,6 +90,9 @@ func (s String) Create(d Dialect) (string, error) {
 	}
 	if s.Unique {
 		attrs = append(attrs, "UNIQUE")
+	}
+	if s.Default != nil {
+		attrs = append(attrs, fmt.Sprintf("DEFAULT '%s'", *s.Default))
 	}
 	if len(attrs) > 0 {
 		compiled += fmt.Sprintf(" %s", strings.Join(attrs, " "))
