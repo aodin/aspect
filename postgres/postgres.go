@@ -17,3 +17,6 @@ func (d *PostGres) Parameterize(i int) string {
 func init() {
 	aspect.RegisterDialect("postgres", &PostGres{})
 }
+
+// Now represents the clause needed to return a now timestamp in postgres
+var Now string = `now() at time zone 'utc'`
