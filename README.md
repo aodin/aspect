@@ -392,7 +392,7 @@ var Posts = sql.Table("posts",
 CREATE TABLE "posts" (
   "uid" BIGINT REFERENCES users("id") ON DELETE CASCADE,
   "name" VARCHAR(32) NOT NULL,
-  "is_published" BOOL DEFAULT TRUE,
+  "is_published" BOOLEAN DEFAULT TRUE,
   UNIQUE ("name"),
   PRIMARY KEY ("uid", "name")
 );
@@ -402,7 +402,7 @@ CREATE TABLE "posts" (
 Development
 -----------
 
-To perform tests, copy the `db.example.json` file into each driver package requiring credentials as `db.json` (currently required only by the `postgres` package) as set it for your local configuration.
+To perform tests, copy the `db.example.json` file into each driver package requiring credentials as `db.json` (currently required only by the `postgres` package) and set it for your local configuration.
 
 All compilable statements implement a `String` method for dialect-neutral logging and the `Compile` method for building dialect-specific and parameterized output:
 
