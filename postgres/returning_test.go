@@ -3,6 +3,8 @@ package postgres
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/aodin/aspect"
 )
 
@@ -39,6 +41,20 @@ func TestInsert(t *testing.T) {
 		"secret",
 	)
 
+	// Insert multiple values
+	inserts := []user{
+		{Name: "admin", Password: "secret"},
+		{Name: "client", Password: "1234"},
+	}
+	expect.SQL(
+		`INSERT INTO "users" ("name", "password") VALUES ($1, $2), ($3, $4) RETURNING "users"."id"`,
+		stmt.Values(inserts),
+		"admin",
+		"secret",
+		"client",
+		"1234",
+	)
+
 	// Statements with a returning clause should be unaffected
 	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
@@ -62,4 +78,38 @@ func TestInsert(t *testing.T) {
 		"admin",
 		"1234",
 	)
+}
+
+func TestReturning(t *testing.T) {
+	assert := assert.New(t)
+	db, tx := testSetup(t)
+	defer db.Close()
+	defer tx.Rollback()
+
+	tx.MustExecute(users.Create())
+
+	clients := []user{
+		{Name: "client", Password: "1234", IsActive: false},
+		{Name: "member", Password: "secret", IsActive: true},
+	}
+	stmt := Insert(
+		users.C["name"],
+		users.C["password"],
+		users.C["is_active"],
+	).Returning(
+		users.C["id"],
+		users.C["created_at"],
+	)
+	assert.Nil(tx.QueryAll(stmt.Values(clients), &clients))
+
+	// The IDs should be anything but zero
+	assert.Equal(2, len(clients))
+
+	assert.NotEqual(0, clients[0].ID)
+	assert.Equal("client", clients[0].Name)
+	assert.False(clients[0].CreatedAt.IsZero())
+
+	assert.NotEqual(0, clients[1].ID)
+	assert.Equal("member", clients[1].Name)
+	assert.False(clients[1].CreatedAt.IsZero())
 }

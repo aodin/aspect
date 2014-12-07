@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,12 +21,13 @@ type incompleteUser struct {
 
 // Select incomplete structs
 type testUser struct {
-	ID       int64  `db:"id"`
-	Name     string `db:"name"`
-	Password string `db:"password"`
-	IsActive bool   `db:"is_active"`
-	Contacts []string
-	manager  string
+	ID        int64     `db:"id"`
+	Name      string    `db:"name"`
+	Password  string    `db:"password"`
+	IsActive  bool      `db:"is_active"`
+	CreatedAt time.Time `db:"created_at"`
+	Contacts  []string
+	manager   string
 }
 
 func TestSelect(t *testing.T) {
@@ -79,9 +81,13 @@ func TestSelect(t *testing.T) {
 		users.C["is_active"],
 	).Returning(
 		users.C["id"],
+		users.C["created_at"],
 	)
-	require.Nil(t, tx.QueryOne(returningStmt.Values(client), &client.ID))
-	assert.NotEqual(0, client.ID) // The ID should be anything but zero
+	require.Nil(t, tx.QueryOne(returningStmt.Values(client), &client))
+
+	// The ID and time should be anything but zero
+	assert.NotEqual(0, client.ID)
+	assert.False(client.CreatedAt.IsZero())
 
 	// Select into a struct that has extra columns
 	// TODO Skip unexported fields
@@ -113,8 +119,8 @@ func TestSelect(t *testing.T) {
 	selectByName := users.Select().OrderBy(users.C["name"])
 	values := aspect.Values{}
 	assert.Nil(tx.QueryOne(selectByName, values))
-	assert.Equal(4, len(values))
-	assert.Equal(1, values["id"])
+	assert.Equal(5, len(values))
+	assert.NotEqual(0, values["id"])
 	assert.Equal([]byte("admin"), values["name"]) // Yup, strings are []byte
 	assert.Equal(true, values["is_active"])
 	assert.Equal([]byte{}, values["password"])
@@ -125,8 +131,8 @@ func TestSelect(t *testing.T) {
 	assert.Equal(3, len(allValues))
 
 	values = allValues[2]
-	assert.Equal(4, len(values))
-	assert.Equal(3, values["id"])
+	assert.Equal(5, len(values))
+	assert.NotEqual(0, values["id"])
 	assert.Equal([]byte("client"), values["name"]) // Yup, strings are []byte
 	assert.Equal(false, values["is_active"])
 	assert.Equal([]byte("1234"), values["password"])

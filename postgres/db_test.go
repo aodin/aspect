@@ -8,6 +8,21 @@ import (
 	"github.com/aodin/aspect"
 )
 
+// Return a database connection pool and transaction
+func testSetup(t *testing.T) (*aspect.DB, aspect.Transaction) {
+	// Connect to the database specified in the test db.json config
+	// Default to the Travis CI settings if no file is found
+	conf, err := aspect.ParseTestConfig("./db.json")
+	require.Nil(t, err)
+
+	db, err := aspect.Connect(conf.Driver, conf.Credentials())
+	require.Nil(t, err)
+
+	tx, err := db.Begin()
+	require.Nil(t, err)
+	return db, tx
+}
+
 func TestDB(t *testing.T) {
 	// Connect to the database specified in the test db.json config
 	// Default to the Travis CI settings if no file is found

@@ -41,6 +41,7 @@ func (m *mockScanner) Scan(args ...interface{}) error {
 		)
 	}
 	// Set the args
+	// TODO Set the field to a non-empty value?
 	for i, _ := range args {
 		args[i] = nil
 	}
@@ -125,6 +126,13 @@ func TestResult(t *testing.T) {
 	result = newMockResult("id", "name")
 	var extras []extraUser
 	assert.Nil(result.All(&extras))
+
+	// Scan into arrays with elements
+	result = newMockResult("id", "name")
+	elems := []extraUser{{Password: "1"}, {Password: "2"}}
+	assert.Nil(result.All(&elems))
+	assert.Equal(2, len(elems))
+	assert.Equal("1", elems[0].Password)
 
 	// Test improper types
 	// Non-pointer

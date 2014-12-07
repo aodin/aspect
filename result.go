@@ -171,20 +171,42 @@ func (r *Result) All(arg interface{}) error {
 			return fmt.Errorf("aspect: to select into a untagged struct without matching names, the struct's number of exported fields must match the order (and type) of the expected result")
 		}
 
+		// Is there an existing slice element for this result?
+		n := argElem.Len()
+
+		// The number of results that hve been scanned
+		var scanned int
+
 		for r.rows.Next() {
-			// Create a new slice element
-			newElem := reflect.New(elem).Elem()
+			if scanned < n {
+				// Scan into an existing element
+				newElem := argElem.Index(scanned)
 
-			// Get an interface for each field and save a pointer to it
-			dest := make([]interface{}, len(alias))
-			for i, fieldIndex := range alias {
-				dest[i] = newElem.Field(fieldIndex).Addr().Interface()
-			}
+				// Get an interface for each field and save a pointer to it
+				dest := make([]interface{}, len(alias))
+				for i, fieldIndex := range alias {
+					dest[i] = newElem.Field(fieldIndex).Addr().Interface()
+				}
 
-			if err := r.rows.Scan(dest...); err != nil {
-				return err
+				if err := r.rows.Scan(dest...); err != nil {
+					return err
+				}
+			} else {
+				// Create a new slice element
+				newElem := reflect.New(elem).Elem()
+
+				// Get an interface for each field and save a pointer to it
+				dest := make([]interface{}, len(alias))
+				for i, fieldIndex := range alias {
+					dest[i] = newElem.Field(fieldIndex).Addr().Interface()
+				}
+
+				if err := r.rows.Scan(dest...); err != nil {
+					return err
+				}
+				argElem.Set(reflect.Append(argElem, newElem))
 			}
-			argElem.Set(reflect.Append(argElem, newElem))
+			scanned += 1
 		}
 
 	case reflect.Map:
