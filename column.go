@@ -38,10 +38,16 @@ type ColumnElem struct {
 	name  string
 	table *TableElem
 	typ   Type
+	alias string
 }
 
 var _ TableModifier = ColumnElem{}
 var _ Creatable = ColumnElem{}
+
+func (c ColumnElem) As(alias string) ColumnElem {
+	c.alias = alias
+	return c
+}
 
 // String outputs a parameter-less SQL representation of the column using
 // a neutral dialect. If an error occurred during compilation,
@@ -67,12 +73,21 @@ func (c ColumnElem) SetInner(clause Clause) ColumnElem {
 // Compile produces the dialect specific SQL and adds any parameters
 // in the clause to the given Parameters instance
 func (c ColumnElem) Compile(d Dialect, params *Parameters) (string, error) {
+	var compiled string
+	var err error
 	if c.inner == nil {
 		// Old behavior
-		return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name), nil
+		compiled, err = fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name), nil
 	} else {
-		return c.inner.Compile(d, params)
+		compiled, err = c.inner.Compile(d, params)
 	}
+	if err != nil {
+		return compiled, err
+	}
+	if c.alias != "" {
+		compiled += fmt.Sprintf(` AS "%s"`, c.alias)
+	}
+	return compiled, nil
 }
 
 // Name returns the column's name

@@ -24,6 +24,14 @@ func TestColumnElem(t *testing.T) {
 	expect.SQL(`"users"."chad"`, chad)
 }
 
+func TestColumnAlias(t *testing.T) {
+	expect := NewTester(t, &defaultDialect{})
+	expect.SQL(
+		`"users"."name" AS "user_name"`,
+		users.C["name"].As("user_name"),
+	)
+}
+
 func TestColumnOrdering(t *testing.T) {
 	expect := NewTester(t, &defaultDialect{})
 	expect.SQL(`"users"."id"`, users.C["id"].Orderable())
