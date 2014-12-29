@@ -32,6 +32,7 @@ type Transaction interface {
 	CommitIf(*bool) error
 	MustCommitIf(*bool) bool
 	Rollback() error
+	MustRollbackIf(error)
 }
 
 // Both TX and fakeTX should implement the Connection interface
@@ -313,6 +314,14 @@ func (tx *TX) MustCommitIf(commit *bool) bool {
 	return *commit
 }
 
+func (tx *TX) MustRollbackIf(e error) {
+	if e != nil {
+		if err := tx.Tx.Rollback(); err != nil {
+			log.Panicf("aspect: error during rollback: %s", err)
+		}
+	}
+}
+
 // Execute executes the Executable statement with optional arguments using
 // the current transaction. It returns the database/sql package's Result
 // object, which may contain information on rows affected and last ID inserted
@@ -510,6 +519,10 @@ func (tx *fakeTX) CommitIf(commit *bool) error {
 
 func (tx *fakeTX) MustCommitIf(commit *bool) bool {
 	return false
+}
+
+func (tx *fakeTX) MustRollbackIf(e error) {
+	return
 }
 
 func (tx *fakeTX) Execute(stmt Executable, args ...interface{}) (sql.Result, error) {
