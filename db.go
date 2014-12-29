@@ -32,7 +32,7 @@ type Transaction interface {
 	CommitIf(*bool) error
 	MustCommitIf(*bool) bool
 	Rollback() error
-	MustRollbackIf(error)
+	MustRollbackIf(*bool)
 }
 
 // Both TX and fakeTX should implement the Connection interface
@@ -314,8 +314,8 @@ func (tx *TX) MustCommitIf(commit *bool) bool {
 	return *commit
 }
 
-func (tx *TX) MustRollbackIf(e error) {
-	if e != nil {
+func (tx *TX) MustRollbackIf(rollback *bool) {
+	if *rollback {
 		if err := tx.Tx.Rollback(); err != nil {
 			log.Panicf("aspect: error during rollback: %s", err)
 		}
@@ -521,9 +521,7 @@ func (tx *fakeTX) MustCommitIf(commit *bool) bool {
 	return false
 }
 
-func (tx *fakeTX) MustRollbackIf(e error) {
-	return
-}
+func (tx *fakeTX) MustRollbackIf(rollback *bool) {}
 
 func (tx *fakeTX) Execute(stmt Executable, args ...interface{}) (sql.Result, error) {
 	return tx.tx.Execute(stmt, args...)
