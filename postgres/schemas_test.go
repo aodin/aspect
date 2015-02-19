@@ -22,3 +22,14 @@ var users = aspect.Table("users",
 	aspect.Column("created_at", aspect.Timestamp{Default: Now}),
 	aspect.PrimaryKey("id"),
 )
+
+type hasUUID struct {
+	UUID string `db:"uuid,omitempty"`
+	Name string `db:"name"`
+}
+
+var hasUUIDs = aspect.Table("has_uuids",
+	aspect.Column("uuid", UUID{NotNull: true, Default: GenerateV4}),
+	aspect.Column("name", aspect.String{Length: 32, NotNull: true}),
+	aspect.PrimaryKey("uuid"),
+)

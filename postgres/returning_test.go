@@ -112,4 +112,12 @@ func TestReturning(t *testing.T) {
 	assert.NotEqual(0, clients[1].ID)
 	assert.Equal("member", clients[1].Name)
 	assert.False(clients[1].CreatedAt.IsZero())
+
+	// Test UUID creation
+	tx.MustExecute(hasUUIDs.Create())
+
+	u := hasUUID{Name: "what"}
+	uuidStmt := Insert(hasUUIDs).Values(u).Returning(hasUUIDs.Columns()...)
+	assert.Nil(tx.QueryOne(uuidStmt, &u))
+	assert.NotEqual("", u.UUID, "UUID should have been set")
 }
