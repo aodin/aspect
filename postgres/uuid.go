@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aodin/aspect"
 )
@@ -26,7 +27,10 @@ func (s UUID) Create(d aspect.Dialect) (string, error) {
 		attrs = append(attrs, "NOT NULL")
 	}
 	if s.Default != "" {
-		compiled += fmt.Sprintf(" DEFAULT %s", s.Default)
+		attrs = append(attrs, fmt.Sprintf("DEFAULT %s", s.Default))
+	}
+	if len(attrs) > 0 {
+		compiled += fmt.Sprintf(" %s", strings.Join(attrs, " "))
 	}
 	return compiled, nil
 }
