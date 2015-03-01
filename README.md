@@ -1,9 +1,7 @@
-Aspect
+Aspect [![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/aodin/aspect) [![Build Status](https://travis-ci.org/aodin/aspect.svg?branch=master)](https://travis-ci.org/aodin/aspect)
 ======
 
-[![Build Status](https://travis-ci.org/aodin/aspect.svg?branch=master)](https://travis-ci.org/aodin/aspect)
-
-A relational database toolkit in Go that aims to:
+A relational database toolkit for Go:
 
 * Build complete database schemas
 * Create reusable and cross-dialect SQL statements
@@ -39,28 +37,22 @@ type User struct {
 
 func main() {
     // Connect to an in-memory sqlite3 instance
-    db, err := sql.Connect("sqlite3", ":memory:")
+    conn, err := sql.Connect("sqlite3", ":memory:")
     if err != nil {
-        panic(err)
+        log.Panic(err)
     }
-    defer db.Close()
+    defer conn.Close()
 
     // Create the users table
-    if _, err = db.Execute(Users.Create()); err != nil {
-        panic(err)
-    }
+    conn.MustExecute(Users.Create())
 
     // Insert a user - they can be inserted by value or reference
     admin := User{ID: 1, Name: "admin", Password: "secret"}
-    if _, err = db.Execute(Users.Insert(admin)); err != nil {
-        panic(err)
-    }
+    conn.MustExecute(Users.Insert().Values(admin))
 
     // Select a user - query methods must be given a pointer
     var user User
-    if err = db.QueryOne(Users.Select(), &user); err != nil {
-        panic(err)
-    }
+    conn.MustQueryOne(Users.Select(), &user)
     log.Println(user)
 }
 ```
@@ -83,13 +75,13 @@ Statements that do not return selections can be run with the `Execute` method of
 A successful `Connect` will return a database connection pool ready for use. Its `Execute` method returns an instance of `database/sql` package's `Result` and an error if one occurred:
 
 ```go
-db, err := sql.Connect("sqlite3", ":memory:")
+conn, err := sql.Connect("sqlite3", ":memory:")
 if err != nil {
-    panic(err)
+    log.Panic(err)
 }
-defer db.Close()
+defer conn.Close()
 
-result, err := db.Execute(Users.Create())
+result, err := conn.Execute(Users.Create())
 ```
 
 Results are often ignored, as in the `Quickstart` example above.
@@ -116,7 +108,7 @@ A `CREATE TABLE` statement can be created with:
 Users.Create()
 ```
 
-And will output the following SQL with its `String()` method (a dialect neutral version) or with `db.String()` (a dialect specific version):
+And will output the following SQL with its `String()` method (a dialect neutral version) or with `conn.String()` (a dialect specific version):
 
 ```sql
 CREATE TABLE "users" (
@@ -313,8 +305,8 @@ Results can be returned directly into structs:
 
 ```go
 var users []User
-db.QueryAll(Users.Select(), &users)
-fmt.Println(users)
+conn.MustQueryAll(Users.Select(), &users)
+log.Println(users)
 // [1: admin 2: client 3: daemon]
 ```
 
@@ -327,13 +319,13 @@ type username struct {
 }
 
 var usernames []username
-db.QueryAll(sql.Select(Users.C["name"]), &usernames)
+conn.MustQueryAll(sql.Select(Users.C["name"]), &usernames)
 ```
 
 Single column queries can be returned into slice types:
 
 ```go
-s := aspect.Select(Users.C["id"]).OrderBy(Users.C["id"].Desc())
+stmt := sql.Select(Users.C["id"]).OrderBy(Users.C["id"].Desc())
 ```
 
 ```sql
@@ -342,8 +334,8 @@ SELECT "users"."id" FROM "users" ORDER BY "users"."id" DESC
 
 ```go
 var ids []int64
-db.QueryAll(s, &ids)
-fmt.Println(ids)
+conn.MustQueryAll(s, &ids)
+log.Println(ids)
 // [3, 2, 1]
 ```
 
@@ -351,14 +343,14 @@ Single results can also be queried into instantiated instances of `Values`, whic
 
 ```go
 result := sql.Values{}
-db.QueryOne(Users.Select(), result)
+conn.MustQueryOne(Users.Select(), result)
 ```
 
 Or multiple results with a pointer to a slice of `Values`:
 
 ```go
 var results []sql.Values
-db.QueryAll(Users.Select(), &results)
+conn.QueryAll(Users.Select(), &results)
 ```
 
 A warning, however: string results are added to the map as `[]byte` types. Since this is done internally by the `database/sql` standard library package, this is unlikely to change in the future.
@@ -368,7 +360,7 @@ A warning, however: string results are added to the map as `[]byte` types. Since
 To get string output, simply cast the value to a `string` after asserting that it is a `[]byte`:
 
 ```go
-fmt.Println(string(result["name"].([]byte)))
+log.Println(string(result["name"].([]byte)))
 // Totti
 ```
 
@@ -441,7 +433,7 @@ expect.Error(sql.Select(users.C["does-not-exist"]))
 
 Happy Hacking!
 
-aodin, 2014
+aodin, 2014-15
 
 > Death and Light are everywhere, always, and they begin, end, strive,
 > attend, into and upon the Dream of the Nameless that is the world,
