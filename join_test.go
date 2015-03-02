@@ -22,6 +22,30 @@ var relations = Table("relations",
 	Unique("a_id", "b_id"),
 )
 
+func TestJoinOnStmt(t *testing.T) {
+	expect := NewTester(t, &defaultDialect{})
+
+	expect.SQL(
+		`SELECT "a"."id", "a"."value" FROM "a" JOIN "relations" ON "a"."id" = "relations"."a_id" AND "a"."id" = $1`,
+		Select(tableA).JoinOn(
+			relations,
+			tableA.C["id"].Equals(relations.C["a_id"]),
+			tableA.C["id"].Equals(2),
+		),
+		2,
+	)
+
+	expect.SQL(
+		`SELECT "a"."id", "a"."value" FROM "a" LEFT OUTER JOIN "relations" ON "a"."id" = "relations"."a_id" AND "a"."id" = $1`,
+		Select(tableA).LeftOuterJoinOn(
+			relations,
+			tableA.C["id"].Equals(relations.C["a_id"]),
+			tableA.C["id"].Equals(2),
+		),
+		2,
+	)
+}
+
 func TestJoinStmt(t *testing.T) {
 	expect := NewTester(t, &defaultDialect{})
 

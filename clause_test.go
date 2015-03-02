@@ -11,6 +11,12 @@ func TestClauses(t *testing.T) {
 	id := users.C["id"]
 	name := users.C["name"]
 
+	// Column equality - used in JOIN ... ON ... statements
+	expect.SQL(
+		`"users"."id" = "users"."name"`,
+		id.Equals(name),
+	)
+
 	// Column clause
 	column := ColumnClause{table: users, name: name.Name()}
 	expect.SQL(`"users"."name"`, column)

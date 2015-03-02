@@ -44,6 +44,12 @@ type ColumnElem struct {
 var _ TableModifier = ColumnElem{}
 var _ Creatable = ColumnElem{}
 
+// clause generates a ColumnClause from this ColumnElem
+func (c ColumnElem) clause() ColumnClause {
+	return ColumnClause{table: c.table, name: c.name}
+}
+
+// As specifies an alias for this ColumnElem
 func (c ColumnElem) As(alias string) ColumnElem {
 	c.alias = alias
 	return c
@@ -147,11 +153,23 @@ func (c ColumnElem) NullsLast() OrderedColumn {
 // Equals creates an equals clause that can be used in conditional clauses.
 //  table.Select().Where(table.C["id"].Equals(3))
 func (c ColumnElem) Equals(i interface{}) BinaryClause {
-	return BinaryClause{
-		Pre:  c,
-		Post: &Parameter{i},
-		Sep:  " = ",
+	// If the given parameter is a ColumnElem, wrap the post parameter
+	// in a ColumnClause, not a Parameter
+	switch t := i.(type) {
+	case ColumnElem:
+		return BinaryClause{
+			Pre:  c,
+			Post: t.clause(),
+			Sep:  " = ",
+		}
+	default:
+		return BinaryClause{
+			Pre:  c,
+			Post: &Parameter{i},
+			Sep:  " = ",
+		}
 	}
+
 }
 
 // DoesNotEqual creates a does not equal clause that can be used in

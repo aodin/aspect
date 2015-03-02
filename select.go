@@ -15,7 +15,8 @@ type Selectable interface {
 type SelectStmt struct {
 	tables  []*TableElem
 	columns []ColumnElem
-	joins   []JoinStmt
+	joins   []JoinStmt // Broken and deprecated
+	join    []JoinOnStmt
 	cond    Clause
 	groupBy []ColumnElem
 	order   []OrderedColumn
@@ -68,7 +69,9 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 		strings.Join(stmt.CompileColumns(d, params), ", "),
 		strings.Join(stmt.CompileTables(d, params), ", "),
 	)
-	if stmt.joins != nil && len(stmt.joins) > 0 {
+
+	// The old join syntax, which is broken and deprecated
+	if len(stmt.joins) > 0 {
 		for _, join := range stmt.joins {
 			jc, err := join.Compile(d, params)
 			if err != nil {
@@ -77,6 +80,19 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 			compiled += jc
 		}
 	}
+
+	// JOIN ... ON ...
+	if len(stmt.join) > 0 {
+		for _, j := range stmt.join {
+			jc, err := j.Compile(d, params)
+			if err != nil {
+				return "", err
+			}
+			compiled += jc
+		}
+	}
+
+	// WHERE ...
 	if stmt.cond != nil {
 		cc, err := stmt.cond.Compile(d, params)
 		if err != nil {
@@ -84,7 +100,9 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 		}
 		compiled += fmt.Sprintf(" WHERE %s", cc)
 	}
-	if stmt.groupBy != nil && len(stmt.groupBy) > 0 {
+
+	// GROUP BY ...
+	if len(stmt.groupBy) > 0 {
 		groupBy := make([]string, len(stmt.groupBy))
 		for i, column := range stmt.groupBy {
 			// TODO Errors!
@@ -92,7 +110,9 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 		}
 		compiled += fmt.Sprintf(" GROUP BY %s", strings.Join(groupBy, ", "))
 	}
-	if stmt.order != nil && len(stmt.order) > 0 {
+
+	// ORDER BY ...
+	if len(stmt.order) > 0 {
 		order := make([]string, len(stmt.order))
 		for i, column := range stmt.order {
 			// TODO Errors!
@@ -100,9 +120,13 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 		}
 		compiled += fmt.Sprintf(" ORDER BY %s", strings.Join(order, ", "))
 	}
+
+	// LIMIT ...
 	if stmt.limit != 0 {
 		compiled += fmt.Sprintf(" LIMIT %d", stmt.limit)
 	}
+
+	// OFFSET ...
 	if stmt.offset != 0 {
 		compiled += fmt.Sprintf(" OFFSET %d", stmt.offset)
 	}
@@ -112,7 +136,7 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 // Join adds a JOIN ... ON to the SELECT statement. The second column parameter
 // will be used as the join table and will be removed from the statement's
 // FROM selection.
-// TODO A smarter result for determining the JOIN table.
+// This method is broken and deprecated.
 func (stmt SelectStmt) Join(pre, post ColumnElem) SelectStmt {
 	// Get the table of the pre element
 	preTable := pre.Table()
@@ -134,12 +158,37 @@ func (stmt SelectStmt) Join(pre, post ColumnElem) SelectStmt {
 	}
 
 	// Add the join structure to the select
-	if stmt.joins == nil {
-		stmt.joins = make([]JoinStmt, 0)
-	}
 	stmt.joins = append(
 		stmt.joins,
 		JoinStmt{method: "JOIN", pre: pre, post: post, table: postTable},
+	)
+	return stmt
+}
+
+// Join adds a JOIN ... ON ... clause to the SELECT statement.
+// TODO At least on clause should be required
+func (stmt SelectStmt) JoinOn(table *TableElem, clauses ...Clause) SelectStmt {
+	stmt.join = append(
+		stmt.join,
+		JoinOnStmt{
+			method:      "JOIN",
+			table:       table,
+			ArrayClause: ArrayClause{Clauses: clauses, Sep: " AND "},
+		},
+	)
+	return stmt
+}
+
+// Join adds a LEFT OUTER JOIN ... ON ... clause to the SELECT statement.
+// TODO At least on clause should be required
+func (stmt SelectStmt) LeftOuterJoinOn(table *TableElem, clauses ...Clause) SelectStmt {
+	stmt.join = append(
+		stmt.join,
+		JoinOnStmt{
+			method:      "LEFT OUTER JOIN",
+			table:       table,
+			ArrayClause: ArrayClause{Clauses: clauses, Sep: " AND "},
+		},
 	)
 	return stmt
 }
