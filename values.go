@@ -1,6 +1,10 @@
 package aspect
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/stretchr/testify/assert"
+)
 
 // Values is a map of column names to parameters.
 type Values map[string]interface{}
@@ -20,6 +24,18 @@ func (v Values) Compile(d Dialect, params *Parameters) (string, error) {
 	return ArrayClause{Clauses: clauses, Sep: ", "}.Compile(d, params)
 }
 
+// Diff returns the values in v that differ from the values in other.
+// ISO 31-11: v \ other
+func (v Values) Diff(other Values) Values {
+	diff := Values{}
+	for key, value := range v {
+		if !assert.ObjectsAreEqual(value, other[key]) {
+			diff[key] = value
+		}
+	}
+	return diff
+}
+
 // Keys returns the keys of the Values map in alphabetical order.
 func (v Values) Keys() []string {
 	keys := make([]string, len(v))
@@ -30,4 +46,9 @@ func (v Values) Keys() []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+func (v Values) String() string {
+	compiled, _ := v.Compile(&defaultDialect{}, Params())
+	return compiled
 }
