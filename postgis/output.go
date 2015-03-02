@@ -47,9 +47,9 @@ func AsKMLVersion(c aspect.ColumnElem, version, maxdigits int) aspect.ColumnElem
 		aspect.FuncClause{
 			Inner: aspect.ArrayClause{
 				Clauses: []aspect.Clause{
-					aspect.IntClause{version},
+					aspect.IntClause{D: version},
 					c.Inner(),
-					aspect.IntClause{maxdigits},
+					aspect.IntClause{D: maxdigits},
 				},
 				Sep: ", ",
 			},

@@ -2,6 +2,7 @@ package aspect
 
 import (
 	"fmt"
+	"log"
 )
 
 // Dialect is the common interface that all database drivers must implement.
@@ -22,10 +23,10 @@ var dialects = make(map[string]Dialect)
 // RegisterDialect adds the given Dialect to the registry at the given name.
 func RegisterDialect(name string, d Dialect) {
 	if d == nil {
-		panic("aspect: unable to register a nil Dialect")
+		log.Panic("aspect: unable to register a nil Dialect")
 	}
 	if _, duplicate := dialects[name]; duplicate {
-		panic("aspect: a Dialect with this name already exists")
+		log.Panic("aspect: a Dialect with this name already exists")
 	}
 	dialects[name] = d
 }
@@ -35,7 +36,10 @@ func RegisterDialect(name string, d Dialect) {
 func GetDialect(name string) (Dialect, error) {
 	d, ok := dialects[name]
 	if !ok {
-		return nil, fmt.Errorf("aspect: unknown Dialect %s (did you remember to import it?)", name)
+		return nil, fmt.Errorf(
+			"aspect: unknown Dialect %s (did you remember to import it?)",
+			name,
+		)
 	}
 	return d, nil
 }
@@ -45,7 +49,7 @@ func GetDialect(name string) (Dialect, error) {
 func MustGetDialect(name string) Dialect {
 	dialect, err := GetDialect(name)
 	if err != nil {
-		panic(err.Error())
+		log.Panic(err)
 	}
 	return dialect
 }

@@ -2,6 +2,7 @@ package aspect
 
 import (
 	"fmt"
+	"log"
 )
 
 type fkAction string
@@ -139,14 +140,14 @@ func (fk ForeignKeyElem) Type() Type {
 func ForeignKey(name string, fk ColumnElem, ts ...Type) ForeignKeyElem {
 	// TODO self-referential FKs will need a work around
 	if fk.table == nil {
-		panic("aspect: foreign keys must reference a column with a table already assigned")
+		log.Panic("aspect: foreign keys must reference a column with a table already assigned")
 	}
 
 	// Set the default type of the foreign key to the referencing column, but
 	// allow the type to be overridden by a single optional type
 	t := fk.typ
 	if len(ts) > 1 {
-		panic("aspect: foreign keys may only have one overriding type")
+		log.Panic("aspect: foreign keys may only have one overriding type")
 	} else if len(ts) == 1 {
 		t = ts[0]
 	}

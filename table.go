@@ -1,6 +1,9 @@
 package aspect
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 // TableModifer is an interface with a single method Modify, which allows
 // elements declared in a table schema to modify the parent table.
@@ -125,7 +128,7 @@ func (table *TableElem) Update() UpdateStmt {
 // interface.
 func Table(name string, elements ...TableModifier) *TableElem {
 	if err := validateTableName(name); err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	table := &TableElem{
@@ -137,7 +140,7 @@ func Table(name string, elements ...TableModifier) *TableElem {
 	for _, element := range elements {
 		// Panic on error since little can be done with a bad schema
 		if err := element.Modify(table); err != nil {
-			panic(err)
+			log.Panic(err)
 		}
 	}
 	return table

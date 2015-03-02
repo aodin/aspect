@@ -2,9 +2,12 @@ package aspect
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestOrder(t *testing.T) {
+	assert := assert.New(t)
 	expect := NewTester(t, &defaultDialect{})
 
 	// Asc is implied
@@ -24,12 +27,5 @@ func TestOrder(t *testing.T) {
 	expect.SQL(`"users"."id" NULLS LAST`, o.Asc().NullsLast())
 
 	// Calling Orderable on an OrderableColumn should return a copy of itself
-	copy := o.Orderable()
-	if copy.inner.Name() != o.inner.Name() {
-		t.Fatal(
-			"unexpected inner name during orderable copy: %s != %s",
-			copy.inner.Name(),
-			o.inner.Name(),
-		)
-	}
+	assert.Equal(o.inner.Name(), o.Orderable().inner.Name())
 }

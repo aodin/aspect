@@ -34,7 +34,7 @@ func Within(c aspect.ColumnElem, s Shape) aspect.Clause {
 func DWithin(c aspect.ColumnElem, s Shape, d int) aspect.Clause {
 	return aspect.FuncClause{
 		Inner: aspect.ArrayClause{
-			Clauses: []aspect.Clause{s, c, aspect.IntClause{d}},
+			Clauses: []aspect.Clause{s, c, aspect.IntClause{D: d}},
 			Sep:     ", ",
 		},
 		F: "ST_DWithin",

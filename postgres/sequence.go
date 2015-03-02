@@ -40,7 +40,7 @@ func (stmt AlterSeqStmt) RenameTo(name string) AlterSeqStmt {
 func (stmt AlterSeqStmt) RestartWith(n int) AlterSeqStmt {
 	stmt.clause = aspect.BinaryClause{
 		Sep:  "RESTART WITH ",
-		Post: aspect.IntClause{n},
+		Post: aspect.IntClause{D: n},
 	}
 	return stmt
 }

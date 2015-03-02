@@ -304,7 +304,11 @@ func (s InsertStmt) Values(arg interface{}) InsertStmt {
 			return s
 		}
 
-		s.err = fmt.Errorf("aspect: unsupported type for INSERT %s - values must be of type struct, Values, or a slice of either")
+		s.err = fmt.Errorf(
+			"aspect: unsupported type %T for INSERT %s - values must be of type struct, Values, or a slice of either",
+			arg,
+			s,
+		)
 
 	case reflect.Map:
 		// The only allowed map type is Values
