@@ -24,6 +24,23 @@ var childrenCascade = Table("children",
 	ForeignKey("p_id", parents.C["id"]).OnDelete(Cascade).OnUpdate(Cascade),
 )
 
+var messages = Table("messages",
+	Column("id", Integer{NotNull: true, PrimaryKey: true}),
+	SelfForeignKey("parent_id", "id", Integer{}),
+)
+
+func TestSelfForeignKey(t *testing.T) {
+	expect := NewTester(t, &defaultDialect{})
+
+	expect.SQL(
+		`CREATE TABLE "messages" (
+  "id" INTEGER PRIMARY KEY NOT NULL,
+  "parent_id" INTEGER REFERENCES messages("id")
+);`,
+		messages.Create(),
+	)
+}
+
 func TestForeignKeyElement(t *testing.T) {
 	assert := assert.New(t)
 

@@ -138,7 +138,6 @@ func (fk ForeignKeyElem) Type() Type {
 // will inherit its type from the given column's type, but a different
 // type can be overridden by a single optional type.
 func ForeignKey(name string, fk ColumnElem, ts ...Type) ForeignKeyElem {
-	// TODO self-referential FKs will need a work around
 	if fk.table == nil {
 		log.Panic("aspect: foreign keys must reference a column with a table already assigned")
 	}
@@ -156,5 +155,87 @@ func ForeignKey(name string, fk ColumnElem, ts ...Type) ForeignKeyElem {
 		col:      fk,
 		typ:      t,
 		refTable: fk.table,
+	}
+}
+
+type SelfForeignKeyElem struct {
+	ForeignKeyElem
+	ref string
+}
+
+func (fk SelfForeignKeyElem) Modify(t *TableElem) error {
+	if t == nil {
+		return fmt.Errorf("aspect: columns cannot modify a nil table")
+	}
+
+	if fk.ForeignKeyElem.table != nil {
+		return fmt.Errorf(
+			"aspect: foreign keys cannot be assigned to multiple tables",
+		)
+	}
+
+	// The ref column must also exist on the column
+	if _, exists := t.C[fk.ref]; !exists {
+		return fmt.Errorf(
+			"aspect: no column with the name %s exists in the table %s",
+			fk.ref,
+			t.Name,
+		)
+	}
+
+	fk.ForeignKeyElem.col = t.C[fk.ref]
+	fk.ForeignKeyElem.table = t
+	fk.ForeignKeyElem.refTable = t
+
+	// If the type of fk is nil, use the column's type
+	if fk.ForeignKeyElem.typ == nil {
+		fk.ForeignKeyElem.typ = fk.ForeignKeyElem.col.typ
+	}
+
+	// Column names must validate
+	if err := validateColumnName(fk.ForeignKeyElem.name); err != nil {
+		return err
+	}
+
+	// Create the column for this table
+	column := ColumnElem{
+		inner: ColumnClause{name: fk.ForeignKeyElem.name, table: t},
+		name:  fk.ForeignKeyElem.name,
+		table: t,
+		typ:   fk.ForeignKeyElem.typ,
+	}
+
+	// Add the column to the unique set of columns for this table
+	if duplicate := t.C.Add(column); duplicate != nil {
+		return duplicate
+	}
+
+	// Add the name to the table order
+	t.order = append(t.order, column.name)
+
+	// Add the fk to the create array
+	t.creates = append(t.creates, fk)
+
+	// Add it to the list of foreign keys
+	t.fks = append(t.fks, fk.ForeignKeyElem)
+
+	return nil
+}
+
+func SelfForeignKey(name, ref string, ts ...Type) SelfForeignKeyElem {
+	// Set the default type of the foreign key to the referencing column, but
+	// allow the type to be overridden by a single optional type
+	var t Type
+	if len(ts) > 1 {
+		log.Panic("aspect: foreign keys may only have one overriding type")
+	} else if len(ts) == 1 {
+		t = ts[0]
+	}
+	return SelfForeignKeyElem{
+		ForeignKeyElem: ForeignKeyElem{
+			name: name,
+			typ:  t,
+		},
+		ref: ref,
 	}
 }
