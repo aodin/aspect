@@ -21,7 +21,7 @@ func TestDelete(t *testing.T) {
 	)
 
 	expect.SQL(
-		`DELETE FROM "users" WHERE "users"."id" = $1 AND "users"."name" = $2`,
+		`DELETE FROM "users" WHERE ("users"."id" = $1 AND "users"."name" = $2)`,
 		users.Delete().Where(
 			users.C["id"].Equals(1),
 			users.C["name"].Equals("admin"),

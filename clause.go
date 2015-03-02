@@ -150,10 +150,12 @@ func (c ArrayClause) Compile(d Dialect, params *Parameters) (string, error) {
 	return strings.Join(compiled, c.Sep), nil
 }
 
-func AllOf(clauses ...Clause) ArrayClause {
-	return ArrayClause{clauses, " AND "}
+// AllOf joins the given clauses with 'AND' and wraps them in parentheses
+func AllOf(clauses ...Clause) Clause {
+	return FuncClause{Inner: ArrayClause{clauses, " AND "}}
 }
 
-func AnyOf(clauses ...Clause) ArrayClause {
-	return ArrayClause{clauses, " OR "}
+// AnyOf joins the given clauses with 'OR' and wraps them in parentheses
+func AnyOf(clauses ...Clause) Clause {
+	return FuncClause{Inner: ArrayClause{clauses, " OR "}}
 }

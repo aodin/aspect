@@ -38,21 +38,28 @@ func TestClauses(t *testing.T) {
 
 	// Array clause of binary clauses
 	expect.SQL(
-		`"users"."id" < $1 AND "users"."id" > $2`,
+		`("users"."id" < $1 AND "users"."id" > $2)`,
 		AllOf(id.LessThan(5), id.GreaterThan(1)),
 		5,
 		1,
 	)
+	expect.SQL(
+		`(("users"."id" < $1 AND "users"."id" > $2) OR "users"."id" = $3)`,
+		AnyOf(AllOf(id.LessThan(5), id.GreaterThan(1)), id.Equals(7)),
+		5,
+		1,
+		7,
+	)
 
 	// Composite clauses
 	expect.SQL(
-		`"users"."id" >= $1 AND "users"."id" <= $2`,
+		`("users"."id" >= $1 AND "users"."id" <= $2)`,
 		id.Between(2, 5),
 		2,
 		5,
 	)
 	expect.SQL(
-		`"users"."id" < $1 OR "users"."id" > $2`,
+		`("users"."id" < $1 OR "users"."id" > $2)`,
 		id.NotBetween(2, 5),
 		2,
 		5,

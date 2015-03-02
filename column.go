@@ -308,11 +308,11 @@ func (c ColumnElem) In(args interface{}) BinaryClause {
 	}
 }
 
-func (c ColumnElem) Between(a, b interface{}) ArrayClause {
+func (c ColumnElem) Between(a, b interface{}) Clause {
 	return AllOf(c.GTE(a), c.LTE(b))
 }
 
-func (c ColumnElem) NotBetween(a, b interface{}) ArrayClause {
+func (c ColumnElem) NotBetween(a, b interface{}) Clause {
 	return AnyOf(c.LessThan(a), c.GreaterThan(b))
 }
 

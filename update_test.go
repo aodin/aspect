@@ -38,7 +38,7 @@ func TestUpdate(t *testing.T) {
 	)
 
 	expect.SQL(
-		`UPDATE "users" SET "name" = $1 WHERE "users"."id" = $2 AND "users"."name" = $3`,
+		`UPDATE "users" SET "name" = $1 WHERE ("users"."id" = $2 AND "users"."name" = $3)`,
 		Update(users).Values(Values{"name": "client"}).Where(
 			users.C["id"].Equals(1),
 			users.C["name"].Equals("admin"),
