@@ -38,7 +38,6 @@ func TestFields(t *testing.T) {
 		field{
 			index:   []int{0, 0},
 			column:  "id",
-			table:   "",
 			options: []string{"omitempty"},
 		},
 		fields[0],
@@ -49,7 +48,6 @@ func TestFields(t *testing.T) {
 		field{
 			index:   []int{1},
 			column:  "name",
-			table:   "",
 			options: []string{},
 		},
 		fields[1],
@@ -60,7 +58,6 @@ func TestFields(t *testing.T) {
 		field{
 			index:   []int{2, 0},
 			column:  "created_at",
-			table:   "",
 			options: []string{"omitempty"},
 		},
 		fields[2],
@@ -71,9 +68,31 @@ func TestFields(t *testing.T) {
 		field{
 			index:   []int{2, 1},
 			column:  "updated_at",
-			table:   "",
 			options: []string{},
 		},
 		fields[3],
 	)
+}
+
+func TestAlignColumns(t *testing.T) {
+	assert := assert.New(t)
+
+	fields := []field{
+		field{
+			index:  []int{1},
+			column: "name",
+		},
+		field{
+			index:  []int{0},
+			column: "id",
+		},
+	}
+
+	columns := []string{"id", "name", "age"}
+	aligned := AlignColumns(columns, fields)
+	require.Equal(t, 3, len(aligned))
+
+	assert.Equal(fields[1], aligned[0])
+	assert.Equal(fields[0], aligned[1])
+	assert.False(aligned[2].Exists())
 }

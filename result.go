@@ -85,25 +85,33 @@ func (r *Result) One(arg interface{}) error {
 
 	switch elem.Kind() {
 	case reflect.Struct:
-		// Build the alias object from the columns and given elem
-		alias := selectAlias(columns, reflect.TypeOf(arg).Elem())
-
-		// The alias must be equal in length to the columns or if
-		// the alias returned empty, the number of exported fields
-		// must equal the columns.
-		if len(alias) != len(columns) {
-			alias = selectIndex(columns, reflect.TypeOf(arg).Elem())
+		// Build the fields of the given struct
+		// TODO this operation could be cached
+		fields, err := SelectFields(arg)
+		if err != nil {
+			return err
 		}
 
-		// If the alias still does not match the number of columns, error
-		if len(alias) != len(columns) {
-			return fmt.Errorf("aspect: to select into a untagged struct without matching names, the struct's number of exported fields must match the order (and type) of the expected result")
-		}
+		// Align the fields to the selected columns
+		// This will discard unmatched fields
+		// TODO struct mode? error if not all columns were matched?
+		aligned := AlignColumns(columns, fields)
 
 		// Get an interface for each field and save a pointer to it
-		dest := make([]interface{}, len(alias))
-		for i, fieldIndex := range alias {
-			dest[i] = elem.Field(fieldIndex).Addr().Interface()
+		dest := make([]interface{}, len(aligned))
+		for i, field := range aligned {
+			// If the field does not exist, the value will be discarded
+			if !field.Exists() {
+				dest[i] = &dest[i]
+				continue
+			}
+
+			// Recursively get an interface to the elem's fields
+			var fieldElem reflect.Value = elem
+			for _, index := range field.index {
+				fieldElem = fieldElem.Field(index)
+			}
+			dest[i] = fieldElem.Addr().Interface()
 		}
 
 		if err := r.rows.Scan(dest...); err != nil {
@@ -156,20 +164,15 @@ func (r *Result) All(arg interface{}) error {
 
 	switch elem.Kind() {
 	case reflect.Struct:
-		// Build the alias object from the columns and given elem
-		alias := selectAlias(columns, elem)
 
-		// The alias must be equal in length to the columns or if
-		// the alias returned empty, the number of exported fields
-		// must equal the columns.
-		if len(alias) != len(columns) {
-			alias = selectIndex(columns, elem)
-		}
+		// Build the fields of the given struct
+		// TODO this operation could be cached
+		fields := SelectFieldsFromElem(elem)
 
-		// If the alias still does not match the number of columns, error
-		if len(alias) != len(columns) {
-			return fmt.Errorf("aspect: to select into a untagged struct without matching names, the struct's number of exported fields must match the order (and type) of the expected result")
-		}
+		// Align the fields to the selected columns
+		// This will discard unmatched fields
+		// TODO struct mode? error if not all columns were matched?
+		aligned := AlignColumns(columns, fields)
 
 		// Is there an existing slice element for this result?
 		n := argElem.Len()
@@ -183,9 +186,20 @@ func (r *Result) All(arg interface{}) error {
 				newElem := argElem.Index(scanned)
 
 				// Get an interface for each field and save a pointer to it
-				dest := make([]interface{}, len(alias))
-				for i, fieldIndex := range alias {
-					dest[i] = newElem.Field(fieldIndex).Addr().Interface()
+				dest := make([]interface{}, len(aligned))
+				for i, field := range aligned {
+					// If the field does not exist, the value will be discarded
+					if !field.Exists() {
+						dest[i] = &dest[i]
+						continue
+					}
+
+					// Recursively get an interface to the elem's fields
+					var fieldElem reflect.Value = newElem
+					for _, index := range field.index {
+						fieldElem = fieldElem.Field(index)
+					}
+					dest[i] = fieldElem.Addr().Interface()
 				}
 
 				if err := r.rows.Scan(dest...); err != nil {
@@ -196,9 +210,20 @@ func (r *Result) All(arg interface{}) error {
 				newElem := reflect.New(elem).Elem()
 
 				// Get an interface for each field and save a pointer to it
-				dest := make([]interface{}, len(alias))
-				for i, fieldIndex := range alias {
-					dest[i] = newElem.Field(fieldIndex).Addr().Interface()
+				dest := make([]interface{}, len(aligned))
+				for i, field := range aligned {
+					// If the field does not exist, the value will be discarded
+					if !field.Exists() {
+						dest[i] = &dest[i]
+						continue
+					}
+
+					// Recursively get an interface to the elem's fields
+					var fieldElem reflect.Value = newElem
+					for _, index := range field.index {
+						fieldElem = fieldElem.Field(index)
+					}
+					dest[i] = fieldElem.Addr().Interface()
 				}
 
 				if err := r.rows.Scan(dest...); err != nil {

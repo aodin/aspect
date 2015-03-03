@@ -18,16 +18,23 @@ type field struct {
 	options options
 }
 
-func SelectFields(v interface{}) (fields []field, err error) {
+func (f field) Exists() bool {
+	return len(f.index) > 0
+}
+
+func SelectFields(v interface{}) ([]field, error) {
 	value := reflect.ValueOf(v)
 	if value.Kind() != reflect.Ptr {
-		err = fmt.Errorf(
+		return nil, fmt.Errorf(
 			"aspect: can only take select into pointer values, received %s",
 			value.Kind(),
 		)
-		return
 	}
 	return recurse([]int{}, reflect.TypeOf(v).Elem()), nil
+}
+
+func SelectFieldsFromElem(elem reflect.Type) []field {
+	return recurse([]int{}, elem)
 }
 
 func recurse(indexes []int, elem reflect.Type) (fields []field) {
@@ -66,4 +73,20 @@ func recurse(indexes []int, elem reflect.Type) (fields []field) {
 		fields = append(fields, field)
 	}
 	return
+}
+
+// AlignColumns will reorder the given fields array to match the columns.
+// Columns that do not match fields will be given empty field structs.
+func AlignColumns(columns []string, fields []field) []field {
+	aligned := make([]field, len(columns))
+	// TODO aliases? tables? check if the columns first matches the fields?
+	for i, column := range columns {
+		for _, field := range fields {
+			if field.column == column {
+				aligned[i] = field
+				break
+			}
+		}
+	}
+	return aligned
 }

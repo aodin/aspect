@@ -146,13 +146,14 @@ func TestResult(t *testing.T) {
 	assert.NotNil(result.All(&ids))
 
 	// No tags and unequal number of fields
-	result = newMockResult("id", "name")
-	var tooManyOne tooManyFields
-	assert.NotNil(result.One(&tooManyOne))
+	// 2015-03-03: fields branch - no longer an error
+	// result = newMockResult("id", "name")
+	// var tooManyOne tooManyFields
+	// assert.NotNil(result.One(&tooManyOne))
 
-	result = newMockResult("id", "name")
-	var tooManyAll []tooManyFields
-	assert.NotNil(result.All(&tooManyAll))
+	// result = newMockResult("id", "name")
+	// var tooManyAll []tooManyFields
+	// assert.NotNil(result.All(&tooManyAll))
 
 	// Return no results
 	result = newMockResultN(0, "id", "name")
