@@ -24,7 +24,7 @@ func (p *Parameters) Len() int {
 
 // Params creates a new Parameters instance
 func Params() *Parameters {
-	return &Parameters{args: make([]interface{}, 0)}
+	return &Parameters{}
 }
 
 // Parameter stores a single value of type interface{}
