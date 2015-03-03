@@ -72,3 +72,14 @@ func TestSelect(t *testing.T) {
 	// Select a column that doesn't exist
 	expect.Error(Select(users.C["what"]))
 }
+
+func TestSelectTable(t *testing.T) {
+	expect := NewTester(t, &defaultDialect{})
+
+	expect.SQL(
+		`SELECT "users"."id", "users"."name", "users"."password", "views"."timestamp" FROM "users" JOIN "views" ON "views"."user_id" = "users"."id"`,
+		users.Select(views.C["timestamp"]).JoinOn(
+			views, views.C["user_id"].Equals(users.C["id"]),
+		),
+	)
+}

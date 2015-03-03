@@ -249,12 +249,47 @@ func (stmt SelectStmt) Offset(offset int) SelectStmt {
 	return stmt
 }
 
+// From allows the SelectStmt's FROM clause to be manually specified
+// Since selections and joins will change the statement's currently selected
+// tables, this method should be added to the end of a selection chain.
+func (stmt SelectStmt) From(tables ...*TableElem) SelectStmt {
+	stmt.tables = tables
+	return stmt
+}
+
+// SelectTable creates a SELECT statement from the given table and its
+// columns. Any additional selections will not have their table added to
+// the SelectStmt's tables field - they must be added with the JoinOn syntax.
+// To perform selections using cartesian logic, use Select() instead.
+func SelectTable(table *TableElem, selects ...Selectable) (stmt SelectStmt) {
+	stmt.tables = []*TableElem{table}
+	stmt.columns = table.Columns()
+
+	// Add any additional selections
+	for _, selection := range selects {
+		if selection == nil {
+			stmt.err = fmt.Errorf("aspect: received a nil selectable - do the columns or tables you selected exist?")
+			return
+		}
+		stmt.columns = append(stmt.columns, selection.Selectable()...)
+	}
+
+	// Confirm that all tables exist
+	for _, column := range stmt.columns {
+		if column.Name() == "" {
+			stmt.err = fmt.Errorf("aspect: selected column does not exist")
+			return
+		}
+	}
+	return
+}
+
 // Select generates a new SELECT statement from the given columns and tables.
 func Select(selections ...Selectable) (stmt SelectStmt) {
 	columns := make([]ColumnElem, 0)
 	for _, selection := range selections {
 		if selection == nil {
-			stmt.err = fmt.Errorf("aspect: insert received a nil selectable - do the columns or tables you selected exist?")
+			stmt.err = fmt.Errorf("aspect: received a nil selectable - do the columns or tables you selected exist?")
 			return
 		}
 		columns = append(columns, selection.Selectable()...)

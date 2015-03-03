@@ -84,7 +84,15 @@ func (table *TableElem) Drop() DropStmt {
 
 // Select is an alias for Select(table). It will generate a SELECT statement
 // for all columns in the table.
-func (table *TableElem) Select() SelectStmt {
+func (table *TableElem) Select(selections ...Selectable) SelectStmt {
+	// If additional selections were provide, use the new behavior of
+	// selection - this will not add the additional selections to the
+	// SelectStmt's FROM clause
+	if len(selections) > 0 {
+		return SelectTable(table, selections...)
+	}
+
+	// Otherwise, use the old behavior
 	return Select(table)
 }
 
