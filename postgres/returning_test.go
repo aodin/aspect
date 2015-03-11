@@ -42,10 +42,7 @@ func TestInsert(t *testing.T) {
 	)
 
 	// Insert multiple values
-	inserts := []user{
-		{Name: "admin", Password: "secret"},
-		{Name: "client", Password: "1234"},
-	}
+	inserts := []user{admin, {Name: "client", Password: "1234"}}
 	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2), ($3, $4) RETURNING "users"."id"`,
 		stmt.Values(inserts),
@@ -64,9 +61,11 @@ func TestInsert(t *testing.T) {
 	)
 
 	// Insert with a omitted field - empty and non-empty
+	omitAdmin := omitID{Name: "admin", Password: "1234"}
+
 	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
-		Insert(users).Values(omitID{Name: "admin", Password: "1234"}),
+		Insert(users).Values(omitAdmin),
 		"admin",
 		"1234",
 	)
@@ -78,6 +77,19 @@ func TestInsert(t *testing.T) {
 		"admin",
 		"1234",
 	)
+
+	// Return all user table columns
+	expect.SQL(
+		`INSERT INTO "users" ("name", "password") VALUES ($1, $2) RETURNING "users"."id", "users"."name", "users"."password", "users"."is_active", "users"."created_at"`,
+		Insert(users).Values(omitAdmin).Returning(users),
+		"admin",
+		"1234",
+	)
+
+	// Selecting a column or table that is not part of the insert table
+	// should produce an error
+	expect.Error(Insert(users).Values(omitAdmin).Returning(hasUUIDs))
+	expect.Error(Insert(users).Values(omitAdmin).Returning(hasUUIDs.C["uuid"]))
 }
 
 func TestReturning(t *testing.T) {
@@ -117,7 +129,7 @@ func TestReturning(t *testing.T) {
 	tx.MustExecute(hasUUIDs.Create())
 
 	u := hasUUID{Name: "what"}
-	uuidStmt := Insert(hasUUIDs).Values(u).Returning(hasUUIDs.Columns()...)
+	uuidStmt := Insert(hasUUIDs).Values(u).Returning(hasUUIDs)
 	assert.Nil(tx.QueryOne(uuidStmt, &u))
 	assert.NotEqual("", u.UUID, "UUID should have been set")
 }

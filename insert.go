@@ -19,7 +19,7 @@ type InsertStmt struct {
 	table   *TableElem
 	columns []ColumnElem // TODO custom type for setter / getter operations
 	args    []interface{}
-	err     error
+	err     error // TODO common error handling struct
 	alias   map[string]Field
 }
 
@@ -29,14 +29,17 @@ func (stmt InsertStmt) String() string {
 	return compiled
 }
 
+// Error returns any error attached to this statement
 func (stmt InsertStmt) Error() error {
 	return stmt.err
 }
 
-func (stmt InsertStmt) SetError(err error) {
+// SetError attaches an error to this statment
+func (stmt *InsertStmt) SetError(err error) {
 	stmt.err = err
 }
 
+// Table returns the table of this statement
 func (stmt InsertStmt) Table() *TableElem {
 	return stmt.table
 }

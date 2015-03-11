@@ -52,16 +52,29 @@ func (stmt RetInsertStmt) CompileColumns(d aspect.Dialect, params *aspect.Parame
 }
 
 // Returning adds a RETURNING clause to the statement.
-func (stmt RetInsertStmt) Returning(cs ...aspect.ColumnElem) RetInsertStmt {
-	for _, column := range cs {
-		if column.Table() != stmt.Table() {
-			stmt.SetError(fmt.Errorf(
-				"postgres: all columns must belong to the same table",
-			))
-			break
+func (stmt RetInsertStmt) Returning(cs ...aspect.Selectable) RetInsertStmt {
+	// TODO An INSERT ... RETURING for all columns of the inserted row can
+	// also use the syntax RETURNING *, see:
+	// http://www.postgresql.org/docs/devel/static/sql-insert.html
+	for _, selection := range cs {
+		if selection == nil {
+			stmt.SetError(fmt.Errorf("postgres: received a nil selectable in Returning() - do the columns or tables you selected exist?"))
+			return stmt
 		}
-		stmt.returning = append(stmt.returning, column)
+
+		// All selected columns must belong to the INSERT table
+		for _, column := range selection.Selectable() {
+			if column.Table() != stmt.Table() {
+				stmt.SetError(fmt.Errorf(
+					"postgres: the column '%s' in Returning() does not belong to the inserted table '%s'",
+					column.Name(), stmt.Table().Name,
+				))
+				break
+			}
+			stmt.returning = append(stmt.returning, column)
+		}
 	}
+
 	return stmt
 }
 

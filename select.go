@@ -22,7 +22,7 @@ type SelectStmt struct {
 	order   []OrderedColumn
 	limit   int
 	offset  int
-	err     error
+	err     error // TODO common error handling struct
 }
 
 // TableExists checks if a table already exists in the SELECT statement.
