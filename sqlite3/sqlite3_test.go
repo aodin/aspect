@@ -133,6 +133,22 @@ type tagless struct {
 	manager interface{}
 }
 
+type fullTagless struct {
+	ID       int64
+	Name     string
+	Password string
+}
+
+type fullname struct {
+	Name string `db:"name"`
+}
+
+type embedUser struct {
+	id
+	fullname
+	Password string `db:"password"`
+}
+
 func TestResultTypes(t *testing.T) {
 	conn, err := aspect.Connect("sqlite3", ":memory:")
 	require.Nil(t, err, "Failed to connect to in-memory sqlite3 instance")
@@ -142,9 +158,9 @@ func TestResultTypes(t *testing.T) {
 	_, err = conn.Execute(users.Create())
 	require.Nil(t, err, "Failed to create users table")
 
-	admin := user{
-		ID:       1,
-		Name:     "admin",
+	admin := embedUser{
+		id:       id{ID: 1},
+		fullname: fullname{Name: "admin"},
 		Password: "secret",
 	}
 	_, err = conn.Execute(users.Insert().Values(admin))
@@ -167,4 +183,23 @@ func TestResultTypes(t *testing.T) {
 	require.Equal(t, 1, len(untaggeds))
 	assert.Equal(t, 1, untaggeds[0].ID)
 	assert.Equal(t, "admin", untaggeds[0].Name)
+
+	// Tagless insert - number of columns must match numebr of exported fields
+	noTag := fullTagless{
+		ID:   2,
+		Name: "tagless",
+		// Password is a blank string
+	}
+	_, err = conn.Execute(users.Insert().Values(noTag))
+	require.Nil(t, err, "Inserting a single tagless user should not error")
+
+	// Embedded destination
+	var embed embedUser
+	conn.MustQueryOne(
+		users.Select().Where(users.C["id"].Equals(1)).Limit(1),
+		&embed,
+	)
+	assert.Equal(t, 1, embed.id.ID)
+	assert.Equal(t, "admin", embed.fullname.Name)
+	assert.Equal(t, "secret", embed.Password)
 }

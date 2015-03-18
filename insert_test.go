@@ -31,6 +31,23 @@ type omitID struct {
 	Password string `db:"password"`
 }
 
+type id struct {
+	ID int64 `db:"id,omitempty"`
+}
+
+type name struct {
+	Name string `db:"name"`
+}
+
+type manager struct{}
+
+type embedInsert struct {
+	id
+	name
+	Password string `db:"password,omitempty"`
+	manager  *manager
+}
+
 func TestInsert(t *testing.T) {
 	expect := NewTester(t, &defaultDialect{})
 
@@ -38,17 +55,14 @@ func TestInsert(t *testing.T) {
 	expect.SQL(
 		`INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3)`,
 		users.Insert(),
-		nil,
-		nil,
-		nil,
+		nil, nil, nil,
 	)
 
 	stmt := Insert(users.C["name"], users.C["password"])
 	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
 		stmt,
-		nil,
-		nil,
+		nil, nil,
 	)
 
 	// Adding multiple values will generate a bulk insert statement
@@ -58,32 +72,25 @@ func TestInsert(t *testing.T) {
 	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
 		stmt.Values(admin),
-		"admin",
-		"secret",
+		"admin", "secret",
 	)
 	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2), ($3, $4)`,
 		stmt.Values([]user{admin, client}),
-		"admin",
-		"secret",
-		"client",
-		"1234",
+		"admin", "secret", "client", "1234",
 	)
 
 	// Insert with a omitted field - empty and non-empty
 	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2)`,
 		users.Insert().Values(omitID{Name: "admin", Password: "1234"}),
-		"admin",
-		"1234",
+		"admin", "1234",
 	)
 
 	expect.SQL(
 		`INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3)`,
 		users.Insert().Values(omitID{ID: 1, Name: "admin", Password: "1234"}),
-		1,
-		"admin",
-		"1234",
+		1, "admin", "1234",
 	)
 
 	// Omit should also work for multiple struct inserts
@@ -94,18 +101,13 @@ func TestInsert(t *testing.T) {
 	expect.SQL(
 		`INSERT INTO "users" ("name", "password") VALUES ($1, $2), ($3, $4)`,
 		users.Insert().Values(omits),
-		"admin",
-		"1234",
-		"client",
-		"1234",
+		"admin", "1234", "client", "1234",
 	)
 
 	expect.SQL(
 		`INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3)`,
 		users.Insert().Values([]omitID{{ID: 1, Name: "admin", Password: "1"}}),
-		1,
-		"admin",
-		"1",
+		1, "admin", "1",
 	)
 
 	// Complete table inserts will build dynamically from the given values
@@ -114,9 +116,7 @@ func TestInsert(t *testing.T) {
 	expect.SQL(
 		`INSERT INTO "users" ("id", "name", "password") VALUES ($1, $2, $3)`,
 		users.Insert().Values(user{ID: 1, Name: "client"}),
-		1,
-		"client",
-		"",
+		1, "client", "",
 	)
 	expect.SQL(
 		`INSERT INTO "users" ("name") VALUES ($1)`,
@@ -128,18 +128,43 @@ func TestInsert(t *testing.T) {
 	expect.SQL(
 		`INSERT INTO "users" ("name") VALUES ($1), ($2)`,
 		users.Insert().Values([]managedUser{{Name: "alice"}, {Name: "bob"}}),
-		"alice",
-		"bob",
+		"alice", "bob",
 	)
 
 	// Insert a struct without db tags.
-	// TODO As long as the number of exported fields matches columns
-	// the statement should be allowed. As of now, no unexported fields are
-	// allowed - this must be checked by using another test package
+	// As long as the number of exported fields matches columns
+	// the statement should be allowed.
 	expect.SQL(
 		`INSERT INTO "users" ("name") VALUES ($1)`,
 		Insert(users.C["name"]).Values(username{Name: "Solo"}),
 		"Solo",
+	)
+
+	// Embedded inserts
+	expect.SQL(
+		`INSERT INTO "users" ("name") VALUES ($1)`,
+		users.Insert().Values(embedInsert{name: name{Name: "Zed"}}),
+		"Zed",
+	)
+	expect.SQL(
+		`INSERT INTO "users" ("name") VALUES ($1)`,
+		users.Insert().Values(&embedInsert{name: name{Name: "Zed"}}),
+		"Zed",
+	)
+
+	embedSlice := []embedInsert{
+		embedInsert{id: id{ID: 1}, name: name{Name: "Alpha"}},
+		embedInsert{id: id{ID: 2}, name: name{Name: "Bravo"}},
+	}
+	expect.SQL(
+		`INSERT INTO "users" ("id", "name") VALUES ($1, $2), ($3, $4)`,
+		users.Insert().Values(embedSlice),
+		1, "Alpha", 2, "Bravo",
+	)
+	expect.SQL(
+		`INSERT INTO "users" ("id", "name") VALUES ($1, $2), ($3, $4)`,
+		users.Insert().Values(&embedSlice),
+		1, "Alpha", 2, "Bravo",
 	)
 
 	// Insert a struct without matching tags
