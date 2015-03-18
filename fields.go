@@ -18,12 +18,14 @@ type field struct {
 	options options
 }
 
+// Exists returns true if the field contains a valid recursive field index
 func (f field) Exists() bool {
 	return len(f.index) > 0
 }
 
 type fields []field
 
+// Empty returns true if all of its fields do not exist
 func (f fields) Empty() bool {
 	for _, field := range f {
 		if field.Exists() {
@@ -33,7 +35,9 @@ func (f fields) Empty() bool {
 	return true
 }
 
-func SelectFields(v interface{}) ([]field, error) {
+// SelectFields returns the ordered list of fields from the given interface.
+// The interface must be a pointer to a struct.
+func SelectFields(v interface{}) (fields, error) {
 	value := reflect.ValueOf(v)
 	if value.Kind() != reflect.Ptr {
 		return nil, fmt.Errorf(
@@ -44,11 +48,13 @@ func SelectFields(v interface{}) ([]field, error) {
 	return recurse([]int{}, reflect.TypeOf(v).Elem()), nil
 }
 
-func SelectFieldsFromElem(elem reflect.Type) []field {
+// SelectFieldsFromElem returns the ordered list of fields from the given
+// reflect Type
+func SelectFieldsFromElem(elem reflect.Type) fields {
 	return recurse([]int{}, elem)
 }
 
-func recurse(indexes []int, elem reflect.Type) (fields []field) {
+func recurse(indexes []int, elem reflect.Type) (fields fields) {
 	if elem.Kind() != reflect.Struct {
 		return nil
 	}
