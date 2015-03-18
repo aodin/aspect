@@ -1,8 +1,6 @@
 package aspect
 
-import (
-	"fmt"
-)
+import "fmt"
 
 type JoinOnStmt struct {
 	ArrayClause

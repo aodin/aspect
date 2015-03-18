@@ -1,8 +1,6 @@
 package aspect
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestUpdate(t *testing.T) {
 	expect := NewTester(t, &defaultDialect{})

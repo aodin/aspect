@@ -1,8 +1,6 @@
 package aspect
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestPrimaryKey(t *testing.T) {
 	// Test contains

@@ -1,8 +1,6 @@
 package aspect
 
-import (
-	"testing"
-)
+import "testing"
 
 // TODO All table schemas should live in one file
 

@@ -1,8 +1,6 @@
 package aspect
 
-import (
-	"strings"
-)
+import "strings"
 
 type options []string
 

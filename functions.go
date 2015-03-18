@@ -1,7 +1,5 @@
 package aspect
 
-import ()
-
 func Avg(c ColumnElem) ColumnElem {
 	c.inner = FuncClause{Inner: c.inner, F: "AVG"}
 	return c

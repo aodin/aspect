@@ -1,7 +1,5 @@
 package aspect
 
-import ()
-
 // Both ColumnElem and OrderedColumns will implement the Orderable interface
 type Orderable interface {
 	Orderable() OrderedColumn

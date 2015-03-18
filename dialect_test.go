@@ -2,39 +2,29 @@ package aspect
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRegistry(t *testing.T) {
-	// Add a dialect
+	// Add dialects
 	RegisterDialect("default", &defaultDialect{})
 
-	// Get a dialect
-	if _, err := GetDialect("default"); err != nil {
-		t.Errorf("unexpected error getting a dialect that exists: %s", err)
-	}
+	assert.Panics(t,
+		func() { RegisterDialect("nil", nil) },
+		"registry failed to panic when given a nil dialect",
+	)
 
-	// Get a dialect that doesn't exist
-	if _, err := GetDialect("dne"); err == nil {
-		t.Errorf("expected an error when getting a dialect that doesn't exist")
-	}
+	assert.Panics(t,
+		func() { RegisterDialect("default", &defaultDialect{}) },
+		"registry failed to panic when given a duplicate dialect",
+	)
 
-	// Attempt to add a nil dialect
-	func() {
-		defer func() {
-			if panicked := recover(); panicked == nil {
-				t.Errorf("registry failed to panic when given a nil dialect")
-			}
-		}()
-		RegisterDialect("nil", nil)
-	}()
+	// Get dialects
+	var err error
+	_, err = GetDialect("default")
+	assert.Nil(t, err, "Getting a dialect that exists should not error")
 
-	// Attempt to add a duplicate dialect
-	func() {
-		defer func() {
-			if panicked := recover(); panicked == nil {
-				t.Errorf("registry failed to panic when given a duplicate dialect")
-			}
-		}()
-		RegisterDialect("default", &defaultDialect{})
-	}()
+	_, err = GetDialect("dne")
+	assert.NotNil(t, err, "Getting a dialect that does not exist should error")
 }

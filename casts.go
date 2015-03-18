@@ -1,8 +1,6 @@
 package aspect
 
-import (
-	"time"
-)
+import "time"
 
 func (c ColumnElem) InLocation(loc *time.Location) ColumnElem {
 	c.inner = BinaryClause{

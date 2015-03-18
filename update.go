@@ -1,8 +1,6 @@
 package aspect
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // UpdateStmt is the internal representation of an SQL UPDATE statement.
 type UpdateStmt struct {

@@ -1,8 +1,6 @@
 package aspect
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // DropStmt is the internal representation of an DROP TABLE statement.
 type DropStmt struct {

@@ -1,7 +1,5 @@
 package aspect
 
-import ()
-
 // Parameters holds a slice of interface{} parameters
 type Parameters struct {
 	args []interface{}
