@@ -64,36 +64,6 @@ func fieldMap(columns []ColumnElem, i interface{}) (map[string]Field, error) {
 	return alias, nil
 }
 
-// Used in select statements - TODO should be generalized
-func selectAlias(names []string, elem reflect.Type) (fields []int) {
-	// TODO what about duplicate names?
-	for _, name := range names {
-		for i := 0; i < elem.NumField(); i += 1 {
-			f := elem.Field(i)
-
-			tag, _ := parseTag(f.Tag.Get("db"))
-
-			// Skip the field
-			if tag == "-" {
-				continue
-			}
-			if tag == name || f.Name == name {
-				fields = append(fields, i)
-				break
-			}
-		}
-	}
-	return
-}
-
-// Used in select statements - TODO should be generalized
-func selectIndex(names []string, elem reflect.Type) (fields []int) {
-	for i := 0; i < elem.NumField(); i += 1 {
-		fields = append(fields, i)
-	}
-	return
-}
-
 // TODO better way to pass columns than byusing the whole statement?
 // TODO if this is better generalized then it can be used with UPDATE and
 // DELETE statements.
