@@ -8,9 +8,10 @@ import (
 
 // Integer represents INTEGER column types.
 type Integer struct {
-	NotNull    bool
-	Unique     bool
-	PrimaryKey bool
+	NotNull       bool
+	Unique        bool
+	PrimaryKey    bool
+	Autoincrement bool
 }
 
 var _ Type = Integer{}
@@ -19,8 +20,14 @@ var _ Type = Integer{}
 func (s Integer) Create(d Dialect) (string, error) {
 	compiled := "INTEGER"
 	attrs := make([]string, 0)
+
+	// TODO The AUTOINCREMENT key word is only allowed if PrimaryKey is true
+	// TODO This should imply NOT NULL
 	if s.PrimaryKey {
 		attrs = append(attrs, "PRIMARY KEY")
+		if s.Autoincrement {
+			attrs = append(attrs, "AUTOINCREMENT")
+		}
 	}
 	if s.NotNull {
 		attrs = append(attrs, "NOT NULL")

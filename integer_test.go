@@ -15,6 +15,10 @@ func TestInteger(t *testing.T) {
 		"INTEGER PRIMARY KEY NOT NULL UNIQUE",
 		Integer{PrimaryKey: true, NotNull: true, Unique: true},
 	)
+	expect.Create(
+		"INTEGER PRIMARY KEY AUTOINCREMENT",
+		Integer{PrimaryKey: true, Autoincrement: true},
+	)
 
 	assert.Equal(false, Integer{}.IsPrimaryKey())
 	assert.Equal(false, Integer{}.IsUnique())
