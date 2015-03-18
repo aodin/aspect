@@ -30,9 +30,3 @@ func TestSerial(t *testing.T) {
 	_, err = Serial{}.Validate("HEY")
 	assert.NotNil(err)
 }
-
-func TestInet(t *testing.T) {
-	expect := aspect.NewTester(t, &PostGres{})
-
-	expect.Create("INET", Inet{})
-}
