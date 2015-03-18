@@ -2,7 +2,6 @@ package aspect
 
 import (
 	"database/sql"
-	"fmt"
 	"reflect"
 	"unicode"
 )
@@ -23,6 +22,11 @@ func (f field) Exists() bool {
 	return len(f.index) > 0
 }
 
+// HasOption returns true if the field's options contains the given option
+func (f field) HasOption(option string) bool {
+	return f.options.Has(option)
+}
+
 type fields []field
 
 // Empty returns true if all of its fields do not exist
@@ -35,17 +39,20 @@ func (f fields) Empty() bool {
 	return true
 }
 
-// SelectFields returns the ordered list of fields from the given interface.
-// The interface must be a pointer to a struct.
-func SelectFields(v interface{}) (fields, error) {
-	value := reflect.ValueOf(v)
-	if value.Kind() != reflect.Ptr {
-		return nil, fmt.Errorf(
-			"aspect: can only take select into pointer values, received %s",
-			value.Kind(),
-		)
+// HasColumn returns true if the given column exists in the fields
+func (f fields) HasColumn(column string) bool {
+	for _, field := range f {
+		// TODO what about table name
+		if field.column == column {
+			return true
+		}
 	}
-	return recurse([]int{}, reflect.TypeOf(v).Elem()), nil
+	return false
+}
+
+// SelectFields returns the ordered list of fields from the given interface.
+func SelectFields(v interface{}) fields {
+	return recurse([]int{}, reflect.TypeOf(v).Elem())
 }
 
 // SelectFieldsFromElem returns the ordered list of fields from the given

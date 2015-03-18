@@ -2,6 +2,11 @@ package aspect
 
 import "strings"
 
+// Common options
+const (
+	OMITEMPTY = "omitempty"
+)
+
 type options []string
 
 // Has returns true if the options array contains the requested option

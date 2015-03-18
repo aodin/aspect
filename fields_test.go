@@ -27,8 +27,7 @@ func TestFields(t *testing.T) {
 	assert := assert.New(t)
 
 	var e embedded
-	fields, err := SelectFields(&e)
-	require.Nil(t, err, "Fields should not error when given a proper struct")
+	fields := SelectFields(&e)
 
 	// It should find 4 fields: id, name, created_at, and updated_at
 	require.Equal(t, 4, len(fields))

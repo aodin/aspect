@@ -87,10 +87,7 @@ func (r *Result) One(arg interface{}) error {
 	case reflect.Struct:
 		// Build the fields of the given struct
 		// TODO this operation could be cached
-		fields, err := SelectFields(arg)
-		if err != nil {
-			return err
-		}
+		fields := SelectFields(arg)
 
 		// Align the fields to the selected columns
 		// This will discard unmatched fields

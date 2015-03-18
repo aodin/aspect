@@ -20,7 +20,7 @@ type InsertStmt struct {
 	columns []ColumnElem // TODO custom type for setter / getter operations
 	args    []interface{}
 	err     error // TODO common error handling struct
-	alias   map[string]Field
+	fields  fields
 }
 
 // String outputs the parameter-less INSERT statement in a neutral dialect.
@@ -158,184 +158,220 @@ func removeColumn(columns []ColumnElem, name string) []ColumnElem {
 
 // A field marked omitempty can cause the removal of a column, only
 // to have another value not have an empty value for that field
-func (stmt *InsertStmt) removeEmptyColumns(elem reflect.Value) {
+func (stmt *InsertStmt) trimFields(elem reflect.Value) {
 	// TODO this function could be skipped if it was known that the given
 	// struct has no omitempty fields
-	for name, field := range stmt.alias {
-		if field.OmitEmpty && isEmptyValue(elem.FieldByName(field.Name)) {
-			// Remove the column
-			stmt.columns = removeColumn(stmt.columns, name)
+	validFields := fields{}
+	for _, field := range stmt.fields {
+		if !field.Exists() {
 			continue
 		}
-	}
-}
-
-// Since alias is a map, columns must be read in order and then aliased
-func (stmt *InsertStmt) argsByAlias(elem reflect.Value) {
-	for _, column := range stmt.columns {
-		alias := stmt.alias[column.Name()].Name
-		stmt.args = append(stmt.args, elem.FieldByName(alias).Interface())
-	}
-}
-
-// Read every value of the struct in order
-func (stmt *InsertStmt) argsByIndex(elem reflect.Value) {
-	for i, _ := range stmt.columns {
-		stmt.args = append(stmt.args, elem.Field(i).Interface())
-	}
-}
-
-func (stmt *InsertStmt) argsByValues(values Values) {
-	// Since alias is a map, columns must be read in order and then aliased
-	for _, column := range stmt.columns {
-		stmt.args = append(stmt.args, values[stmt.alias[column.Name()].Name])
-	}
-}
-
-// setColumns removes any columns that weren't matched by the alias.
-func (stmt *InsertStmt) setColumns() {
-	// TODO keep actual target columns separate from requested in case
-	// the statement is updated?
-	if len(stmt.alias) != len(stmt.columns) {
-		var matched []ColumnElem
-		for _, column := range stmt.columns {
-			if _, exists := stmt.alias[column.Name()]; exists {
-				matched = append(matched, column)
+		if field.HasOption(OMITEMPTY) {
+			var fieldElem reflect.Value = elem
+			for _, index := range field.index {
+				fieldElem = fieldElem.Field(index)
+			}
+			if isEmptyValue(fieldElem) {
+				// Remove the column
+				stmt.columns = removeColumn(stmt.columns, field.column)
+				continue
 			}
 		}
-		stmt.columns = matched
+		// Keep the field
+		validFields = append(validFields, field)
+	}
+	stmt.fields = validFields
+}
+
+func (stmt *InsertStmt) argsFromValues(values Values) {
+	for _, column := range stmt.columns {
+		stmt.args = append(stmt.args, values[column.Name()])
+	}
+}
+
+func (stmt *InsertStmt) argsFromElem(elem reflect.Value) {
+	for _, field := range stmt.fields {
+		var fieldElem reflect.Value = elem
+		for _, index := range field.index {
+			fieldElem = fieldElem.Field(index)
+		}
+		stmt.args = append(stmt.args, fieldElem.Interface())
+	}
+}
+
+// updateColumns removes any columns that weren't matched by the fields.
+func (stmt *InsertStmt) updateColumns() {
+	// TODO keep actual target columns separate from requested in case
+	// the statement is updated?
+	for _, column := range stmt.columns {
+		if !stmt.fields.HasColumn(column.Name()) {
+			// TODO pass an index to prevent further nesting of iteration
+			stmt.columns = removeColumn(stmt.columns, column.Name())
+		}
 	}
 }
 
 // Values adds parameters to the INSERT statement. If the given values do not
 // match the statement's current columns, the columns will be updated.
 // Valid values include structs, Values maps, or slices of structs or Values.
-func (s InsertStmt) Values(arg interface{}) InsertStmt {
+func (stmt InsertStmt) Values(arg interface{}) InsertStmt {
 	// For now, inserts can be performed on pointers or values
 	// NOTE: If auto-updating fields are required, they will need pointers
 	elem := reflect.Indirect(reflect.ValueOf(arg))
 
 	switch elem.Kind() {
 	case reflect.Struct:
-		// Map the column names to fields on the given struct
-		if s.alias, s.err = fieldMap(s.columns, arg); s.err != nil {
-			return s
+		// Inspect the fields of the given struct
+		unaligned := SelectFieldsFromElem(elem.Type())
+
+		// TODO function to return names of columns
+		columns := make([]string, len(stmt.columns))
+		for i, column := range stmt.columns {
+			columns[i] = column.Name()
 		}
-		// If no columns were detected and the number of fields matches the
+
+		stmt.fields = AlignColumns(columns, unaligned)
+
+		// If no fields were found and the number of fields matches the
 		// columns requested, then insert the struct's values as is.
-		if len(s.alias) == 0 && len(s.columns) == elem.NumField() {
-			s.argsByIndex(elem)
-			return s
-		} else if len(s.alias) == 0 {
-			s.err = fmt.Errorf("aspect: cannot insert given struct, no fields match columns - were `db` struct tags set?")
-			return s
+		if stmt.fields.Empty() && len(unaligned) == len(stmt.columns) {
+			stmt.fields = unaligned
+			stmt.argsFromElem(elem)
+			return stmt
 		}
 
-		// Remove unmatched columns
-		s.setColumns()
+		// Remove unmatched columns and empty values from fields
+		// with the 'omitempty' option
+		stmt.updateColumns()
+		stmt.trimFields(elem)
 
-		// Remove empty values
-		s.removeEmptyColumns(elem)
+		// If no fields remain after trimming, abort
+		if len(stmt.fields) == 0 {
+			stmt.err = fmt.Errorf("aspect: could not match fields for INSERT - are the 'db' tags correct?")
+			return stmt
+		}
 
-		// Add the args using the created field map
-		// Drop args with empty values if they have the option "omitempty"
-		s.argsByAlias(elem)
+		// Collect the parameters
+		stmt.argsFromElem(elem)
 
 	case reflect.Slice:
-		if elem.Len() < 1 {
-			s.err = fmt.Errorf("aspect: args cannot be set by empty slices")
-			return s
+		if elem.Len() == 0 {
+			stmt.err = fmt.Errorf("aspect: args cannot be set by empty slices")
+			return stmt
 		}
 		// Slices of structs or Values are acceptable
 		// TODO check kind of elem directly?
 		elem0 := elem.Index(0)
 		if elem0.Kind() == reflect.Struct {
-			// TODO Remove code duplication
-			if s.alias, s.err = fieldMap(s.columns, elem0.Interface()); s.err != nil {
-				return s
+			unaligned := SelectFieldsFromElem(elem.Type().Elem())
+
+			// TODO function to return names of columns
+			columns := make([]string, len(stmt.columns))
+			for i, column := range stmt.columns {
+				columns[i] = column.Name()
 			}
-			// If no columns were detected and the number of fields matches the
+			stmt.fields = AlignColumns(columns, unaligned)
+
+			// If no fields were found and the number of fields matches the
 			// columns requested, then insert the struct's values as is.
-			// TODO This does not ignore unexported fields - it should
-			if len(s.alias) == 0 && len(s.columns) == elem.NumField() {
+			if stmt.fields.Empty() && len(unaligned) == len(stmt.columns) {
+				stmt.fields = unaligned
 				for i := 0; i < elem.Len(); i++ {
-					s.argsByIndex(elem.Index(i))
+					stmt.argsFromElem(elem.Index(i))
 				}
-				return s
-			} else if len(s.alias) == 0 {
-				s.err = fmt.Errorf("aspect: cannot insert given struct, no fields match columns - were `db` struct tags set?")
-				return s
+				return stmt
 			}
 
-			// Remove unmatched columns
-			s.setColumns()
+			// Remove unmatched columns and empty values from fields
+			// with the 'omitempty' option
+			stmt.updateColumns()
+			stmt.trimFields(elem0)
 
-			// Remove empty values using the first elem
-			s.removeEmptyColumns(elem0)
+			// If no fields remain after trimming, abort
+			if len(stmt.fields) == 0 {
+				stmt.err = fmt.Errorf("aspect: could not match fields for INSERT - are the 'db' tags correct?")
+				return stmt
+			}
 
-			// Add the args using the created field map
+			// Add the parameters for each element
 			for i := 0; i < elem.Len(); i++ {
-				s.argsByAlias(elem.Index(i))
+				stmt.argsFromElem(elem.Index(i))
 			}
 
-			return s
+			return stmt
 		}
 
 		valuesSlice, ok := arg.([]Values)
 		if ok {
-			if len(valuesSlice) < 1 {
-				s.err = fmt.Errorf(
+			if len(valuesSlice) == 0 {
+				stmt.err = fmt.Errorf(
 					"aspect: cannot insert []Values of length zero",
 				)
-				return s
+				return stmt
 			}
 
-			// Set the table columns according to the first values
-			if s.alias, s.err = valuesMap(s, valuesSlice[0]); s.err != nil {
-				return s
+			// Set the table columns according to the values
+			if stmt.fields, stmt.err = valuesMap(stmt, valuesSlice[0]); stmt.err != nil {
+				return stmt
 			}
 
-			// Remove unmatched columns
-			s.setColumns()
+			// TODO Column names should match in each values element!
+			stmt.updateColumns()
 
 			// Add the args in the values
-			// TODO what to do about varying values in the slice?
 			for _, v := range valuesSlice {
-				s.argsByValues(v)
+				stmt.argsFromValues(v)
 			}
 
-			return s
+			return stmt
 		}
 
-		s.err = fmt.Errorf(
+		stmt.err = fmt.Errorf(
 			"aspect: unsupported type %T for INSERT %s - values must be of type struct, Values, or a slice of either",
 			arg,
-			s,
+			stmt,
 		)
 
 	case reflect.Map:
 		// The only allowed map type is Values
 		values, ok := arg.(Values)
 		if !ok {
-			s.err = fmt.Errorf(
+			stmt.err = fmt.Errorf(
 				"aspect: inserted maps must be of type Values",
 			)
-			return s
+			return stmt
 		}
 
 		// Set the table columns according to the values
-		if s.alias, s.err = valuesMap(s, values); s.err != nil {
-			return s
+		if stmt.fields, stmt.err = valuesMap(stmt, values); stmt.err != nil {
+			return stmt
 		}
 
-		// Remove unmatched columns
-		s.setColumns()
-
-		// Add the args in the values
-		s.argsByValues(values)
+		// Remove unmatched columns and add args from the values
+		stmt.updateColumns()
+		stmt.argsFromValues(values)
 
 	}
-	return s
+	return stmt
+}
+
+// TODO better way to pass columns than by using the whole statement?
+// TODO if this is better generalized then it can be used with UPDATE and
+// DELETE statements.
+// TODO use a column set - that's all it needs - maybe move to fields?
+func valuesMap(stmt InsertStmt, values Values) (fields, error) {
+	fields := make(fields, len(values))
+	var i int
+	for column, _ := range values {
+		if !stmt.HasColumn(column) {
+			return nil, fmt.Errorf(
+				"aspect: cannot INSERT a value with column '%s' as it has no corresponding column in the INSERT statement",
+				column,
+			)
+		}
+		fields[i] = field{column: column} // TODO set index?
+	}
+	return fields, nil
 }
 
 // Insert creates an INSERT statement for the given columns. There must be at
