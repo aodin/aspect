@@ -10,6 +10,9 @@ import (
 	"github.com/aodin/aspect"
 )
 
+// The sql dialect must implement the dialect interface
+var _ aspect.Dialect = &Sqlite3{}
+
 var users = aspect.Table("users",
 	aspect.Column("id", aspect.Integer{NotNull: true}),
 	aspect.Column("name", aspect.String{Length: 32, NotNull: true}),

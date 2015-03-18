@@ -2,13 +2,16 @@ package postgres
 
 import (
 	"fmt"
-	"github.com/aodin/aspect"
+
 	_ "github.com/lib/pq"
+
+	"github.com/aodin/aspect"
 )
 
-// Implement the Dialect interface
+// PostGres implements the Dialect interface for postgres databases.
 type PostGres struct{}
 
+// Parameterize returns the postgres specific parameterization scheme.
 func (d *PostGres) Parameterize(i int) string {
 	return fmt.Sprintf(`$%d`, i)
 }
