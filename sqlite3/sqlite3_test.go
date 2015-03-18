@@ -2,8 +2,8 @@ package sqlite3
 
 import (
 	"testing"
+	"time"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -12,6 +12,18 @@ import (
 
 // The sql dialect must implement the dialect interface
 var _ aspect.Dialect = &Sqlite3{}
+
+var things = aspect.Table("things",
+	aspect.Column("name", aspect.String{Length: 32, NotNull: true}),
+	aspect.Column(
+		"created_at", Datetime{NotNull: true, Default: CurrentTimestamp},
+	),
+)
+
+type thing struct {
+	Name      string    `db:"name"`
+	CreatedAt time.Time `db:"created_at,omitempty"`
+}
 
 var users = aspect.Table("users",
 	aspect.Column("id", aspect.Integer{NotNull: true}),
@@ -147,6 +159,28 @@ type embedUser struct {
 	id
 	fullname
 	Password string `db:"password"`
+}
+
+func TestColumnTypes(t *testing.T) {
+	conn, err := aspect.Connect("sqlite3", ":memory:")
+	require.Nil(t, err, "Failed to connect to in-memory sqlite3 instance")
+	defer conn.Close()
+
+	// Create the things table which has a sqlite3.Datetime column type
+	_, err = conn.Execute(things.Create())
+	require.Nil(t, err, "Failed to create things table")
+
+	// Sqlite3 only has per second resolution
+	before := time.Now().Add(-time.Second)
+	newThingy := thing{Name: "A Thing"}
+	conn.MustExecute(things.Insert().Values(newThingy))
+	after := time.Now().Add(time.Second)
+
+	var thingy thing
+	conn.MustQueryOne(things.Select(), &thingy)
+	assert.Equal(t, "A Thing", thingy.Name)
+	assert.True(t, thingy.CreatedAt.After(before))
+	assert.True(t, thingy.CreatedAt.Before(after))
 }
 
 func TestResultTypes(t *testing.T) {
