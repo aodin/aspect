@@ -94,8 +94,14 @@ func (r *Result) One(arg interface{}) error {
 
 		// Align the fields to the selected columns
 		// This will discard unmatched fields
-		// TODO struct mode? error if not all columns were matched?
+		// TODO strict mode? error if not all columns were matched?
 		aligned := AlignColumns(columns, fields)
+
+		// If the aligned struct is empty, fallback to matching the fields in
+		// order, but only if the length of the columns equals the fields
+		if aligned.Empty() && len(columns) == len(fields) {
+			aligned = fields
+		}
 
 		// Get an interface for each field and save a pointer to it
 		dest := make([]interface{}, len(aligned))
@@ -173,6 +179,12 @@ func (r *Result) All(arg interface{}) error {
 		// This will discard unmatched fields
 		// TODO struct mode? error if not all columns were matched?
 		aligned := AlignColumns(columns, fields)
+
+		// If the aligned struct is empty, fallback to matching the fields in
+		// order, but only if the length of the columns equals the fields
+		if aligned.Empty() && len(columns) == len(fields) {
+			aligned = fields
+		}
 
 		// Is there an existing slice element for this result?
 		n := argElem.Len()

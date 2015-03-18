@@ -42,12 +42,12 @@ func TestConnect(t *testing.T) {
 	assert := assert.New(t)
 
 	conn, err := aspect.Connect("sqlite3", ":memory:")
-	assert.Nil(err)
+	require.Nil(t, err, "Failed to connect to in-memory sqlite3 instance")
 	defer conn.Close()
 
 	// Create the users table
 	_, err = conn.Execute(users.Create())
-	require.Nil(t, err)
+	require.Nil(t, err, "Failed to create users table")
 
 	// Insert a user
 	admin := user{
@@ -120,4 +120,48 @@ func TestConnect(t *testing.T) {
 	// Drop the table
 	_, err = conn.Execute(users.Drop())
 	assert.Nil(err, "Dropping the users table should not fail")
+}
+
+// tagless struct's exported fields must match the number and order of the
+// the selected columns
+type tagless struct {
+	ID      int64
+	Name    string
+	manager interface{}
+}
+
+func TestResultTypes(t *testing.T) {
+	conn, err := aspect.Connect("sqlite3", ":memory:")
+	require.Nil(t, err, "Failed to connect to in-memory sqlite3 instance")
+	defer conn.Close()
+
+	// Create the users table
+	_, err = conn.Execute(users.Create())
+	require.Nil(t, err, "Failed to create users table")
+
+	admin := user{
+		ID:       1,
+		Name:     "admin",
+		Password: "secret",
+	}
+	_, err = conn.Execute(users.Insert().Values(admin))
+	require.Nil(t, err, "Inserting a single user should not error")
+
+	// Tagless destination
+	var untagged tagless
+	conn.MustQueryOne(
+		aspect.Select(users.C["id"], users.C["name"]).Limit(1),
+		&untagged,
+	)
+	assert.Equal(t, 1, untagged.ID)
+	assert.Equal(t, "admin", untagged.Name)
+
+	var untaggeds []tagless
+	conn.MustQueryAll(
+		aspect.Select(users.C["id"], users.C["name"]),
+		&untaggeds,
+	)
+	require.Equal(t, 1, len(untaggeds))
+	assert.Equal(t, 1, untaggeds[0].ID)
+	assert.Equal(t, "admin", untaggeds[0].Name)
 }

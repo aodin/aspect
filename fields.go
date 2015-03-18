@@ -22,6 +22,17 @@ func (f field) Exists() bool {
 	return len(f.index) > 0
 }
 
+type fields []field
+
+func (f fields) Empty() bool {
+	for _, field := range f {
+		if field.Exists() {
+			return false
+		}
+	}
+	return true
+}
+
 func SelectFields(v interface{}) ([]field, error) {
 	value := reflect.ValueOf(v)
 	if value.Kind() != reflect.Ptr {
@@ -77,7 +88,7 @@ func recurse(indexes []int, elem reflect.Type) (fields []field) {
 
 // AlignColumns will reorder the given fields array to match the columns.
 // Columns that do not match fields will be given empty field structs.
-func AlignColumns(columns []string, fields []field) []field {
+func AlignColumns(columns []string, fields []field) fields {
 	aligned := make([]field, len(columns))
 	// TODO aliases? tables? check if the columns first matches the fields?
 	for i, column := range columns {
