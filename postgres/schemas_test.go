@@ -33,3 +33,8 @@ var hasUUIDs = aspect.Table("has_uuids",
 	aspect.Column("name", aspect.String{Length: 32, NotNull: true}),
 	aspect.PrimaryKey("uuid"),
 )
+
+var times = aspect.Table("times",
+	aspect.Column("room", aspect.Integer{}),
+	aspect.Column("when", DateRange{}),
+)

@@ -32,6 +32,16 @@ func (c ColumnClause) Compile(d Dialect, params *Parameters) (string, error) {
 	}
 }
 
+// ColumnClauseFromColumn creates a ColumnClause from a ColumnElem
+func ColumnClauseFromColumn(c ColumnElem) ColumnClause {
+	return ColumnClause{table: c.table, name: c.name}
+}
+
+// ColumnClauseFromColumn creates a ColumnClause from a ColumnElem's name only
+func ColumnOnlyClause(c ColumnElem) ColumnClause {
+	return ColumnClause{name: c.name}
+}
+
 // TODO This is a dangerous clause that leads to parameters not being escaped
 type StringClause struct {
 	Name string

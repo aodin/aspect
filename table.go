@@ -36,6 +36,11 @@ type TableElem struct {
 	creates []Creatable
 }
 
+// AddCreatable adds a new Creatable to the table
+func (table *TableElem) AddCreatable(c Creatable) {
+	table.creates = append(table.creates, c)
+}
+
 // String returns the table name.
 func (table *TableElem) String() string {
 	return table.Name

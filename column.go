@@ -47,7 +47,7 @@ var _ Creatable = ColumnElem{}
 
 // clause generates a ColumnClause from this ColumnElem
 func (c ColumnElem) clause() ColumnClause {
-	return ColumnClause{table: c.table, name: c.name}
+	return ColumnClauseFromColumn(c)
 }
 
 // As specifies an alias for this ColumnElem
