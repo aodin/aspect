@@ -166,7 +166,7 @@ func (stmt *InsertStmt) trimFields(elem reflect.Value) {
 		if !field.Exists() {
 			continue
 		}
-		if field.HasOption(OMITEMPTY) {
+		if field.HasOption(OmitEmpty) {
 			var fieldElem reflect.Value = elem
 			for _, index := range field.index {
 				fieldElem = fieldElem.Field(index)

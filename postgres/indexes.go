@@ -4,7 +4,7 @@ type IndexMethod string
 
 const (
 	Gist  IndexMethod = "gist"
-	Gin               = "gin"
-	Btree             = "btree"
-	Hash              = "hash"
+	Gin   IndexMethod = "gin"
+	Btree IndexMethod = "btree"
+	Hash  IndexMethod = "hash"
 )

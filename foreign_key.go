@@ -11,10 +11,10 @@ type fkAction string
 // be used in ON DELETE and ON UPDATE clauses.
 const (
 	NoAction   fkAction = "NO ACTION"
-	Restrict            = "RESTRICT"
-	Cascade             = "CASCADE"
-	SetNull             = "SET NULL"
-	SetDefault          = "SET DEFAULT"
+	Restrict   fkAction = "RESTRICT"
+	Cascade    fkAction = "CASCADE"
+	SetNull    fkAction = "SET NULL"
+	SetDefault fkAction = "SET DEFAULT"
 )
 
 // ForeignKeyElem is an internal type representation. It implements the

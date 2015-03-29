@@ -3,9 +3,7 @@ package aspect
 import "strings"
 
 // Common options
-const (
-	OMITEMPTY = "omitempty"
-)
+const OmitEmpty = "omitempty"
 
 type options []string
 
