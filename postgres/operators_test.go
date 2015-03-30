@@ -8,5 +8,5 @@ import (
 
 func TestOperators(t *testing.T) {
 	expect := aspect.NewTester(t, &PostGres{})
-	expect.SQL(`"room" WITH =`, Equal.With(times.C["room"]))
+	expect.SQL(`"room" WITH =`, Equal.With("room"))
 }

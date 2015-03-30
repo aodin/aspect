@@ -10,13 +10,10 @@ func TestExclude(t *testing.T) {
 	expect := aspect.NewTester(t, &PostGres{})
 	expect.Create(
 		`EXCLUDE ("room" WITH =)`,
-		Exclude(Equal.With(times.C["room"])),
+		Exclude(Equal.With("room")),
 	)
 	expect.Create(
 		`EXCLUDE USING gist ("room" WITH =, "when" WITH &&)`,
-		Exclude(
-			Equal.With(times.C["room"]),
-			Overlap.With(times.C["when"]),
-		).Using(Gist),
+		Exclude(Equal.With("room"), Overlap.With("when")).Using(Gist),
 	)
 }

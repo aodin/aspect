@@ -12,16 +12,8 @@ func (op Operator) Compile(d aspect.Dialect, p *aspect.Parameters) (string, erro
 	return op.String(), nil
 }
 
-func (op Operator) With(column aspect.ColumnElem) ExcludeClause {
-	return ExcludeClause{aspect.BinaryClause{
-		Pre:  aspect.ColumnOnlyClause(column),
-		Post: op,
-		Sep:  " WITH ",
-	}}
-}
-
-type ExcludeClause struct {
-	aspect.BinaryClause
+func (op Operator) With(name string) WithClause {
+	return WithClause{Name: name, Operator: op}
 }
 
 const (

@@ -7,9 +7,24 @@ import (
 	"github.com/aodin/aspect"
 )
 
+// TODO Replace with a more robust binary clause?
+type WithClause struct {
+	Name     string
+	Operator Operator
+}
+
+func (clause WithClause) String() string {
+	output, _ := clause.Compile(&PostGres{}, aspect.Params())
+	return output
+}
+
+func (clause WithClause) Compile(d aspect.Dialect, params *aspect.Parameters) (string, error) {
+	return fmt.Sprintf(`"%s" WITH %s`, clause.Name, clause.Operator), nil
+}
+
 type ExcludeConstraint struct {
 	method  IndexMethod
-	clauses []ExcludeClause
+	clauses []WithClause
 }
 
 var _ aspect.Creatable = ExcludeConstraint{}
@@ -42,6 +57,21 @@ func (exclude ExcludeConstraint) Create(d aspect.Dialect) (string, error) {
 
 // Modify adds the ExcludeConstraint to the table's creates
 func (exclude ExcludeConstraint) Modify(table *aspect.TableElem) error {
+	// There must be at least one clause
+	if len(exclude.clauses) == 0 {
+		return fmt.Errorf(
+			"postgres: an EXCLUDE constraint must contain at least one clause",
+		)
+	}
+
+	// All excluded elements must exist in the given table
+	for _, clause := range exclude.clauses {
+		_, exists := table.C[clause.Name]
+		if !exists {
+			return fmt.Errorf("No column with the name '%s' exists in the table '%s'. Is it declared after the PrimaryKey declaration?", clause.Name, table.Name)
+		}
+	}
+
 	table.AddCreatable(exclude)
 	return nil
 }
@@ -53,6 +83,6 @@ func (exclude ExcludeConstraint) Using(method IndexMethod) ExcludeConstraint {
 }
 
 // Exclude creates a new ExcludeConstraint
-func Exclude(clauses ...ExcludeClause) ExcludeConstraint {
+func Exclude(clauses ...WithClause) ExcludeConstraint {
 	return ExcludeConstraint{clauses: clauses}
 }
