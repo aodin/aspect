@@ -30,6 +30,11 @@ func Lower(c ColumnElem) ColumnElem {
 	return c
 }
 
+func Upper(c ColumnElem) ColumnElem {
+	c.inner = FuncClause{Inner: c.inner, F: "UPPER"}
+	return c
+}
+
 func DatePart(c ColumnElem, part string) ColumnElem {
 	// Add the given date part as a parameter
 	c.inner = FuncClause{
