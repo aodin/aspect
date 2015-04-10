@@ -23,6 +23,16 @@ type embedded struct {
 	manager *struct{}
 }
 
+type nested struct {
+	Another string `db:"another"`
+	embedded
+}
+
+type moreNesting struct {
+	nested
+	OneMore string `db:"one_more"`
+}
+
 func TestFields(t *testing.T) {
 	assert := assert.New(t)
 
@@ -70,6 +80,19 @@ func TestFields(t *testing.T) {
 			options: []string{},
 		},
 		fields[3],
+	)
+
+	// Test a deeply nested struct
+	var n moreNesting
+	fields = SelectFields(&n)
+	require.Equal(t, 6, len(fields))
+	assert.Equal(
+		field{
+			index:   []int{0, 1, 2, 1},
+			column:  "updated_at",
+			options: []string{},
+		},
+		fields[4],
 	)
 }
 

@@ -82,7 +82,13 @@ func recurse(indexes []int, elem reflect.Type) (fields fields) {
 
 		// Field is valid, create a new Field
 		var tag string
-		field := field{index: append(indexes, i)}
+
+		// A new array will not actually be allocated during every
+		// append because capacity is being increased by 2 - make sure to
+		// perform a copy to allocate new memory
+		indexesCopy := make([]int, len(indexes))
+		copy(indexesCopy, indexes)
+		field := field{index: append(indexesCopy, i)}
 		tag, field.options = parseTag(f.Tag.Get(tagLabel))
 		if tag == "-" {
 			continue
