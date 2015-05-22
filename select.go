@@ -271,26 +271,3 @@ func Select(selections ...Selectable) (stmt SelectStmt) {
 	}
 	return
 }
-
-// SelectExcept generates a new SELECT statement from the given table except
-// for the given columns.
-func SelectExcept(table *TableElem, exceptions ...ColumnElem) SelectStmt {
-	// TODO This func should proxy to Select in case behavior changes
-	stmt := SelectStmt{
-		tables: []*TableElem{table},
-	}
-	columns := table.Selectable()
-	// Remove the exceptions
-	// TODO Some set operations would be nice here
-	for _, exception := range exceptions {
-		for i, column := range columns {
-			// There should only be one column matching the exception per table
-			if exception == column {
-				columns = append(columns[:i], columns[i+1:]...)
-				break
-			}
-		}
-	}
-	stmt.columns = columns
-	return stmt
-}

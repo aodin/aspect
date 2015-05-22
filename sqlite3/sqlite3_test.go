@@ -100,7 +100,7 @@ func TestConnect(t *testing.T) {
 	assert.Equal(admin.ID, wrap.user.ID)
 	assert.Equal(admin.Name, wrap.user.Name)
 	assert.Equal(admin.Password, wrap.user.Password)
-	assert.Equal(0, wrap.ID)
+	assert.EqualValues(0, wrap.ID)
 
 	// Select multiple users
 	var us []user
@@ -129,7 +129,7 @@ func TestConnect(t *testing.T) {
 		aspect.Select(users.C["id"]).OrderBy(users.C["id"]), &embeds,
 	))
 	require.Equal(t, 3, len(us))
-	assert.Equal(1, embeds[0].id.ID)
+	assert.EqualValues(1, embeds[0].id.ID)
 	assert.Equal("a", embeds[0].Name)
 
 	// Drop the table
@@ -206,7 +206,7 @@ func TestResultTypes(t *testing.T) {
 		aspect.Select(users.C["id"], users.C["name"]).Limit(1),
 		&untagged,
 	)
-	assert.Equal(t, 1, untagged.ID)
+	assert.EqualValues(t, 1, untagged.ID)
 	assert.Equal(t, "admin", untagged.Name)
 
 	var untaggeds []tagless
@@ -215,7 +215,7 @@ func TestResultTypes(t *testing.T) {
 		&untaggeds,
 	)
 	require.Equal(t, 1, len(untaggeds))
-	assert.Equal(t, 1, untaggeds[0].ID)
+	assert.EqualValues(t, 1, untaggeds[0].ID)
 	assert.Equal(t, "admin", untaggeds[0].Name)
 
 	// Tagless insert - number of columns must match numebr of exported fields
@@ -233,7 +233,7 @@ func TestResultTypes(t *testing.T) {
 		users.Select().Where(users.C["id"].Equals(1)).Limit(1),
 		&embed,
 	)
-	assert.Equal(t, 1, embed.id.ID)
+	assert.EqualValues(t, 1, embed.id.ID)
 	assert.Equal(t, "admin", embed.fullname.Name)
 	assert.Equal(t, "secret", embed.Password)
 }

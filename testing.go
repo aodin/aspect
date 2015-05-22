@@ -110,7 +110,7 @@ func (t *sqlTest) SQL(expect string, stmt Compiles, ps ...interface{}) {
 
 	// Examine individual parameters for equality
 	for i, param := range params.Args() {
-		if !assert.ObjectsAreEqual(ps[i], param) {
+		if !assert.ObjectsAreEqualValues(ps[i], param) {
 			t.t.Errorf(
 				"%s: unequal parameters at index %d: expect %#v, got %#v",
 				caller,

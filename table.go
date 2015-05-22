@@ -101,12 +101,6 @@ func (table *TableElem) Select(selections ...Selectable) SelectStmt {
 	return Select(table)
 }
 
-// SelectExcept is an alias for SelectExcept(table). It will generate a SELECT
-// statement for all columns in the table except those provided as parameters.
-func (table *TableElem) SelectExcept(exceptions ...ColumnElem) SelectStmt {
-	return SelectExcept(table, exceptions...)
-}
-
 // Selectable allows the table to implement the Selectable interface, which
 // builds SELECT statements.
 func (table *TableElem) Selectable() []ColumnElem {

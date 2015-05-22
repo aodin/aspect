@@ -154,7 +154,7 @@ func TestSelect(t *testing.T) {
 
 	rowsAffected, err := result.RowsAffected()
 	assert.Nil(err)
-	assert.Equal(1, rowsAffected)
+	assert.EqualValues(1, rowsAffected)
 
 	// Delete
 	// ------
@@ -164,7 +164,7 @@ func TestSelect(t *testing.T) {
 
 	rowsAffected, err = result.RowsAffected()
 	assert.Nil(err)
-	assert.Equal(3, rowsAffected)
+	assert.EqualValues(3, rowsAffected)
 }
 
 type u1 struct {

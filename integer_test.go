@@ -28,15 +28,15 @@ func TestInteger(t *testing.T) {
 
 	value, err := Integer{}.Validate(123)
 	assert.Nil(err)
-	assert.Equal(123, value)
+	assert.EqualValues(123, value)
 
 	value, err = Integer{}.Validate(123.000)
 	assert.Nil(err)
-	assert.Equal(123, value)
+	assert.EqualValues(123, value)
 
 	value, err = Integer{}.Validate("123")
 	assert.Nil(err)
-	assert.Equal(123, value)
+	assert.EqualValues(123, value)
 
 	_, err = Integer{}.Validate(123.456)
 	assert.NotNil(err)

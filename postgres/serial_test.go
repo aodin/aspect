@@ -9,7 +9,6 @@ import (
 )
 
 func TestSerial(t *testing.T) {
-	assert := assert.New(t)
 	expect := aspect.NewTester(t, &PostGres{})
 
 	expect.Create("SERIAL", Serial{})
@@ -20,13 +19,13 @@ func TestSerial(t *testing.T) {
 	)
 
 	value, err := Serial{}.Validate(123)
-	assert.Nil(err)
-	assert.Equal(123, value)
+	assert.Nil(t, err)
+	assert.EqualValues(t, 123, value)
 
 	value, err = Serial{}.Validate("123")
-	assert.Nil(err)
-	assert.Equal(123, value)
+	assert.Nil(t, err)
+	assert.EqualValues(t, 123, value)
 
 	_, err = Serial{}.Validate("HEY")
-	assert.NotNil(err)
+	assert.NotNil(t, err)
 }
