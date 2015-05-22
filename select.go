@@ -13,16 +13,15 @@ type Selectable interface {
 
 // SelectStmt is the internal representation of an SQL SELECT statement.
 type SelectStmt struct {
+	ConditionalStmt
 	tables  []*TableElem
 	columns []ColumnElem
 	joins   []JoinStmt // Broken and deprecated
 	join    []JoinOnStmt
-	cond    Clause
 	groupBy []ColumnElem
 	order   []OrderedColumn
 	limit   int
 	offset  int
-	err     error // TODO common error handling struct
 }
 
 // TableExists checks if a table already exists in the SELECT statement.
@@ -61,8 +60,8 @@ func (stmt SelectStmt) String() string {
 // An error may be returned because of a pre-existing error or because
 // an error occurred during compilation.
 func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
-	if stmt.err != nil {
-		return "", stmt.err
+	if err := stmt.Error(); err != nil {
+		return "", err
 	}
 	compiled := fmt.Sprintf(
 		"SELECT %s FROM %s",
@@ -268,7 +267,7 @@ func SelectTable(table *TableElem, selects ...Selectable) (stmt SelectStmt) {
 	// Add any additional selections
 	for _, selection := range selects {
 		if selection == nil {
-			stmt.err = fmt.Errorf("aspect: received a nil selectable - do the columns or tables you selected exist?")
+			stmt.SetError("aspect: received a nil selectable - do the columns or tables you selected exist?")
 			return
 		}
 		stmt.columns = append(stmt.columns, selection.Selectable()...)
@@ -277,7 +276,7 @@ func SelectTable(table *TableElem, selects ...Selectable) (stmt SelectStmt) {
 	// Confirm that all tables exist
 	for _, column := range stmt.columns {
 		if column.Name() == "" {
-			stmt.err = fmt.Errorf("aspect: selected column does not exist")
+			stmt.SetError("aspect: selected column does not exist")
 			return
 		}
 	}
@@ -289,14 +288,14 @@ func Select(selections ...Selectable) (stmt SelectStmt) {
 	columns := make([]ColumnElem, 0)
 	for _, selection := range selections {
 		if selection == nil {
-			stmt.err = fmt.Errorf("aspect: received a nil selectable - do the columns or tables you selected exist?")
+			stmt.SetError("aspect: received a nil selectable - do the columns or tables you selected exist?")
 			return
 		}
 		columns = append(columns, selection.Selectable()...)
 	}
 
 	if len(columns) < 1 {
-		stmt.err = fmt.Errorf("aspect: must select at least one column")
+		stmt.SetError("aspect: must select at least one column")
 		return
 	}
 
@@ -304,7 +303,7 @@ func Select(selections ...Selectable) (stmt SelectStmt) {
 		// Adding a bad column will pass a zero-initialized ColumnElem and
 		// since blank column names are invalid SQL we can reject them
 		if column.Name() == "" {
-			stmt.err = fmt.Errorf("aspect: selected column does not exist")
+			stmt.SetError("aspect: selected column does not exist")
 			return
 		}
 		stmt.columns = append(stmt.columns, column)

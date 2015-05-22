@@ -58,17 +58,19 @@ func (stmt RetInsertStmt) Returning(cs ...aspect.Selectable) RetInsertStmt {
 	// http://www.postgresql.org/docs/devel/static/sql-insert.html
 	for _, selection := range cs {
 		if selection == nil {
-			stmt.SetError(fmt.Errorf("postgres: received a nil selectable in Returning() - do the columns or tables you selected exist?"))
+			stmt.SetError(
+				"postgres: received a nil selectable in Returning() - do the columns or tables you selected exist?",
+			)
 			return stmt
 		}
 
 		// All selected columns must belong to the INSERT table
 		for _, column := range selection.Selectable() {
 			if column.Table() != stmt.Table() {
-				stmt.SetError(fmt.Errorf(
+				stmt.SetError(
 					"postgres: the column '%s' in Returning() does not belong to the inserted table '%s'",
 					column.Name(), stmt.Table().Name,
-				))
+				)
 				break
 			}
 			stmt.returning = append(stmt.returning, column)

@@ -7,10 +7,9 @@ import (
 
 // DeleteStmt is the internal representation of a DELETE statement.
 type DeleteStmt struct {
+	ConditionalStmt
 	table   *TableElem
 	args    []interface{}
-	cond    Clause
-	err     error
 	pkField int
 }
 
@@ -24,8 +23,8 @@ func (stmt DeleteStmt) String() string {
 // An error may be returned because of a pre-existing error or because
 // an error occurred during compilation.
 func (stmt DeleteStmt) Compile(d Dialect, params *Parameters) (string, error) {
-	if stmt.err != nil {
-		return "", stmt.err
+	if err := stmt.Error(); err != nil {
+		return "", err
 	}
 	compiled := fmt.Sprintf(`DELETE FROM "%s"`, stmt.table.Name)
 
@@ -44,12 +43,15 @@ func (stmt DeleteStmt) Compile(d Dialect, params *Parameters) (string, error) {
 func (stmt DeleteStmt) Values(arg interface{}) DeleteStmt {
 	// The must be a primary key
 	if len(stmt.table.pk) == 0 {
-		stmt.err = fmt.Errorf("aspect: a table must have a primary key to delete by values")
+		stmt.SetError(
+			"aspect: a table must have a primary key to delete by values",
+		)
 		return stmt
 	}
 
 	if len(stmt.table.pk) > 1 {
-		stmt.err = fmt.Errorf("aspect: deletion by composite primary keys is currently not supported")
+		stmt.SetError(
+			"aspect: deletion by composite primary keys is not yet supported")
 		return stmt
 	}
 
@@ -62,7 +64,8 @@ func (stmt DeleteStmt) Values(arg interface{}) DeleteStmt {
 	switch elem.Kind() {
 	case reflect.Struct:
 		// Match the primary key column to the field
-		if stmt.err = stmt.setPkField(arg, pk.Name()); stmt.err != nil {
+		if err := stmt.setPkField(arg, pk.Name()); err != nil {
+			stmt.SetError(err.Error())
 			return stmt
 		}
 
@@ -71,7 +74,7 @@ func (stmt DeleteStmt) Values(arg interface{}) DeleteStmt {
 
 	case reflect.Slice:
 		if elem.Len() < 1 {
-			stmt.err = fmt.Errorf(
+			stmt.SetError(
 				"aspect: values cannot be set for deletion by empty slices",
 			)
 			return stmt
@@ -80,7 +83,7 @@ func (stmt DeleteStmt) Values(arg interface{}) DeleteStmt {
 		// Only slices of structs are acceptable
 		elem0 := elem.Index(0)
 		if elem0.Kind() != reflect.Struct {
-			stmt.err = fmt.Errorf(
+			stmt.SetError(
 				"aspect: unsupported slice element for deletion by values: %s",
 				elem0.Kind(),
 			)
@@ -95,7 +98,7 @@ func (stmt DeleteStmt) Values(arg interface{}) DeleteStmt {
 		stmt.cond = pk.In(pks)
 
 	default:
-		stmt.err = fmt.Errorf(
+		stmt.SetError(
 			"aspect: unsupported type for deletion by values: %s",
 			elem.Kind(),
 		)
@@ -143,9 +146,7 @@ func (stmt *DeleteStmt) setPkField(arg interface{}, name string) error {
 // Delete creates a DELETE statement for the given table.
 func Delete(table *TableElem) (stmt DeleteStmt) {
 	if table == nil {
-		stmt.err = fmt.Errorf(
-			"aspect: attempting to DELETE a nil table",
-		)
+		stmt.SetError("aspect: attempting to DELETE a nil table")
 		return
 	}
 	stmt.table = table

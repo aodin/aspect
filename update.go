@@ -4,14 +4,9 @@ import "fmt"
 
 // UpdateStmt is the internal representation of an SQL UPDATE statement.
 type UpdateStmt struct {
+	ConditionalStmt
 	table  *TableElem
 	values Values
-	err    error
-	cond   Clause
-}
-
-func (stmt UpdateStmt) Error() error {
-	return stmt.err
 }
 
 // String outputs the parameter-less UPDATE statement in a neutral dialect.
@@ -25,8 +20,8 @@ func (stmt UpdateStmt) String() string {
 // an error occurred during compilation.
 func (stmt UpdateStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	// Check for delayed errors
-	if stmt.err != nil {
-		return "", stmt.err
+	if err := stmt.Error(); err != nil {
+		return "", err
 	}
 
 	// If no values were attached, then create a default values map
@@ -67,17 +62,18 @@ func (stmt UpdateStmt) Compile(d Dialect, params *Parameters) (string, error) {
 func (stmt UpdateStmt) Values(values Values) UpdateStmt {
 	// There must be some columns to update!
 	if len(values) == 0 {
-		stmt.err = fmt.Errorf("aspect: there must be at least one value in a Values instance")
+		stmt.SetError(
+			"aspect: there must be at least one value in a Values instance",
+		)
 		return stmt
 	}
 
 	// Confirm that all values' keys are columns in the table
 	for key := range values {
 		if _, ok := stmt.table.C[key]; !ok {
-			stmt.err = fmt.Errorf(
+			stmt.SetError(
 				"aspect: no column %s exists in the table %s",
-				key,
-				stmt.table.Name,
+				key, stmt.table.Name,
 			)
 		}
 	}
@@ -100,9 +96,7 @@ func (stmt UpdateStmt) Where(conds ...Clause) UpdateStmt {
 // Update creates an UPDATE statement for the given table.
 func Update(table *TableElem) (stmt UpdateStmt) {
 	if table == nil {
-		stmt.err = fmt.Errorf(
-			"aspect: attempting to UPDATE a nil table",
-		)
+		stmt.SetError("aspect: attempting to UPDATE a nil table")
 		return
 	}
 	stmt.table = table

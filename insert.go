@@ -16,10 +16,10 @@ var (
 
 // InsertStmt is the internal representation of an INSERT statement.
 type InsertStmt struct {
+	Stmt
 	table   *TableElem
 	columns []ColumnElem // TODO custom type for setter / getter operations
 	args    []interface{}
-	err     error // TODO common error handling struct
 	fields  fields
 }
 
@@ -27,16 +27,6 @@ type InsertStmt struct {
 func (stmt InsertStmt) String() string {
 	compiled, _ := stmt.Compile(&defaultDialect{}, Params())
 	return compiled
-}
-
-// Error returns any error attached to this statement
-func (stmt InsertStmt) Error() error {
-	return stmt.err
-}
-
-// SetError attaches an error to this statment
-func (stmt *InsertStmt) SetError(err error) {
-	stmt.err = err
 }
 
 // Table returns the table of this statement
@@ -62,8 +52,8 @@ func (stmt InsertStmt) HasColumn(name string) bool {
 // an error occurred during compilation.
 func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	// Check for delayed errors
-	if stmt.err != nil {
-		return "", stmt.err
+	if err := stmt.Error(); err != nil {
+		return "", err
 	}
 
 	c := len(stmt.columns)
@@ -247,7 +237,7 @@ func (stmt InsertStmt) Values(arg interface{}) InsertStmt {
 
 		// If no fields remain after trimming, abort
 		if len(stmt.fields) == 0 {
-			stmt.err = fmt.Errorf("aspect: could not match fields for INSERT - are the 'db' tags correct?")
+			stmt.SetError("aspect: could not match fields for INSERT - are the 'db' tags correct?")
 			return stmt
 		}
 
@@ -256,7 +246,7 @@ func (stmt InsertStmt) Values(arg interface{}) InsertStmt {
 
 	case reflect.Slice:
 		if elem.Len() == 0 {
-			stmt.err = fmt.Errorf("aspect: args cannot be set by empty slices")
+			stmt.SetError("aspect: args cannot be set by empty slices")
 			return stmt
 		}
 		// Slices of structs or Values are acceptable
@@ -289,7 +279,7 @@ func (stmt InsertStmt) Values(arg interface{}) InsertStmt {
 
 			// If no fields remain after trimming, abort
 			if len(stmt.fields) == 0 {
-				stmt.err = fmt.Errorf("aspect: could not match fields for INSERT - are the 'db' tags correct?")
+				stmt.SetError("aspect: could not match fields for INSERT - are the 'db' tags correct?")
 				return stmt
 			}
 
@@ -304,14 +294,16 @@ func (stmt InsertStmt) Values(arg interface{}) InsertStmt {
 		valuesSlice, ok := arg.([]Values)
 		if ok {
 			if len(valuesSlice) == 0 {
-				stmt.err = fmt.Errorf(
+				stmt.SetError(
 					"aspect: cannot insert []Values of length zero",
 				)
 				return stmt
 			}
 
 			// Set the table columns according to the values
-			if stmt.fields, stmt.err = valuesMap(stmt, valuesSlice[0]); stmt.err != nil {
+			var err error
+			if stmt.fields, err = valuesMap(stmt, valuesSlice[0]); err != nil {
+				stmt.SetError(err.Error())
 				return stmt
 			}
 
@@ -326,24 +318,25 @@ func (stmt InsertStmt) Values(arg interface{}) InsertStmt {
 			return stmt
 		}
 
-		stmt.err = fmt.Errorf(
+		stmt.SetError(
 			"aspect: unsupported type %T for INSERT %s - values must be of type struct, Values, or a slice of either",
-			arg,
-			stmt,
+			arg, stmt,
 		)
 
 	case reflect.Map:
 		// The only allowed map type is Values
 		values, ok := arg.(Values)
 		if !ok {
-			stmt.err = fmt.Errorf(
+			stmt.SetError(
 				"aspect: inserted maps must be of type Values",
 			)
 			return stmt
 		}
 
 		// Set the table columns according to the values
-		if stmt.fields, stmt.err = valuesMap(stmt, values); stmt.err != nil {
+		var err error
+		if stmt.fields, err = valuesMap(stmt, values); err != nil {
+			stmt.SetError(err.Error())
 			return stmt
 		}
 
@@ -380,23 +373,21 @@ func Insert(selection Selectable, selections ...Selectable) (stmt InsertStmt) {
 	columns := make([]ColumnElem, 0)
 	for _, s := range append([]Selectable{selection}, selections...) {
 		if s == nil {
-			stmt.err = fmt.Errorf("aspect: insert received a nil selectable - do the columns or tables you selected exist?")
+			stmt.SetError("aspect: insert received a nil selectable - do the columns or tables you selected exist?")
 			return
 		}
 		columns = append(columns, s.Selectable()...)
 	}
 
 	if len(columns) < 1 {
-		stmt.err = fmt.Errorf(
-			"aspect: no columns were selected for INSERT",
-		)
+		stmt.SetError("aspect: no columns were selected for INSERT")
 		return
 	}
 
 	// The table is set from the first column
 	column := columns[0]
 	if column.table == nil {
-		stmt.err = fmt.Errorf(
+		stmt.SetError(
 			"aspect: attempting to INSERT to a column unattached to a table",
 		)
 		return
@@ -409,11 +400,11 @@ func Insert(selection Selectable, selections ...Selectable) (stmt InsertStmt) {
 		// don't if the name is missing - the most common error case will
 		// be a mistyped name in table.C)
 		if c.Name() == "" {
-			stmt.err = fmt.Errorf("aspect: cannot INSERT to a column that does not exist - are selected columns named correctly?")
+			stmt.SetError("aspect: cannot INSERT to a column that does not exist - are selected columns named correctly?")
 			return
 		}
 		if c.table != stmt.table {
-			stmt.err = fmt.Errorf("aspect: columns of an INSERT must all belong to the same table")
+			stmt.SetError("aspect: columns of an INSERT must all belong to the same table")
 			return
 		}
 		stmt.columns = append(stmt.columns, c)
