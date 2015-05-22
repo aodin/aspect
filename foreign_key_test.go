@@ -31,7 +31,6 @@ var messages = Table("messages",
 
 func TestSelfForeignKey(t *testing.T) {
 	expect := NewTester(t, &defaultDialect{})
-
 	expect.SQL(
 		`CREATE TABLE "messages" (
   "id" INTEGER PRIMARY KEY NOT NULL,
@@ -42,19 +41,17 @@ func TestSelfForeignKey(t *testing.T) {
 }
 
 func TestForeignKeyElement(t *testing.T) {
-	assert := assert.New(t)
-
 	// Test that the fk columns were added to the C mapping
 	_, ok := children.C["parent_id"]
-	assert.Equal(true, ok)
+	assert.Equal(t, true, ok)
 
 	// There should also be a foreign key element attached to the table
 	fks := children.ForeignKeys()
-	assert.Equal(1, len(fks))
+	assert.Len(t, fks, 1, "The length of foreign keys should be 1")
 
 	fk := fks[0]
-	assert.Equal(children, fk.Table())
-	assert.Equal(parents, fk.ReferencesTable())
+	assert.Equal(t, children, fk.Table())
+	assert.Equal(t, parents, fk.ReferencesTable())
 }
 
 func TestForeignKey_Create(t *testing.T) {
@@ -80,15 +77,9 @@ func TestForeignKey_Create(t *testing.T) {
 	expect.SQL(expected, childrenCascade.Create())
 
 	// Test too many overrides
-	func() {
-		defer func() {
-			if panicked := recover(); panicked == nil {
-				t.Errorf("table failed to panic when multiple overriding types were added to a foreign key")
-			}
-		}()
-		Table("bad",
-			ForeignKey("no", parents.C["id"], String{}, Integer{}),
-		)
-	}()
-
+	assert.Panics(t, func() {
+		Table("bad", ForeignKey("no", parents.C["id"], String{}, Integer{}))
+	},
+		"table failed to panic when multiple overriding types were added to a foreign key",
+	)
 }
