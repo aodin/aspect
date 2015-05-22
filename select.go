@@ -16,7 +16,6 @@ type SelectStmt struct {
 	ConditionalStmt
 	tables  []*TableElem
 	columns []ColumnElem
-	joins   []JoinStmt // Broken and deprecated
 	join    []JoinOnStmt
 	groupBy []ColumnElem
 	order   []OrderedColumn
@@ -69,17 +68,6 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 		strings.Join(stmt.CompileTables(d, params), ", "),
 	)
 
-	// The old join syntax, which is broken and deprecated
-	if len(stmt.joins) > 0 {
-		for _, join := range stmt.joins {
-			jc, err := join.Compile(d, params)
-			if err != nil {
-				return "", err
-			}
-			compiled += jc
-		}
-	}
-
 	// JOIN ... ON ...
 	if len(stmt.join) > 0 {
 		for _, j := range stmt.join {
@@ -130,38 +118,6 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 		compiled += fmt.Sprintf(" OFFSET %d", stmt.offset)
 	}
 	return compiled, nil
-}
-
-// Join adds a JOIN ... ON to the SELECT statement. The second column parameter
-// will be used as the join table and will be removed from the statement's
-// FROM selection.
-// This method is broken and deprecated.
-func (stmt SelectStmt) Join(pre, post ColumnElem) SelectStmt {
-	// Get the table of the pre element
-	preTable := pre.Table()
-
-	// If the preTable is not in the current select statement, add it
-	if !stmt.TableExists(preTable.Name) {
-		stmt.tables = append(stmt.tables, preTable)
-	}
-
-	// Get the table of the post element
-	postTable := post.Table()
-
-	// Remove the post table from the list of selected tables
-	for i, t := range stmt.tables {
-		if t == postTable {
-			stmt.tables = append(stmt.tables[:i], stmt.tables[i+1:]...)
-			break
-		}
-	}
-
-	// Add the join structure to the select
-	stmt.joins = append(
-		stmt.joins,
-		JoinStmt{method: "JOIN", pre: pre, post: post, table: postTable},
-	)
-	return stmt
 }
 
 // Join adds a JOIN ... ON ... clause to the SELECT statement.
