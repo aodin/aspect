@@ -7,4 +7,4 @@ Aspect is a relational database toolkit for Go:
 */
 package aspect
 
-const VERSION = "0.3.1"
+const VERSION = "0.4.0"
