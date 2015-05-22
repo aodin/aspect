@@ -55,7 +55,7 @@ var attrs = Table("attrs",
 
 func TestTableSchema(t *testing.T) {
 	// Test table properties
-	assert.Equal(t, "users", users.Name)
+	assert.Equal(t, "users", users.Name())
 	assert.Equal(t, "users", users.String())
 
 	// Test the accessor methods

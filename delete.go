@@ -26,7 +26,7 @@ func (stmt DeleteStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	if err := stmt.Error(); err != nil {
 		return "", err
 	}
-	compiled := fmt.Sprintf(`DELETE FROM "%s"`, stmt.table.Name)
+	compiled := fmt.Sprintf(`DELETE FROM "%s"`, stmt.table.Name())
 
 	if stmt.cond != nil {
 		cc, err := stmt.cond.Compile(d, params)

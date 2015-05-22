@@ -27,13 +27,18 @@ func validateTableName(name string) error {
 // returned from the Table constructor function.
 // TODO make this an internal struct?
 type TableElem struct {
-	Name    string
+	name    string
 	C       ColumnSet
 	order   []string
 	pk      PrimaryKeyArray
 	fks     []ForeignKeyElem
 	uniques []UniqueConstraint
 	creates []Creatable
+}
+
+// Name returns the table's name
+func (table *TableElem) Name() string {
+	return table.name
 }
 
 // AddCreatable adds a new Creatable to the table
@@ -43,7 +48,7 @@ func (table *TableElem) AddCreatable(c Creatable) {
 
 // String returns the table name.
 func (table *TableElem) String() string {
-	return table.Name
+	return table.Name()
 }
 
 // PrimaryKey returns the table's primary key array.
@@ -65,7 +70,7 @@ func (table *TableElem) ForeignKeys() []ForeignKeyElem {
 // TODO Compile might not be the best name for this method, since it is
 // not a target for compilation
 func (table *TableElem) Compile(d Dialect, params *Parameters) string {
-	return fmt.Sprintf(`"%s"`, table.Name)
+	return fmt.Sprintf(`"%s"`, table.String())
 }
 
 // Columns returns the table's columns in proper order.
@@ -139,7 +144,7 @@ func Table(name string, elements ...TableModifier) *TableElem {
 	}
 
 	table := &TableElem{
-		Name: name,
+		name: name,
 		C:    ColumnSet{},
 	}
 

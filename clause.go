@@ -28,7 +28,7 @@ func (c ColumnClause) Compile(d Dialect, params *Parameters) (string, error) {
 	if c.table == nil {
 		return fmt.Sprintf(`"%s"`, c.name), nil
 	} else {
-		return fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name), nil
+		return fmt.Sprintf(`"%s"."%s"`, c.table.name, c.name), nil
 	}
 }
 
@@ -110,6 +110,7 @@ func (c UnaryClause) Compile(d Dialect, params *Parameters) (string, error) {
 	return fmt.Sprintf("%s%s", pre, c.Sep), nil
 }
 
+// BinaryClause is two clauses with a separator
 type BinaryClause struct {
 	Pre, Post Clause
 	Sep       string
@@ -138,6 +139,7 @@ func (c BinaryClause) Compile(d Dialect, params *Parameters) (string, error) {
 	return fmt.Sprintf("%s%s%s", pre, c.Sep, post), nil
 }
 
+// ArrayClause is any number of clauses with a column join
 type ArrayClause struct {
 	Clauses []Clause
 	Sep     string

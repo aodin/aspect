@@ -84,7 +84,7 @@ func (c ColumnElem) Compile(d Dialect, params *Parameters) (string, error) {
 	var err error
 	if c.inner == nil {
 		// Old behavior
-		compiled, err = fmt.Sprintf(`"%s"."%s"`, c.table.Name, c.name), nil
+		compiled, err = fmt.Sprintf(`"%s"."%s"`, c.table.name, c.name), nil
 	} else {
 		compiled, err = c.inner.Compile(d, params)
 	}
@@ -365,7 +365,7 @@ func (c ColumnElem) Modify(t *TableElem) error {
 		return fmt.Errorf(
 			"aspect: column '%s' already belongs to table '%s'",
 			c.name,
-			t.Name,
+			t.name,
 		)
 	}
 

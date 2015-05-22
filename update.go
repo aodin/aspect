@@ -41,7 +41,7 @@ func (stmt UpdateStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	// Begin building the UPDATE statement
 	compiled := fmt.Sprintf(
 		`UPDATE "%s" SET %s`,
-		stmt.table.Name,
+		stmt.table.Name(),
 		valuesStmt,
 	)
 
@@ -73,7 +73,7 @@ func (stmt UpdateStmt) Values(values Values) UpdateStmt {
 		if _, ok := stmt.table.C[key]; !ok {
 			stmt.SetError(
 				"aspect: no column %s exists in the table %s",
-				key, stmt.table.Name,
+				key, stmt.table.Name(),
 			)
 		}
 	}

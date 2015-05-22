@@ -26,7 +26,7 @@ type SelectStmt struct {
 // TableExists checks if a table already exists in the SELECT statement.
 func (stmt SelectStmt) TableExists(name string) bool {
 	for _, table := range stmt.tables {
-		if table.Name == name {
+		if table.Name() == name {
 			return true
 		}
 	}
@@ -265,7 +265,7 @@ func Select(selections ...Selectable) (stmt SelectStmt) {
 		stmt.columns = append(stmt.columns, column)
 
 		// Add the table to the stmt tables if it does not already exist
-		if !stmt.TableExists(column.Table().Name) {
+		if !stmt.TableExists(column.Table().Name()) {
 			stmt.tables = append(stmt.tables, column.Table())
 		}
 	}

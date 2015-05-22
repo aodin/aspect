@@ -69,7 +69,7 @@ func (stmt RetInsertStmt) Returning(cs ...aspect.Selectable) RetInsertStmt {
 			if column.Table() != stmt.Table() {
 				stmt.SetError(
 					"postgres: the column '%s' in Returning() does not belong to the inserted table '%s'",
-					column.Name(), stmt.Table().Name,
+					column.Name(), stmt.Table().Name(),
 				)
 				break
 			}

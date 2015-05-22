@@ -104,7 +104,7 @@ func (stmt InsertStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	// TODO Bulk insert syntax is dialect specific
 	return fmt.Sprintf(
 		`INSERT INTO "%s" (%s) VALUES %s`,
-		stmt.table.Name,
+		stmt.table.Name(),
 		strings.Join(columns, ", "),
 		strings.Join(parameters, ", "),
 	), nil

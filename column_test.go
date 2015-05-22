@@ -69,7 +69,7 @@ func TestColumnConditionals(t *testing.T) {
 }
 
 func TestColumnElem_Modify(t *testing.T) {
-	table := &TableElem{Name: "users"}
+	table := &TableElem{name: "users"}
 
 	// Attempt to modify a table with a nameless columns
 	nameless := ColumnElem{}

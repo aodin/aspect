@@ -39,7 +39,7 @@ func (stmt CreateStmt) Compile(d Dialect, p *Parameters) (string, error) {
 
 	return fmt.Sprintf(
 		"CREATE TABLE \"%s\" (\n  %s\n);",
-		stmt.table.Name,
+		stmt.table.Name(),
 		strings.Join(compiled, ",\n  "),
 	), nil
 }

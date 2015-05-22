@@ -42,8 +42,8 @@ func (fk ForeignKeyElem) Create(d Dialect) (string, error) {
 		`"%s" %s REFERENCES %s("%s")`,
 		fk.name,
 		ct,
-		fk.col.table.Name,
-		fk.col.name,
+		fk.col.table.Name(),
+		fk.col.Name(),
 	)
 	if fk.onDelete != nil {
 		compiled += fmt.Sprintf(" ON DELETE %s", *fk.onDelete)
@@ -179,7 +179,7 @@ func (fk SelfForeignKeyElem) Modify(t *TableElem) error {
 		return fmt.Errorf(
 			"aspect: no column with the name %s exists in the table %s",
 			fk.ref,
-			t.Name,
+			t.Name(),
 		)
 	}
 
