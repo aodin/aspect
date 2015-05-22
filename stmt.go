@@ -27,3 +27,13 @@ type ConditionalStmt struct {
 func (stmt ConditionalStmt) Conditional() Clause {
 	return stmt.cond
 }
+
+// AddConditional adds a conditional clause to the statement. If a conditional
+// clause already exists, they will be joined with an AND.
+func (stmt *ConditionalStmt) AddConditional(cond Clause) {
+	if stmt.cond == nil {
+		stmt.cond = cond
+	} else {
+		stmt.cond = AllOf(stmt.cond, cond)
+	}
+}
