@@ -1,5 +1,51 @@
 package postgres
 
-import "github.com/aodin/aspect"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/aodin/aspect"
+	"github.com/aodin/aspect/config"
+)
 
 var _ aspect.Dialect = &PostGres{}
+
+func TestPostGres(t *testing.T) {
+	// Connect to the database specified in the test db.json config
+	// Default to the Travis CI settings if no file is found
+	conf, err := config.ParseTestConfig("./db.json")
+	if err != nil {
+		t.Fatalf(
+			"postgres: failed to parse test configuration, test aborted: %s",
+			err,
+		)
+	}
+
+	db, err := aspect.Connect(conf.Driver, conf.Credentials())
+	require.Nil(t, err)
+	defer db.Close()
+
+	_, err = db.Execute(users.Drop().IfExists())
+	require.Nil(t, err)
+
+	// Perform test twice
+	for i := 0; i < 2; i++ {
+		tx, err := db.Begin()
+		require.Nil(t, err)
+
+		// Start a fake transaction that will implement the connection passed
+		// to resources / controllers
+		fakeTX := aspect.FakeTx(tx)
+
+		innerTX, err := fakeTX.Begin()
+		require.Nil(t, err)
+
+		_, err = innerTX.Execute(users.Create())
+		require.Nil(t, err)
+		innerTX.Commit()
+
+		// Rollback the real transaction
+		tx.Rollback()
+	}
+}

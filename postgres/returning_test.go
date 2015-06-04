@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/aodin/aspect"
+	"github.com/aodin/aspect/dbtest"
 )
 
 type omitID struct {
@@ -93,9 +94,8 @@ func TestInsert(t *testing.T) {
 }
 
 func TestReturning(t *testing.T) {
-	assert := assert.New(t)
-	db, tx := testSetup(t)
-	defer db.Close()
+	conn, tx := dbtest.WithConfig(t, "./db.json")
+	defer conn.Close()
 	defer tx.Rollback()
 
 	tx.MustExecute(users.Create())
@@ -112,24 +112,24 @@ func TestReturning(t *testing.T) {
 		users.C["id"],
 		users.C["created_at"],
 	)
-	assert.Nil(tx.QueryAll(stmt.Values(clients), &clients))
+	assert.Nil(t, tx.QueryAll(stmt.Values(clients), &clients))
 
 	// The IDs should be anything but zero
-	assert.Equal(2, len(clients))
+	assert.Equal(t, 2, len(clients))
 
-	assert.NotEqual(0, clients[0].ID)
-	assert.Equal("client", clients[0].Name)
-	assert.False(clients[0].CreatedAt.IsZero())
+	assert.NotEqual(t, int64(0), clients[0].ID)
+	assert.Equal(t, "client", clients[0].Name)
+	assert.False(t, clients[0].CreatedAt.IsZero())
 
-	assert.NotEqual(0, clients[1].ID)
-	assert.Equal("member", clients[1].Name)
-	assert.False(clients[1].CreatedAt.IsZero())
+	assert.NotEqual(t, int64(0), clients[1].ID)
+	assert.Equal(t, "member", clients[1].Name)
+	assert.False(t, clients[1].CreatedAt.IsZero())
 
 	// Test UUID creation
 	tx.MustExecute(hasUUIDs.Create())
 
 	u := hasUUID{Name: "what"}
 	uuidStmt := Insert(hasUUIDs).Values(u).Returning(hasUUIDs)
-	assert.Nil(tx.QueryOne(uuidStmt, &u))
-	assert.NotEqual("", u.UUID, "UUID should have been set")
+	assert.Nil(t, tx.QueryOne(uuidStmt, &u))
+	assert.NotEqual(t, "", u.UUID, "UUID should have been set")
 }
