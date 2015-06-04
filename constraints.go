@@ -28,7 +28,10 @@ func (pk PrimaryKeyArray) Modify(table *TableElem) error {
 	for _, name := range pk {
 		_, exists := table.C[name]
 		if !exists {
-			return fmt.Errorf("No column with the name '%s' exists in the table '%s'. Is it declared after the PrimaryKey declaration?", name, table.Name)
+			return fmt.Errorf(
+				"No column with the name '%s' exists in the table '%s'. Is it declared after the PrimaryKey declaration?",
+				name, table.Name(),
+			)
 		}
 		// TODO Set the attributes of the column type?
 	}
@@ -80,7 +83,10 @@ func (uc UniqueConstraint) Modify(table *TableElem) error {
 	for _, name := range uc {
 		_, exists := table.C[name]
 		if !exists {
-			return fmt.Errorf("No column with the name '%s' exists in the table '%s'. Is it declared after the PrimaryKey declaration?", name, table.Name)
+			return fmt.Errorf(
+				"No column with the name '%s' exists in the table '%s'. Is it declared after the PrimaryKey declaration?",
+				name, table.Name(),
+			)
 		}
 		// TODO Set the attributes of the column type?
 	}

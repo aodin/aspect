@@ -68,7 +68,10 @@ func (exclude ExcludeConstraint) Modify(table *aspect.TableElem) error {
 	for _, clause := range exclude.clauses {
 		_, exists := table.C[clause.Name]
 		if !exists {
-			return fmt.Errorf("No column with the name '%s' exists in the table '%s'. Is it declared after the PrimaryKey declaration?", clause.Name, table.Name)
+			return fmt.Errorf(
+				"No column with the name '%s' exists in the table '%s'. Is it declared after the PrimaryKey declaration?",
+				clause.Name, table.Name(),
+			)
 		}
 	}
 
