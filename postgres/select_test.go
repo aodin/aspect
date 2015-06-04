@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/aodin/aspect"
+	"github.com/aodin/aspect/config"
 )
 
 // Perform some selections against an actual postgres database
@@ -35,7 +36,7 @@ func TestSelect(t *testing.T) {
 
 	// Connect to the database specified in the test db.json config
 	// Default to the Travis CI settings if no file is found
-	conf, err := aspect.ParseTestConfig("./db.json")
+	conf, err := config.ParseTestConfig("./db.json")
 	if err != nil {
 		t.Fatalf(
 			"postgres: failed to parse test configuration, test aborted: %s",
@@ -182,7 +183,7 @@ func TestSelect_Omitempty(t *testing.T) {
 
 	// Connect to the database specified in the test db.json config
 	// Default to the Travis CI settings if no file is found
-	conf, err := aspect.ParseTestConfig("./db.json")
+	conf, err := config.ParseTestConfig("./db.json")
 	if err != nil {
 		t.Fatalf(
 			"postgres: failed to parse test configuration, test aborted: %s",

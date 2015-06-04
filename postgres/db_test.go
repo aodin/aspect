@@ -6,13 +6,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/aodin/aspect"
+	"github.com/aodin/aspect/config"
 )
 
 // Return a database connection pool and transaction
 func testSetup(t *testing.T) (*aspect.DB, aspect.Transaction) {
 	// Connect to the database specified in the test db.json config
 	// Default to the Travis CI settings if no file is found
-	conf, err := aspect.ParseTestConfig("./db.json")
+	conf, err := config.ParseTestConfig("./db.json")
 	require.Nil(t, err)
 
 	db, err := aspect.Connect(conf.Driver, conf.Credentials())
@@ -26,7 +27,7 @@ func testSetup(t *testing.T) (*aspect.DB, aspect.Transaction) {
 func TestDB(t *testing.T) {
 	// Connect to the database specified in the test db.json config
 	// Default to the Travis CI settings if no file is found
-	conf, err := aspect.ParseTestConfig("./db.json")
+	conf, err := config.ParseTestConfig("./db.json")
 	if err != nil {
 		t.Fatalf(
 			"postgres: failed to parse test configuration, test aborted: %s",

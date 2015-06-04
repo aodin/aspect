@@ -1,4 +1,4 @@
-package aspect
+package config
 
 import (
 	"encoding/json"
@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// DatabaseConfig contains the fields needed to connect to a database.
-type DatabaseConfig struct {
+// Database contains the fields needed to connect to a database.
+type Database struct {
 	Driver   string `json:"driver"`
 	Host     string `json:"host"`
 	Port     int64  `json:"port"`
@@ -22,7 +22,7 @@ type DatabaseConfig struct {
 
 // Credentials with return a string of credentials appropriate for Go's
 // sql.Open function
-func (db DatabaseConfig) Credentials() string {
+func (db Database) Credentials() string {
 	// Only add the key if there is a value
 	var values []string
 	if db.Host != "" {
@@ -46,25 +46,16 @@ func (db DatabaseConfig) Credentials() string {
 	return strings.Join(values, " ")
 }
 
-var travisCI = DatabaseConfig{
-	Driver:  "postgres",
-	Host:    "localhost",
-	Port:    5432,
-	Name:    "travis_ci_test",
-	User:    "postgres",
-	SSLMode: "disable",
-}
-
-// Parse will create a DatabaseConfig using the file at the given path.
-func ParseConfig(filename string) (DatabaseConfig, error) {
+// Parse will create a Database using the file at the given path.
+func ParseConfig(filename string) (Database, error) {
 	f, err := os.Open(filename)
 	if err != nil {
-		return DatabaseConfig{}, err
+		return Database{}, err
 	}
 	return parseConfig(f)
 }
 
-func parseConfig(f io.Reader) (c DatabaseConfig, err error) {
+func parseConfig(f io.Reader) (c Database, err error) {
 	b, err := ioutil.ReadAll(f)
 	if err != nil {
 		return
@@ -73,9 +64,18 @@ func parseConfig(f io.Reader) (c DatabaseConfig, err error) {
 	return
 }
 
+var travisCI = Database{
+	Driver:  "postgres",
+	Host:    "localhost",
+	Port:    5432,
+	Name:    "travis_ci_test",
+	User:    "postgres",
+	SSLMode: "disable",
+}
+
 // ParseTestConfig varies from the default ParseConfig by defaulting to the
 // Travis CI credentials if the given config returned nothing.
-func ParseTestConfig(filename string) (DatabaseConfig, error) {
+func ParseTestConfig(filename string) (Database, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return travisCI, nil

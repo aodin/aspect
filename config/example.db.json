@@ -3,7 +3,7 @@
     "host": "localhost",
     "port": 5432,
     "name": "aspect_test",
-    "user": "",
+    "user": "postgres",
     "password": "",
     "ssl_mode": "disable"
 }
