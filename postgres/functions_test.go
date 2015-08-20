@@ -14,3 +14,11 @@ func TestFunctions(t *testing.T) {
 		"range",
 	)
 }
+
+func Test_StringAgg(t *testing.T) {
+	expect := aspect.NewTester(t, &PostGres{})
+	expect.SQL(
+		`string_agg("times"."when", ', ')`,
+		StringAgg(times.C["when"], ", "),
+	)
+}
