@@ -14,13 +14,15 @@ type Selectable interface {
 // SelectStmt is the internal representation of an SQL SELECT statement.
 type SelectStmt struct {
 	ConditionalStmt
-	tables  []*TableElem
-	columns []ColumnElem
-	join    []JoinOnStmt
-	groupBy []ColumnElem
-	order   []OrderedColumn
-	limit   int
-	offset  int
+	tables     []*TableElem
+	columns    []ColumnElem
+	join       []JoinOnStmt
+	groupBy    []ColumnElem
+	order      []OrderedColumn
+	isDistinct bool
+	distincts  []ColumnElem
+	limit      int
+	offset     int
 }
 
 // TableExists checks if a table already exists in the SELECT statement.
@@ -62,8 +64,26 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	if err := stmt.Error(); err != nil {
 		return "", err
 	}
-	compiled := fmt.Sprintf(
-		"SELECT %s FROM %s",
+
+	compiled := "SELECT"
+
+	// DISTINCT
+	if stmt.isDistinct {
+		compiled += " DISTINCT"
+		if len(stmt.distincts) > 0 {
+			distincts := make([]string, len(stmt.distincts))
+			for i, column := range stmt.distincts {
+				// TODO Errors!
+				distincts[i], _ = column.Compile(d, params)
+			}
+			compiled += fmt.Sprintf(
+				" ON (%s)", strings.Join(distincts, ", "),
+			)
+		}
+	}
+
+	compiled += fmt.Sprintf(
+		" %s FROM %s",
 		strings.Join(stmt.CompileColumns(d, params), ", "),
 		strings.Join(stmt.CompileTables(d, params), ", "),
 	)
@@ -120,6 +140,21 @@ func (stmt SelectStmt) Compile(d Dialect, params *Parameters) (string, error) {
 	return compiled, nil
 }
 
+// All removes the DISTINCT clause from the SELECT statment.
+func (stmt SelectStmt) All() SelectStmt {
+	stmt.isDistinct = false
+	stmt.distincts = nil
+	return stmt
+}
+
+// Distinct adds a DISTINCT clause to the SELECT statement. If any
+// column are provided, the clause will be compiled as a DISTINCT ON.
+func (stmt SelectStmt) Distinct(columns ...ColumnElem) SelectStmt {
+	stmt.isDistinct = true
+	stmt.distincts = columns
+	return stmt
+}
+
 // Join adds a JOIN ... ON ... clause to the SELECT statement.
 // TODO At least on clause should be required
 func (stmt SelectStmt) JoinOn(table *TableElem, clauses ...Clause) SelectStmt {
@@ -164,14 +199,8 @@ func (stmt SelectStmt) Where(conds ...Clause) SelectStmt {
 // GroupBy adds a GROUP BY to the SELECT statement. Only one GROUP BY
 // is allowed per statement. Additional calls to GroupBy will overwrite the
 // existing GROUP BY clause.
-func (stmt SelectStmt) GroupBy(cs ...ColumnElem) SelectStmt {
-	groupBy := make([]ColumnElem, len(cs))
-	// Since columns may be given without an ordering method, perform the
-	// orderable conversion whether or not it is already ordered
-	for i, column := range cs {
-		groupBy[i] = column
-	}
-	stmt.groupBy = groupBy
+func (stmt SelectStmt) GroupBy(columns ...ColumnElem) SelectStmt {
+	stmt.groupBy = columns
 	return stmt
 }
 

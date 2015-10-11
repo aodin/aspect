@@ -69,6 +69,23 @@ func TestSelect(t *testing.T) {
 
 	// Select a column that doesn't exist
 	expect.Error(Select(users.C["what"]))
+
+	// Distinct
+	expect.SQL(
+		`SELECT DISTINCT "users"."name" FROM "users"`,
+		Select(users.C["name"]).Distinct(),
+	)
+
+	expect.SQL(
+		`SELECT DISTINCT ON ("users"."id", "users"."name") "users"."name" FROM "users"`,
+		Select(users.C["name"]).Distinct(users.C["id"], users.C["name"]),
+	)
+
+	// All is the default, and will remove the Distinct if called after
+	expect.SQL(
+		`SELECT "users"."name" FROM "users"`,
+		Select(users.C["name"]).Distinct().All(),
+	)
 }
 
 func TestSelectTable(t *testing.T) {
