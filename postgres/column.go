@@ -3,6 +3,7 @@ package postgres
 import "github.com/aodin/aspect"
 
 // ColumnElem expands aspect's ColumnElem by adding PostGres specific operators
+// and functions
 type ColumnElem struct {
 	aspect.ColumnElem
 }
@@ -13,6 +14,22 @@ func (c ColumnElem) operator(i interface{}, op Operator) aspect.BinaryClause {
 		Post: &aspect.Parameter{i},
 		Sep:  " " + string(op) + " ",
 	}
+}
+
+func (c ColumnElem) function(f, name string) ColumnElem {
+	return ColumnElem{c.SetInner(aspect.BinaryClause{
+		Pre:  c,
+		Post: &aspect.StringClause{Name: name},
+		Sep:  f,
+	})}
+}
+
+func (c ColumnElem) GetJSON(name string) ColumnElem {
+	return c.function(" -> ", name)
+}
+
+func (c ColumnElem) GetJSONText(name string) ColumnElem {
+	return c.function(" ->> ", name)
 }
 
 func (c ColumnElem) NotEqual(i interface{}) aspect.BinaryClause {

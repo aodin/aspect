@@ -38,3 +38,9 @@ var times = aspect.Table("times",
 	aspect.Column("room", aspect.Integer{}),
 	aspect.Column("when", DateRange{}),
 )
+
+var members = aspect.Table("members",
+	aspect.Column("id", Serial{NotNull: true}),
+	aspect.Column("info", JSON{NotNull: true}),
+	aspect.PrimaryKey("id"),
+)
