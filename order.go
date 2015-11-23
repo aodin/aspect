@@ -25,6 +25,11 @@ func (o OrderedColumn) String() string {
 	return compiled
 }
 
+// Column returns the OrderedColumn's inner ColumnElem
+func (o OrderedColumn) Column() ColumnElem {
+	return o.inner
+}
+
 func (o OrderedColumn) Compile(d Dialect, params *Parameters) (string, error) {
 	// Call the compilation method of the embeded column
 	compiled, err := o.inner.Compile(d, params)
