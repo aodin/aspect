@@ -1,5 +1,9 @@
-Aspect [![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/aodin/aspect) [![Build Status](https://travis-ci.org/aodin/aspect.svg?branch=master)](https://travis-ci.org/aodin/aspect)
+### Future development moved to https://github.com/aodin/sol
+
+Aspect
 ======
+[![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/aodin/aspect) [![Build Status](https://travis-ci.org/aodin/aspect.svg?branch=master)](https://travis-ci.org/aodin/aspect)
+
 
 A relational database toolkit for Go:
 
